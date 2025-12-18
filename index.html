@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Musculoskeletal Study Guide | Med-Surg</title>
+  <meta name="description" content="Interactive study guide for Musculoskeletal Disorders - Med-Surg Nursing Exam Prep">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦴</text></svg>">
+</head>
+
+<body>
+  <div class="bg-animation"></div>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-container">
+      <div class="nav-logo">🦴 MSK Study Guide</div>
+      <div class="mastery-badge" id="masteryBadge" title="Your mastery level">
+        <span class="mastery-icon">🏆</span>
+        <span class="mastery-level" id="masteryLevel">0%</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Tab Navigation -->
+  <div class="main-tabs">
+    <button class="main-tab active" data-maintab="learn">
+      <span class="main-tab-icon">📚</span>
+      <span class="main-tab-text">Learn</span>
+    </button>
+    <button class="main-tab" data-maintab="quiz">
+      <span class="main-tab-icon">📝</span>
+      <span class="main-tab-text">Quiz</span>
+    </button>
+    <button class="main-tab" data-maintab="flashcards">
+      <span class="main-tab-icon">🃏</span>
+      <span class="main-tab-text">Flashcards</span>
+    </button>
+    <button class="main-tab" data-maintab="progress">
+      <span class="main-tab-icon">📊</span>
+      <span class="main-tab-text">Progress</span>
+    </button>
+  </div>
+
+  <!-- LEARN TAB PANEL -->
+  <div class="main-tab-panel active" id="panel-learn">
+
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span>📚</span>
+          <span>Medical-Surgical Nursing</span>
+        </div>
+        <h1>Musculoskeletal Study Guide</h1>
+        <p class="hero-subtitle">
+          Master musculoskeletal concepts through <strong>active recall</strong>, <strong>spaced repetition</strong>,
+          and
+          <strong>clinical reasoning</strong> — the science-backed way to pass your exam.
+        </p>
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+          <a href="#quick-review" class="btn btn-primary">Start Learning →</a>
+          <button class="btn btn-secondary" onclick="switchMainTab('quiz')">📝 Take Quiz</button>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="stat-value" id="studyStreak">0</div>
+            <div class="stat-label">Day Streak 🔥</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="cardsmastered">0</div>
+            <div class="stat-label">Cards Mastered</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="quizBest">0%</div>
+            <div class="stat-label">Best Quiz Score</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quick Review Cheat Sheet -->
+    <section class="section" id="quick-review">
+      <div class="section-header">
+        <h2>⚡ Quick Review Cheat Sheet</h2>
+        <p>The absolute must-know concepts for your exam</p>
+      </div>
+
+      <div class="cheat-sheet">
+        <div class="cheat-card critical">
+          <div class="cheat-header">
+            <span class="cheat-icon">🚨</span>
+            <h3>Compartment Syndrome</h3>
+            <span class="cheat-tag">EMERGENCY</span>
+          </div>
+          <div class="cheat-content">
+            <p><strong>What:</strong> Pressure buildup in muscle compartment → cuts off blood flow</p>
+            <p><strong>Signs:</strong> 6 P's (Pain out of proportion, Pallor, Pulselessness, Paresthesia, Paralysis,
+              Poikilothermia)</p>
+            <p><strong>Action:</strong> NOTIFY SURGEON NOW → Fasciotomy</p>
+            <p class="cheat-pearl">💎 <em>Pain with passive stretch is the earliest sign!</em></p>
+          </div>
+        </div>
+
+        <div class="cheat-card important">
+          <div class="cheat-header">
+            <span class="cheat-icon">🔄</span>
+            <h3>OA vs RA</h3>
+            <span class="cheat-tag">HIGH-YIELD</span>
+          </div>
+          <div class="cheat-content">
+            <p><strong>OA:</strong> Worse with activity, better with rest (wear & tear)</p>
+            <p><strong>RA:</strong> Morning stiffness that IMPROVES with movement (autoimmune)</p>
+            <p><strong>OA:</strong> Asymmetric joints | <strong>RA:</strong> Symmetric joints</p>
+            <p class="cheat-pearl">💎 <em>RA = "Rest is wrong!" - movement helps</em></p>
+          </div>
+        </div>
+
+        <div class="cheat-card important">
+          <div class="cheat-header">
+            <span class="cheat-icon">🦴</span>
+            <h3>Hip Replacement Positioning</h3>
+            <span class="cheat-tag">HIGH-YIELD</span>
+          </div>
+          <div class="cheat-content">
+            <p><strong>Avoid:</strong> Adduction past midline, crossing legs, flexion &gt;90°</p>
+            <p><strong>Use:</strong> Abduction pillow between legs</p>
+            <p><strong>Why:</strong> Prevent prosthesis dislocation</p>
+            <p class="cheat-pearl">💎 <em>Think "legs APART, not crossed" = safe</em></p>
+          </div>
+        </div>
+
+        <div class="cheat-card">
+          <div class="cheat-header">
+            <span class="cheat-icon">⚖️</span>
+            <h3>Traction Rules</h3>
+            <span class="cheat-tag">TEST TIP</span>
+          </div>
+          <div class="cheat-content">
+            <p><strong>Weights:</strong> Must hang freely at ALL times</p>
+            <p><strong>Never:</strong> Remove, rest on floor, or adjust without order</p>
+            <p><strong>Check:</strong> Ropes not frayed, pulleys aligned</p>
+            <p class="cheat-pearl">💎 <em>If answer says "remove weights" = WRONG</em></p>
+          </div>
+        </div>
+
+        <div class="cheat-card">
+          <div class="cheat-header">
+            <span class="cheat-icon">🩸</span>
+            <h3>Fat Embolism</h3>
+            <span class="cheat-tag">TIMING</span>
+          </div>
+          <div class="cheat-content">
+            <p><strong>When:</strong> 24-72 hours after LONG BONE fracture</p>
+            <p><strong>Triad:</strong> Respiratory distress + Petechial rash + Confusion</p>
+            <p><strong>Vital sign:</strong> Tachycardia (NOT bradycardia)</p>
+            <p class="cheat-pearl">💎 <em>Petechial rash = pathognomonic sign!</em></p>
+          </div>
+        </div>
+
+        <div class="cheat-card">
+          <div class="cheat-header">
+            <span class="cheat-icon">💊</span>
+            <h3>Pre-Op Arthroplasty</h3>
+            <span class="cheat-tag">NUMBERS</span>
+          </div>
+          <div class="cheat-content">
+            <p><strong>Stop 7 days before:</strong> NSAIDs, aspirin, fish oil, ginkgo</p>
+            <p><strong>Day before:</strong> Hibiclens shower x2, NPO after midnight</p>
+            <p><strong>Goal:</strong> Reduce bleeding and infection risk</p>
+            <p class="cheat-pearl">💎 <em>"7 days" is the magic number for NSAIDs</em></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Clinical Pearls & Common Mistakes -->
+    <section class="section" id="pearls">
+      <div class="section-header">
+        <h2>💎 Clinical Pearls & ⚠️ Common Mistakes</h2>
+        <p>What separates good nurses from great ones</p>
+      </div>
+
+      <div class="content-grid">
+        <div class="pearl-card">
+          <div class="pearl-header success">
+            <span>💎</span>
+            <h4>Clinical Pearl</h4>
+          </div>
+          <h3>The First Sign Matters Most</h3>
+          <p>In compartment syndrome, <strong>pain out of proportion</strong> — especially pain with passive stretch —
+            is
+            often the FIRST sign before other P's appear. Don't wait for all 6!</p>
+        </div>
+
+        <div class="pearl-card">
+          <div class="pearl-header danger">
+            <span>⚠️</span>
+            <h4>Common Mistake</h4>
+          </div>
+          <h3>Confusing Tendons & Ligaments</h3>
+          <p><strong>Tendons</strong> = Muscle to bone (think "T" for "to")<br>
+            <strong>Ligaments</strong> = Bone to bone<br>
+            Students often mix these up on exams!
+          </p>
+        </div>
+
+        <div class="pearl-card">
+          <div class="pearl-header success">
+            <span>💎</span>
+            <h4>Clinical Pearl</h4>
+          </div>
+          <h3>Cast Education Priority</h3>
+          <p>When teaching cast care, the #1 thing to emphasize is: <strong>"Report numbness, tingling, or severe pain
+              IMMEDIATELY."</strong> These signal neurovascular compromise.</p>
+        </div>
+
+        <div class="pearl-card">
+          <div class="pearl-header danger">
+            <span>⚠️</span>
+            <h4>Common Mistake</h4>
+          </div>
+          <h3>RA vs OA Pain Pattern</h3>
+          <p>Students often think rest helps RA because it's inflammatory. <strong>WRONG!</strong> RA improves with
+            movement. This is a favorite NCLEX distractor.</p>
+        </div>
+
+        <div class="pearl-card">
+          <div class="pearl-header success">
+            <span>💎</span>
+            <h4>Clinical Pearl</h4>
+          </div>
+          <h3>Phantom Pain is REAL</h3>
+          <p>Never dismiss phantom limb pain as "imaginary." It's caused by real nerve signals and requires actual
+            treatment. Validate the patient's experience.</p>
+        </div>
+
+        <div class="pearl-card">
+          <div class="pearl-header danger">
+            <span>⚠️</span>
+            <h4>Common Mistake</h4>
+          </div>
+          <h3>Elevating Too High</h3>
+          <p>For compartment syndrome, keep limb at <strong>heart level</strong>, NOT elevated. Elevation can reduce
+            arterial flow to an already compromised extremity.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Anatomy & Physiology with Diagrams -->
+    <section class="section" id="anatomy">
+      <div class="section-header">
+        <h2>🦴 Anatomy & Physiology</h2>
+        <p>Understanding the musculoskeletal system foundation</p>
+      </div>
+
+      <!-- Interactive Diagram Gallery -->
+      <div class="diagram-gallery">
+        <h3 class="gallery-title">📸 Interactive Anatomy Gallery <span class="gallery-hint">Click to explore</span></h3>
+        <div class="gallery-grid">
+          <div class="diagram-card" data-diagram="synovial">
+            <img src="synovial_joint.png" alt="Synovial Joint" class="diagram-img">
+            <div class="diagram-overlay">
+              <h4>Synovial Joint</h4>
+              <p>Key to arthritis & synovitis</p>
+            </div>
+          </div>
+          <div class="diagram-card" data-diagram="bone">
+            <img src="bone_structure.png" alt="Bone Structure" class="diagram-img">
+            <div class="diagram-overlay">
+              <h4>Bone Structure</h4>
+              <p>Understanding osteoporosis</p>
+            </div>
+          </div>
+          <div class="diagram-card" data-diagram="muscle">
+            <img src="muscle_anatomy.png" alt="Muscle Anatomy" class="diagram-img">
+            <div class="diagram-overlay">
+              <h4>Muscle Anatomy</h4>
+              <p>Compartments & atrophy</p>
+            </div>
+          </div>
+          <div class="diagram-card" data-diagram="tendon">
+            <img src="tendon_ligament.png" alt="Tendon vs Ligament" class="diagram-img">
+            <div class="diagram-overlay">
+              <h4>Tendon vs Ligament</h4>
+              <p>Key distinction</p>
+            </div>
+          </div>
+          <div class="diagram-card" data-diagram="hip">
+            <img src="hip_fractures.png" alt="Hip Fractures" class="diagram-img">
+            <div class="diagram-overlay">
+              <h4>Hip Fractures</h4>
+              <p>3 types with locations</p>
+            </div>
+          </div>
+          <div class="diagram-card" data-diagram="osteo">
+            <img src="osteoporosis_comparison.png" alt="Osteoporosis" class="diagram-img">
+            <div class="diagram-overlay">
+              <h4>Healthy vs Osteoporotic</h4>
+              <p>Bone density loss</p>
+            </div>
+          </div>
+          <div class="diagram-card" data-diagram="traction">
+            <img src="traction_types.png" alt="Traction Types" class="diagram-img">
+            <div class="diagram-overlay">
+              <h4>Traction Types</h4>
+              <p>Skeletal vs Skin</p>
+            </div>
+          </div>
+          <div class="diagram-card" data-diagram="dvt">
+            <img src="dvt_prevention.png" alt="DVT Prevention" class="diagram-img">
+            <div class="diagram-overlay">
+              <h4>DVT Prevention</h4>
+              <p>Post-op essentials</p>
+            </div>
+          </div>
+          <div class="diagram-card" data-diagram="sixps">
+            <img src="six_ps_visual.png" alt="6 P's" class="diagram-img">
+            <div class="diagram-overlay">
+              <h4>The 6 P's</h4>
+              <p>Neurovascular assessment</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabs" style="margin-top: 3rem;">
+          <button class="tab active" data-tab="bones">Bones</button>
+          <button class="tab" data-tab="joints">Joints</button>
+          <button class="tab" data-tab="muscles">Muscles</button>
+          <button class="tab" data-tab="connections">Connections</button>
+        </div>
+
+        <div class="content-grid" id="anatomyContent">
+          <div class="topic-card" data-content="bones">
+            <div class="topic-icon">🦴</div>
+            <h3>Bone Types</h3>
+            <ul>
+              <li><strong>Long Bones</strong> - Femur, humerus, tibia (fracture risk!)</li>
+              <li><strong>Short Bones</strong> - Carpals, tarsals</li>
+              <li><strong>Flat Bones</strong> - Skull, ribs, sternum</li>
+              <li><strong>Irregular Bones</strong> - Vertebrae, pelvis</li>
+            </ul>
+            <div class="why-matters">
+              <strong>💡 Why it matters:</strong> Long bone fractures → fat embolism risk. Know which bones are "long
+              bones"!
+            </div>
+          </div>
+          <div class="topic-card" data-content="bones">
+            <div class="topic-icon">🏗️</div>
+            <h3>Bone Structure</h3>
+            <ul>
+              <li><strong>Periosteum</strong> - Outer membrane (blood vessels, nerves)</li>
+              <li><strong>Compact bone</strong> - Dense outer layer (strength)</li>
+              <li><strong>Spongy bone</strong> - Inner trabecular bone (shock absorption)</li>
+              <li><strong>Epiphyseal plate</strong> - Growth plate in children</li>
+            </ul>
+            <div class="why-matters">
+              <strong>💡 Why it matters:</strong> Osteoporosis affects spongy bone first → hip/spine fractures are
+              common
+              sites.
+            </div>
+          </div>
+          <div class="topic-card" data-content="joints">
+            <div class="topic-icon">🔗</div>
+            <h3>Joint Classification</h3>
+            <ul>
+              <li><strong>Synovial</strong> - Freely movable (shoulder, knee, hip)</li>
+              <li><strong>Fibrous</strong> - Immovable (skull sutures)</li>
+              <li><strong>Cartilaginous</strong> - Limited movement (spine, pelvis)</li>
+            </ul>
+            <div class="why-matters">
+              <strong>💡 Why it matters:</strong> Most mobility disorders involve synovial joints — know them well!
+            </div>
+          </div>
+          <div class="topic-card" data-content="joints">
+            <div class="topic-icon">💧</div>
+            <h3>Synovial Joint Components</h3>
+            <ul>
+              <li><strong>Synovial membrane</strong> - Produces synovial fluid</li>
+              <li><strong>Synovial fluid</strong> - Lubricates, nourishes cartilage</li>
+              <li><strong>Articular cartilage</strong> - Smooth surface for movement</li>
+              <li><strong>Joint capsule</strong> - Encloses and protects joint</li>
+            </ul>
+            <div class="why-matters">
+              <strong>💡 Why it matters:</strong> RA attacks the synovial membrane → produces inflammatory fluid →
+              destroys
+              cartilage over time.
+            </div>
+          </div>
+          <div class="topic-card" data-content="muscles">
+            <div class="topic-icon">💪</div>
+            <h3>Muscle Types</h3>
+            <ul>
+              <li><strong>Skeletal</strong> - Voluntary, striated, moves bones</li>
+              <li><strong>Cardiac</strong> - Involuntary, striated, heart only</li>
+              <li><strong>Smooth</strong> - Involuntary, non-striated, organs</li>
+            </ul>
+            <div class="why-matters">
+              <strong>💡 Why it matters:</strong> Skeletal muscle compartments → compartment syndrome. Know your
+              compartments!
+            </div>
+          </div>
+          <div class="topic-card" data-content="muscles">
+            <div class="topic-icon">🦵</div>
+            <h3>Muscle Atrophy & Immobility</h3>
+            <ul>
+              <li>Disuse atrophy begins within <strong>24-48 hours</strong></li>
+              <li>Can lose <strong>3-5% strength per day</strong> of immobility</li>
+              <li>Sarcopenia in aging compounds this</li>
+            </ul>
+            <div class="why-matters">
+              <strong>💡 Why it matters:</strong> This is why early mobilization is CRITICAL in hospitalized patients!
+            </div>
+          </div>
+          <div class="topic-card" data-content="connections">
+            <div class="topic-icon">🎗️</div>
+            <h3>Tendons</h3>
+            <ul>
+              <li>Connect <strong>muscle → bone</strong></li>
+              <li>Made of dense connective tissue (collagen)</li>
+              <li>Transfer force from muscle contraction to skeleton</li>
+            </ul>
+            <div class="why-matters">
+              <strong>💡 Memory trick:</strong> <strong>T</strong>endons = Muscle <strong>T</strong>o bone
+            </div>
+          </div>
+          <div class="topic-card" data-content="connections">
+            <div class="topic-icon">🔗</div>
+            <h3>Ligaments</h3>
+            <ul>
+              <li>Connect <strong>bone → bone</strong></li>
+              <li>Stabilize joints, limit movement range</li>
+              <li>Sprains = ligament injuries</li>
+            </ul>
+            <div class="why-matters">
+              <strong>💡 Memory trick:</strong> <strong>L</strong>igaments = bone to bone (<strong>L</strong>inks bones)
+            </div>
+          </div>
+        </div>
+    </section>
+
+    <!-- Immobility Effects with Why It Matters -->
+    <section class="section" id="immobility">
+      <div class="section-header">
+        <h2>⚠️ Effects of Immobility</h2>
+        <p>Understanding systemic complications — and why early mobilization saves lives</p>
+      </div>
+
+      <div class="mnemonic-card" style="margin-bottom: 2rem;">
+        <div class="mnemonic-title">Memory Tip: "SKIN CUPS" for Immobility Complications</div>
+        <p><strong>S</strong>kin (pressure ulcers) • <strong>K</strong>idney (stones, UTI) • <strong>I</strong>ntestines
+          (constipation) • <strong>N</strong>ervous (depression, cognition) • <strong>C</strong>ardio (DVT, orthostatic)
+          •
+          <strong>U</strong>rinary (stasis) • <strong>P</strong>ulmonary (atelectasis) • <strong>S</strong>keletal
+          (contractures)
+        </p>
+      </div>
+
+      <div class="systems-visual">
+        <div class="system-card">
+          <div class="system-icon">🧠</div>
+          <h3>Nervous System</h3>
+          <div class="system-effects">
+            <span class="effect-tag">Depression</span>
+            <span class="effect-tag">↓ Cognition</span>
+            <span class="effect-tag">Sleep changes</span>
+            <span class="effect-tag">Sensory deprivation</span>
+          </div>
+          <p class="system-intervention"><strong>Nursing Action:</strong> Frequent reorientation, mental stimulation,
+            regular sleep schedule</p>
+        </div>
+
+        <div class="system-card">
+          <div class="system-icon">❤️</div>
+          <h3>Cardiovascular</h3>
+          <div class="system-effects">
+            <span class="effect-tag danger">DVT risk</span>
+            <span class="effect-tag danger">VTE</span>
+            <span class="effect-tag">Orthostatic hypotension</span>
+            <span class="effect-tag">↑ Cardiac workload</span>
+          </div>
+          <p class="system-intervention"><strong>Nursing Action:</strong> SCDs, anticoagulants, early ambulation, dangle
+            before standing</p>
+        </div>
+
+        <div class="system-card">
+          <div class="system-icon">🫁</div>
+          <h3>Pulmonary</h3>
+          <div class="system-effects">
+            <span class="effect-tag danger">Atelectasis</span>
+            <span class="effect-tag danger">Pneumonia</span>
+            <span class="effect-tag">↓ Lung expansion</span>
+            <span class="effect-tag">Secretion pooling</span>
+          </div>
+          <p class="system-intervention"><strong>Nursing Action:</strong> Incentive spirometry, turn Q2H, cough & deep
+            breathe</p>
+        </div>
+
+        <div class="system-card">
+          <div class="system-icon">🩹</div>
+          <h3>Integumentary</h3>
+          <div class="system-effects">
+            <span class="effect-tag danger">Pressure ulcers</span>
+            <span class="effect-tag">Skin breakdown</span>
+            <span class="effect-tag">↓ Perfusion</span>
+          </div>
+          <p class="system-intervention"><strong>Nursing Action:</strong> Turn Q2H, Braden scale, pressure-relieving
+            mattress, skin assessment</p>
+        </div>
+
+        <div class="system-card">
+          <div class="system-icon">🍽️</div>
+          <h3>Gastrointestinal</h3>
+          <div class="system-effects">
+            <span class="effect-tag">Constipation</span>
+            <span class="effect-tag">↓ Peristalsis</span>
+            <span class="effect-tag">↓ Appetite</span>
+          </div>
+          <p class="system-intervention"><strong>Nursing Action:</strong> Fiber, fluids, stool softeners, abdominal
+            assessment</p>
+        </div>
+
+        <div class="system-card">
+          <div class="system-icon">🚽</div>
+          <h3>Genitourinary</h3>
+          <div class="system-effects">
+            <span class="effect-tag danger">UTI risk</span>
+            <span class="effect-tag">Urinary stasis</span>
+            <span class="effect-tag">Kidney stones</span>
+            <span class="effect-tag">Retention</span>
+          </div>
+          <p class="system-intervention"><strong>Nursing Action:</strong> Adequate hydration, I&O monitoring, early
+            catheter removal</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Clinical Conditions with Visual Diagrams -->
+    <section class="section" id="conditions">
+      <div class="section-header">
+        <h2>🏥 Clinical Conditions</h2>
+        <p>Key musculoskeletal disorders affecting mobility</p>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="osteoporosis">Osteoporosis</button>
+        <button class="tab" data-tab="arthritis">OA vs RA</button>
+        <button class="tab" data-tab="fractures">Fractures</button>
+        <button class="tab" data-tab="synovitis">Synovitis</button>
+      </div>
+
+      <div id="conditionsContent">
+        <!-- Osteoporosis -->
+        <div class="condition-panel active" data-panel="osteoporosis">
+          <div class="condition-deep">
+            <div class="condition-main">
+              <h3>🦴 Osteoporosis - "The Silent Disease"</h3>
+              <p class="condition-definition">Progressive bone loss making bones fragile and fracture-prone. Called
+                "silent" because there are NO symptoms until a fracture occurs.</p>
+
+              <div class="condition-grid">
+                <div class="condition-box">
+                  <h4>📊 Diagnostics</h4>
+                  <ul>
+                    <li><strong>DXA scan</strong> - Gold standard for bone density</li>
+                    <li>T-score ≤ -2.5 = osteoporosis</li>
+                    <li>Calcium, Vitamin D, PTH levels</li>
+                  </ul>
+                </div>
+                <div class="condition-box">
+                  <h4>💊 Medications</h4>
+                  <ul>
+                    <li><strong>Bisphosphonates</strong> (alendronate)</li>
+                    <li>Calcitonin</li>
+                    <li>Calcium + Vitamin D supplements</li>
+                    <li>Estrogen (selective cases)</li>
+                  </ul>
+                </div>
+                <div class="condition-box">
+                  <h4>🏃 Patient Teaching</h4>
+                  <ul>
+                    <li><strong>Weight-bearing exercise</strong> - walking, dancing</li>
+                    <li>Fall prevention strategies</li>
+                    <li>Adequate calcium (1200mg) + Vit D</li>
+                    <li>No smoking, limit alcohol</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="condition-sidebar">
+              <div class="risk-factors">
+                <h4>⚠️ Risk Factors</h4>
+                <div class="risk-list">
+                  <span class="risk-tag">Age >50</span>
+                  <span class="risk-tag">Female</span>
+                  <span class="risk-tag">Postmenopausal</span>
+                  <span class="risk-tag">White/Asian</span>
+                  <span class="risk-tag">Thin build</span>
+                  <span class="risk-tag">Smoking</span>
+                  <span class="risk-tag">Alcohol</span>
+                  <span class="risk-tag">Sedentary</span>
+                  <span class="risk-tag">Steroid use</span>
+                </div>
+              </div>
+              <div class="test-tip">
+                <h4>📝 NCLEX Tip</h4>
+                <p>When a question mentions an elderly postmenopausal woman who fell and broke her hip — think
+                  <strong>osteoporosis</strong> as the underlying cause!
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- OA vs RA -->
+        <div class="condition-panel" data-panel="arthritis">
+          <div class="comparison-visual">
+            <h3>🔥 Osteoarthritis vs Rheumatoid Arthritis</h3>
+            <p>This is one of the MOST TESTED topics. Know it cold!</p>
+
+            <div class="vs-container">
+              <div class="vs-side oa">
+                <h4>Osteoarthritis (OA)</h4>
+                <div class="vs-point"><span class="vs-label">Cause:</span> "Wear and tear"</div>
+                <div class="vs-point"><span class="vs-label">Pain:</span> WORSE with activity</div>
+                <div class="vs-point"><span class="vs-label">Morning:</span> Brief stiffness (<30 min)</div>
+                    <div class="vs-point"><span class="vs-label">Joints:</span> Asymmetric</div>
+                    <div class="vs-point"><span class="vs-label">Common:</span> Knees, hips, spine, hands</div>
+                    <div class="vs-point"><span class="vs-label">Treatment:</span> NSAIDs, PT, surgery</div>
+                </div>
+                <div class="vs-divider">VS</div>
+                <div class="vs-side ra">
+                  <h4>Rheumatoid Arthritis (RA)</h4>
+                  <div class="vs-point"><span class="vs-label">Cause:</span> Autoimmune attack</div>
+                  <div class="vs-point"><span class="vs-label">Pain:</span> BETTER with movement</div>
+                  <div class="vs-point"><span class="vs-label">Morning:</span> Long stiffness (>1 hour)</div>
+                  <div class="vs-point"><span class="vs-label">Joints:</span> Symmetric (both sides)</div>
+                  <div class="vs-point"><span class="vs-label">Common:</span> Hands, wrists, feet</div>
+                  <div class="vs-point"><span class="vs-label">Treatment:</span> DMARDs, biologics</div>
+                </div>
+              </div>
+
+              <div class="mnemonic-card" style="margin-top: 2rem;">
+                <div class="mnemonic-title">The Ultimate Memory Trick</div>
+                <p><strong>OA = "Old Age" wear and tear → rest helps pain</strong></p>
+                <p><strong>RA = "Rest is AWFUL" → movement helps pain</strong></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fractures with Diagram -->
+          <div class="condition-panel" data-panel="fractures">
+            <div class="fracture-content">
+              <div class="fracture-visual">
+                <img src="hip_fractures.png" alt="Hip Fracture Types" class="anatomy-image">
+                <div class="fracture-legend">
+                  <div class="legend-item"><span class="legend-dot red"></span> Femoral Neck</div>
+                  <div class="legend-item"><span class="legend-dot yellow"></span> Intertrochanteric</div>
+                  <div class="legend-item"><span class="legend-dot green"></span> Subtrochanteric</div>
+                </div>
+              </div>
+
+              <div class="fracture-info">
+                <h3>💔 Fractures Overview</h3>
+
+                <div class="fracture-types">
+                  <div class="ftype open">
+                    <h4>Open (Compound)</h4>
+                    <p>Bone breaks through skin</p>
+                    <span class="warning-tag">HIGH infection risk!</span>
+                  </div>
+                  <div class="ftype closed">
+                    <h4>Closed (Simple)</h4>
+                    <p>Skin remains intact</p>
+                    <span class="safe-tag">Lower infection risk</span>
+                  </div>
+                </div>
+
+                <h4 style="margin-top: 1.5rem;">Clinical Presentation (6 Signs)</h4>
+                <div class="six-ps-grid" style="grid-template-columns: repeat(3, 1fr);">
+                  <div class="p-card"><span class="icon">😣</span>
+                    <h4>Pain</h4>
+                  </div>
+                  <div class="p-card"><span class="icon">🎈</span>
+                    <h4>Swelling</h4>
+                  </div>
+                  <div class="p-card"><span class="icon">💜</span>
+                    <h4>Bruising</h4>
+                  </div>
+                  <div class="p-card"><span class="icon">👆</span>
+                    <h4>Tenderness</h4>
+                  </div>
+                  <div class="p-card"><span class="icon">📏</span>
+                    <h4>Shortening</h4>
+                  </div>
+                  <div class="p-card"><span class="icon">〰️</span>
+                    <h4>Deformity</h4>
+                  </div>
+                </div>
+
+                <div class="test-tip" style="margin-top: 1.5rem;">
+                  <h4>📝 NCLEX Priority</h4>
+                  <p>For ANY fracture patient: <strong>Always assess neurovascular status FIRST!</strong> (6 P's)</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Synovitis -->
+          <div class="condition-panel" data-panel="synovitis">
+            <div class="glass-card">
+              <h3>💧 Synovitis</h3>
+              <p>Inflammation of the synovial membrane lining joints</p>
+
+              <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+                <div>
+                  <h4 style="color: var(--primary-light);">Causes</h4>
+                  <ul>
+                    <li>Contusion or sprain</li>
+                    <li>Repetitive motion (occupational)</li>
+                    <li>Rheumatologic disease (RA, gout, lupus)</li>
+                    <li>Infection (septic joint)</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 style="color: var(--success);">Treatment</h4>
+                  <ul>
+                    <li>RICE protocol initially</li>
+                    <li>NSAIDs for inflammation</li>
+                    <li>Rest and temporary immobilization</li>
+                    <li>Treat underlying cause (antibiotics if septic)</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="why-matters" style="margin-top: 1.5rem;">
+                <strong>💡 Connection:</strong> Synovitis is a FEATURE of RA — the autoimmune attack targets the
+                synovium,
+                causing chronic inflammation that eventually destroys the joint.
+              </div>
+            </div>
+          </div>
+        </div>
+    </section>
+
+    <!-- Nursing Assessment - 6 Ps with Visual -->
+    <section class="section" id="nursing">
+      <div class="section-header">
+        <h2>👩‍⚕️ Nursing Assessment</h2>
+        <p>Critical skills that can save limbs and lives</p>
+      </div>
+
+      <div class="assessment-hero">
+        <div class="six-ps-visual">
+          <h3>🔴 The 6 P's of Neurovascular Assessment</h3>
+          <p>Memorize this. It WILL be on your exam, and more importantly, it will save your patients.</p>
+
+          <div class="six-ps-circle">
+            <div class="p-item" data-p="1">
+              <div class="p-number">1</div>
+              <div class="p-name">Pain</div>
+              <div class="p-detail">Out of proportion, worse with passive stretch</div>
+            </div>
+            <div class="p-item" data-p="2">
+              <div class="p-number">2</div>
+              <div class="p-name">Pallor</div>
+              <div class="p-detail">Pale, white, or cyanotic</div>
+            </div>
+            <div class="p-item" data-p="3">
+              <div class="p-number">3</div>
+              <div class="p-name">Pulselessness</div>
+              <div class="p-detail">Diminished or absent pulses</div>
+            </div>
+            <div class="p-item" data-p="4">
+              <div class="p-number">4</div>
+              <div class="p-name">Paresthesia</div>
+              <div class="p-detail">Numbness, tingling, pins-and-needles</div>
+            </div>
+            <div class="p-item" data-p="5">
+              <div class="p-number">5</div>
+              <div class="p-name">Paralysis</div>
+              <div class="p-detail">Cannot move extremity</div>
+            </div>
+            <div class="p-item" data-p="6">
+              <div class="p-number">6</div>
+              <div class="p-name">Poikilothermia</div>
+              <div class="p-detail">Cold to touch (abnormal temperature)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Compartment Syndrome with Visual -->
+      <div class="emergency-card">
+        <div class="emergency-header">
+          <span class="emergency-icon">🚨</span>
+          <h3>COMPARTMENT SYNDROME — SURGICAL EMERGENCY</h3>
+        </div>
+
+        <div class="emergency-content">
+          <div class="emergency-visual">
+            <img src="compartment_syndrome.png" alt="Compartment Syndrome" class="emergency-image">
+          </div>
+
+          <div class="emergency-info">
+            <div class="emergency-what">
+              <h4>What's Happening</h4>
+              <p>Pressure builds in a muscle compartment → compresses blood vessels and nerves → tissue death if not
+                released within <strong>4-6 hours</strong></p>
+            </div>
+
+            <div class="emergency-signs">
+              <h4>Warning Signs (in order of appearance)</h4>
+              <ol>
+                <li><strong>Pain with passive stretch</strong> — EARLIEST sign!</li>
+                <li>Pain out of proportion to injury</li>
+                <li>Paresthesia (numbness/tingling)</li>
+                <li>Pallor, Pulselessness (LATE signs)</li>
+                <li>Paralysis (very late — tissue damage occurring)</li>
+              </ol>
+            </div>
+
+            <div class="emergency-action">
+              <h4>IMMEDIATE ACTIONS</h4>
+              <div class="action-steps">
+                <div class="action-step critical">1. NOTIFY SURGEON IMMEDIATELY</div>
+                <div class="action-step">2. Loosen/bivalve cast</div>
+                <div class="action-step">3. Keep limb at HEART LEVEL (not elevated)</div>
+                <div class="action-step">4. Prepare for FASCIOTOMY</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NCLEX Test-Taking Strategies -->
+    <section class="section" id="nclex">
+      <div class="section-header">
+        <h2>📝 NCLEX Test-Taking Strategies</h2>
+        <p>Specific strategies for musculoskeletal questions</p>
+      </div>
+
+      <div class="strategy-grid">
+        <div class="strategy-card">
+          <div class="strategy-number">1</div>
+          <h3>Priority = Safety</h3>
+          <p>If a client has signs of neurovascular compromise (6 P's), the priority is ALWAYS to notify the provider or
+            take action — not to document, reassess later, or elevate.</p>
+          <div class="strategy-example">
+            <strong>Example:</strong> "Severe pain and numbness in toes after cast placement" → Notify provider (not
+            give
+            pain meds)
+          </div>
+        </div>
+
+        <div class="strategy-card">
+          <div class="strategy-number">2</div>
+          <h3>ABCs First, Then MSK</h3>
+          <p>In trauma, always stabilize airway, breathing, circulation BEFORE addressing the fracture. The answer
+            "stabilize the client" comes before "splint the fracture."</p>
+          <div class="strategy-example">
+            <strong>Watch for:</strong> Questions with multiple injuries — ABCs trump everything
+          </div>
+        </div>
+
+        <div class="strategy-card">
+          <div class="strategy-number">3</div>
+          <h3>Traction = Don't Touch</h3>
+          <p>Any answer suggesting removing weights, resting weights, or adjusting traction without an order is WRONG.
+            Weights must hang freely at all times.</p>
+          <div class="strategy-example">
+            <strong>Correct answer pattern:</strong> "Ensure weights hang freely and ropes are not frayed"
+          </div>
+        </div>
+
+        <div class="strategy-card">
+          <div class="strategy-number">4</div>
+          <h3>Hip Replacement = Abduction</h3>
+          <p>After total hip arthroplasty, always choose the answer that keeps legs APART (abducted). Avoid crossing
+            legs,
+            avoid flexion >90°.</p>
+          <div class="strategy-example">
+            <strong>Wrong answers:</strong> Cross legs, adduct, flex hip past 90 degrees
+          </div>
+        </div>
+
+        <div class="strategy-card">
+          <div class="strategy-number">5</div>
+          <h3>Timing Matters</h3>
+          <p>Fat embolism = 24-72 hours after long bone fracture. Compartment syndrome = hours after cast/injury. Know
+            your timing!</p>
+          <div class="strategy-example">
+            <strong>If question says "48 hours after femur fracture..." → Fat embolism</strong>
+          </div>
+        </div>
+
+        <div class="strategy-card">
+          <div class="strategy-number">6</div>
+          <h3>Patient Teaching</h3>
+          <p>For cast care, the #1 teaching priority is reporting neurovascular symptoms. For osteoporosis, it's
+            weight-bearing exercise + calcium/Vit D.</p>
+          <div class="strategy-example">
+            <strong>Key phrase:</strong> "Report numbness, tingling, or severe pain immediately"
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- END LEARN TAB PANEL -->
+
+  <!-- FLASHCARDS TAB PANEL -->
+  <div class="main-tab-panel" id="panel-flashcards">
+    <!-- Enhanced Flashcards with Confidence -->
+    <section class="section" id="flashcards">
+      <div class="section-header">
+        <h2>🎴 Confidence-Based Flashcards</h2>
+        <p>Rate your confidence to track mastery and focus on weak areas</p>
+      </div>
+
+      <div class="flashcard-stats">
+        <div class="stat-box">
+          <div class="stat-number" id="newCards">50</div>
+          <div class="stat-label">New</div>
+        </div>
+        <div class="stat-box learning">
+          <div class="stat-number" id="learningCards">0</div>
+          <div class="stat-label">Learning</div>
+        </div>
+        <div class="stat-box mastered">
+          <div class="stat-number" id="masteredCards">0</div>
+          <div class="stat-label">Mastered</div>
+        </div>
+      </div>
+
+      <div class="flashcard-controls">
+        <button class="btn btn-secondary" id="prevCard">← Previous</button>
+        <span id="cardCounter">1 / 50</span>
+        <button class="btn btn-secondary" id="nextCard">Next →</button>
+        <button class="btn btn-primary" id="shuffleCards">🔀 Shuffle</button>
+      </div>
+
+      <div class="flashcard-container" style="max-width: 700px; margin: 2rem auto;">
+        <div class="flashcard" id="flashcard">
+          <div class="flashcard-front">
+            <div class="card-category" id="cardCategory">Assessment</div>
+            <h3 id="flashcardQuestion">What are the 6 P's of neurovascular assessment?</h3>
+            <p style="margin-top: 2rem; color: var(--text-muted);">Click to reveal answer</p>
+          </div>
+          <div class="flashcard-back">
+            <h3 id="flashcardAnswer">Pain, Pallor, Pulselessness, Paresthesia, Paralysis, Poikilothermia</h3>
+            <div class="confidence-buttons">
+              <p>How confident are you?</p>
+              <div class="confidence-group">
+                <button class="confidence-btn again" data-confidence="0">😕 Again</button>
+                <button class="confidence-btn hard" data-confidence="1">🤔 Hard</button>
+                <button class="confidence-btn good" data-confidence="2">😊 Good</button>
+                <button class="confidence-btn easy" data-confidence="3">🎯 Easy</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div><!-- END FLASHCARDS TAB PANEL -->
+
+  <!-- QUIZ TAB PANEL -->
+  <div class="main-tab-panel" id="panel-quiz">
+    <!-- Quiz with Enhanced Feedback -->
+    <section class="section" id="quiz">
+      <div class="section-header">
+        <h2>📝 Practice Quiz</h2>
+        <p>NCLEX-style questions with detailed rationales</p>
+      </div>
+
+      <!-- Quiz Settings Panel -->
+      <div class="quiz-settings-panel">
+        <div class="quiz-setting">
+          <label for="quizCategory">📂 Category</label>
+          <select id="quizCategory" class="quiz-select">
+            <option value="all">All Topics (80 questions)</option>
+            <option value="diagnostics">Diagnostics</option>
+            <option value="arthroplasty">Arthroplasty</option>
+            <option value="amputations">Amputations</option>
+            <option value="osteoporosis">Osteoporosis</option>
+            <option value="trauma">Trauma</option>
+            <option value="oa-lbp">OA & Low-Back Pain</option>
+            <option value="pharmacology">Pharmacology</option>
+          </select>
+        </div>
+        <div class="quiz-setting">
+          <label for="quizCount"># Questions</label>
+          <select id="quizCount" class="quiz-select">
+            <option value="10">10 Questions</option>
+            <option value="20">20 Questions</option>
+            <option value="40">40 Questions</option>
+            <option value="0" selected>All Available</option>
+          </select>
+        </div>
+        <div class="quiz-setting">
+          <label>⏱️ Timer</label>
+          <div class="timer-toggle">
+            <button class="timer-btn active" data-timer="off">Off</button>
+            <button class="timer-btn" data-timer="on">On</button>
+          </div>
+        </div>
+        <button class="btn btn-primary start-quiz-btn" id="startQuizBtn">
+          🎯 Start Quiz
+        </button>
+      </div>
+
+      <div class="quiz-container" style="max-width: 800px; margin: 0 auto; display: none;" id="quizMainContainer">
+        <div class="quiz-progress">
+          <span id="quizProgress">Question 1 of 25</span>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 4%;"></div>
+          </div>
+          <span id="quizScore">Score: 0</span>
+        </div>
+
+        <div id="quizContent">
+          <p class="quiz-question" id="quizQuestion">Loading...</p>
+          <div class="quiz-options" id="quizOptions"></div>
+          <div id="quizFeedback" style="margin-top: 1.5rem; display: none;"></div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
+          <button class="btn btn-primary" id="nextQuestion" style="display: none;">Next Question →</button>
+        </div>
+
+        <div id="quizResults" style="display: none; text-align: center;">
+          <h2>🎉 Quiz Complete!</h2>
+          <div class="timer-display" id="finalScore">0%</div>
+          <div id="weakAreas" class="weak-areas"></div>
+          <button class="btn btn-primary" id="restartQuiz">Restart Quiz</button>
+        </div>
+      </div>
+    </section>
+  </div><!-- END QUIZ TAB PANEL -->
+
+  <!-- PROGRESS TAB PANEL -->
+  <div class="main-tab-panel" id="panel-progress">
+    <section class="section" id="progress-dashboard">
+      <div class="section-header">
+        <h2>📊 Your Progress</h2>
+        <p>Track your study journey and identify areas for improvement</p>
+      </div>
+
+      <div class="progress-overview">
+        <div class="progress-stat-card">
+          <div class="progress-stat-icon">🔥</div>
+          <div class="progress-stat-value" id="progressStreak">0</div>
+          <div class="progress-stat-label">Day Streak</div>
+        </div>
+        <div class="progress-stat-card">
+          <div class="progress-stat-icon">📝</div>
+          <div class="progress-stat-value" id="progressQuizzesTaken">0</div>
+          <div class="progress-stat-label">Quizzes Taken</div>
+        </div>
+        <div class="progress-stat-card">
+          <div class="progress-stat-icon">🎯</div>
+          <div class="progress-stat-value" id="progressBestScore">0%</div>
+          <div class="progress-stat-label">Best Score</div>
+        </div>
+        <div class="progress-stat-card">
+          <div class="progress-stat-icon">🃏</div>
+          <div class="progress-stat-value" id="progressCardsMastered">0</div>
+          <div class="progress-stat-label">Cards Mastered</div>
+        </div>
+      </div>
+
+      <div class="progress-sections">
+        <div class="progress-section-card">
+          <h3>📈 Category Performance</h3>
+          <div class="category-breakdown" id="categoryBreakdown">
+            <div class="category-bar">
+              <span class="category-name">Diagnostics</span>
+              <div class="category-progress">
+                <div class="category-fill" style="width: 0%"></div>
+              </div>
+              <span class="category-percent">0%</span>
+            </div>
+            <div class="category-bar">
+              <span class="category-name">Arthroplasty</span>
+              <div class="category-progress">
+                <div class="category-fill" style="width: 0%"></div>
+              </div>
+              <span class="category-percent">0%</span>
+            </div>
+            <div class="category-bar">
+              <span class="category-name">Amputations</span>
+              <div class="category-progress">
+                <div class="category-fill" style="width: 0%"></div>
+              </div>
+              <span class="category-percent">0%</span>
+            </div>
+            <div class="category-bar">
+              <span class="category-name">Osteoporosis</span>
+              <div class="category-progress">
+                <div class="category-fill" style="width: 0%"></div>
+              </div>
+              <span class="category-percent">0%</span>
+            </div>
+            <div class="category-bar">
+              <span class="category-name">Trauma</span>
+              <div class="category-progress">
+                <div class="category-fill" style="width: 0%"></div>
+              </div>
+              <span class="category-percent">0%</span>
+            </div>
+            <div class="category-bar">
+              <span class="category-name">OA/Low-Back</span>
+              <div class="category-progress">
+                <div class="category-fill" style="width: 0%"></div>
+              </div>
+              <span class="category-percent">0%</span>
+            </div>
+            <div class="category-bar">
+              <span class="category-name">Pharmacology</span>
+              <div class="category-progress">
+                <div class="category-fill" style="width: 0%"></div>
+              </div>
+              <span class="category-percent">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="progress-section-card">
+          <h3>📜 Recent Quiz History</h3>
+          <div class="quiz-history" id="quizHistory">
+            <div class="history-empty">
+              <p>No quizzes taken yet!</p>
+              <button class="btn btn-secondary" onclick="switchMainTab('quiz')">Take Your First Quiz →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="progress-actions">
+        <button class="btn btn-danger" id="resetProgressBtn">🗑️ Reset All Progress</button>
+      </div>
+    </section>
+  </div><!-- END PROGRESS TAB PANEL -->
+
+  <!-- Case Study Enhanced (standalone, always visible below tabs) -->
+  <section class="section" id="casestudy">
+    <div class="section-header">
+      <h2>📋 Case Study: Mr. Charles</h2>
+      <p>Apply clinical reasoning to a real scenario</p>
+    </div>
+
+    <div class="case-layout">
+      <div class="case-sidebar">
+        <div class="patient-card">
+          <div class="patient-avatar">👴</div>
+          <h3>Nathan Charles</h3>
+          <p>75 years old, Male</p>
+        </div>
+
+        <div class="case-info-card">
+          <h4>📋 Admitting Dx</h4>
+          <p>Pneumonia</p>
+        </div>
+
+        <div class="case-info-card">
+          <h4>📚 PMH</h4>
+          <ul>
+            <li>Parkinson's disease</li>
+            <li>HTN</li>
+            <li>CHF</li>
+            <li>Hypercholesterolemia</li>
+            <li>DJD (bilateral knees)</li>
+          </ul>
+        </div>
+
+        <div class="case-info-card">
+          <h4>🚶 Mobility</h4>
+          <p>Uses walker, very unsteady</p>
+        </div>
+      </div>
+
+      <div class="case-main">
+        <div class="case-timeline">
+          <div class="timeline-point admission">
+            <h4>Day 1: Admission</h4>
+            <div class="vitals-grid">
+              <div class="vital abnormal">BP: 140/90</div>
+              <div class="vital abnormal">Temp: 100.4°F</div>
+              <div class="vital">HR: 98</div>
+              <div class="vital abnormal">RR: 24</div>
+              <div class="vital abnormal">O2: 93% RA</div>
+              <div class="vital">WBC: 9.4</div>
+            </div>
+            <div class="orders">
+              <h5>Orders:</h5>
+              <ul>
+                <li>O2 2L NC</li>
+                <li>Azithromycin IV → PO</li>
+                <li>Consult PT/OT</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="timeline-point day3">
+            <h4>Day 3: Progress</h4>
+            <div class="vitals-grid">
+              <div class="vital normal">BP: 130/80</div>
+              <div class="vital normal">Temp: 98.2°F</div>
+              <div class="vital">HR: 88</div>
+              <div class="vital">RR: 22</div>
+              <div class="vital normal">O2: 97% RA</div>
+              <div class="vital normal">WBC: 7.4</div>
+            </div>
+            <p class="progress-note">Ambulating with walker + supervision. Appetite improved. Hallway walks with PT x2
+              daily.</p>
+          </div>
+        </div>
+
+        <div class="case-questions">
+          <h3>🤔 Critical Thinking</h3>
+
+          <div class="case-question">
+            <h4>1. Why is Mr. Charles at HIGH risk for immobility complications?</h4>
+            <div class="answer-reveal" id="answer1">
+              <button class="reveal-btn">Reveal Answer</button>
+              <div class="answer-content">
+                <p><strong>Multiple factors compound his risk:</strong></p>
+                <ul>
+                  <li><strong>Parkinson's</strong> → baseline mobility impairment, increased fall risk</li>
+                  <li><strong>DJD (knees)</strong> → pain with movement, reluctance to ambulate</li>
+                  <li><strong>Pneumonia</strong> → fatigue, weakness, need for bedrest</li>
+                  <li><strong>Age 75</strong> → sarcopenia, decreased physiological reserve</li>
+                  <li><strong>CHF</strong> → already compromised cardiac output</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="case-question">
+            <h4>2. What assessment tools would you implement?</h4>
+            <div class="answer-reveal" id="answer2">
+              <button class="reveal-btn">Reveal Answer</button>
+              <div class="answer-content">
+                <ul>
+                  <li><strong>Braden Scale</strong> — pressure ulcer risk (immobility)</li>
+                  <li><strong>Fall Risk Assessment</strong> — Parkinson's + unsteady gait</li>
+                  <li><strong>Pain Scale</strong> — DJD may limit mobility</li>
+                  <li><strong>Morse Fall Scale</strong> — Walker use, history of falls</li>
+                  <li><strong>Respiratory assessment</strong> — Pneumonia progression</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="case-question">
+            <h4>3. What are your PRIORITY nursing interventions?</h4>
+            <div class="answer-reveal" id="answer3">
+              <button class="reveal-btn">Reveal Answer</button>
+              <div class="answer-content">
+                <ol>
+                  <li><strong>Early mobilization</strong> — PT consult, progressive ambulation</li>
+                  <li><strong>DVT prophylaxis</strong> — SCDs, anticoagulants if ordered</li>
+                  <li><strong>Respiratory</strong> — IS Q1H while awake, turn/cough/deep breathe</li>
+                  <li><strong>Skin protection</strong> — Turn Q2H, pressure-relieving surface</li>
+                  <li><strong>Fall prevention</strong> — Call light in reach, bed alarm, walker accessible</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Study Timer -->
+  <section class="section" id="timer">
+    <div class="section-header">
+      <h2>⏱️ Study Timer</h2>
+      <p>Pomodoro technique for focused studying</p>
+    </div>
+
+    <div class="glass-card" style="max-width: 400px; margin: 0 auto; text-align: center;">
+      <div class="timer-display" id="timerDisplay">25:00</div>
+      <p style="color: var(--text-secondary); margin: 1rem 0;" id="timerLabel">Focus Session</p>
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <button class="btn btn-primary" id="startTimer">▶️ Start</button>
+        <button class="btn btn-secondary" id="resetTimer">🔄 Reset</button>
+      </div>
+      <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem;">
+        <button class="tab active" data-time="25">25 min</button>
+        <button class="tab" data-time="5">5 min break</button>
+        <button class="tab" data-time="15">15 min break</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <span class="footer-logo">🦴</span>
+        <span class="footer-title">Musculoskeletal Study Guide</span>
+      </div>
+
+      <div class="footer-disclaimer">
+        <p class="disclaimer-title">📚 Educational Resource</p>
+        <p>This study guide covers key concepts in <strong>musculoskeletal disorders</strong>, diagnostic procedures,
+          treatments, nursing interventions, and pharmacology for medical-surgical nursing.</p>
+        <p>Created as a <strong>personal study resource</strong> for nursing students preparing for exams.</p>
+      </div>
+
+      <div class="footer-meta">
+        <p>Created for nursing students • For personal study use only</p>
+        <p class="footer-copyright">© 2026 • Not for commercial distribution</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Diagram Modal - Direct Body Child for Proper Fixed Positioning -->
+  <div id="diagramModal" class="diagram-modal-overlay">
+    <div class="diagram-modal-scroll" onclick="if(event.target===this)closeImageModal()">
+      <div class="diagram-modal-content">
+        <div class="diagram-modal-header">
+          <h3 id="modalTitle">Diagram Title</h3>
+          <button class="diagram-modal-close" onclick="closeImageModal()">✕</button>
+        </div>
+        <div class="diagram-modal-image-container">
+          <img id="modalImage" src="" alt="">
+          <div id="hotspotsLayer" class="diagram-hotspots"></div>
+        </div>
+        <div id="modalInfo" class="diagram-modal-info"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
