@@ -53,8 +53,8 @@ class MSKReviewRunner {
         this.achievements = JSON.parse(localStorage.getItem('anatomyAchievements')) || {};
         this.newAchievement = null;
 
-        this.speed = 1.5;
-        this.maxSpeed = 4.0;
+        this.speed = 1.2;
+        this.maxSpeed = 3.5;
 
         this.obstacles = [];
         this.coins_arr = [];
@@ -406,7 +406,7 @@ class MSKReviewRunner {
     startGame() {
         this.state = 'playing';
         this.score = 0; this.coins = 0; this.lives = 3; this.streak = 0; this.multiplier = 1;
-        this.distance = 0; this.speed = 1.5; this.currentLane = 1; this.targetLane = 1;
+        this.distance = 0; this.speed = 1.2; this.currentLane = 1; this.targetLane = 1;
         this.combo = 0; this.comboTimer = 0; this.level = 1;
         this.obstacles = []; this.coins_arr = []; this.powerups = []; this.particles = []; this.floatingTexts = [];
         this.player.isJumping = false; this.player.isSliding = false; this.player.jumpHeight = 0;
@@ -1357,12 +1357,8 @@ class MSKReviewRunner {
     }
 
     drawMenu() {
-        // Premium dark gradient background
-        const bgGrad = this.ctx.createLinearGradient(0, 0, 0, this.height);
-        bgGrad.addColorStop(0, '#0f172a');
-        bgGrad.addColorStop(0.5, '#1e1b4b');
-        bgGrad.addColorStop(1, '#0f172a');
-        this.ctx.fillStyle = bgGrad;
+        // Semi-transparent dark overlay to show game world
+        this.ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
         this.ctx.fillRect(0, 0, this.width, this.height);
 
         // Subtle grid overlay for depth
