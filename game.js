@@ -1302,16 +1302,25 @@ class MSKReviewRunner {
         });
 
         // ═══════════════════════════════════════════════════════════════
-        // 9. HORIZON FOG - Seamless blend into road
+        // 9. UNIFIED GROUND PLANE - Fills world below horizon
         // ═══════════════════════════════════════════════════════════════
-        const fogGrad = this.ctx.createLinearGradient(0, horizonY - 100, 0, horizonY + 100);
+        const groundGrad = this.ctx.createLinearGradient(0, horizonY, 0, this.height);
+        groundGrad.addColorStop(0, '#0f1318');   // Darkest at horizon (shadow)
+        groundGrad.addColorStop(0.4, '#12151c'); // Deep Grey/Blue
+        groundGrad.addColorStop(1, '#0b0d11');   // Near Black at bottom
+        this.ctx.fillStyle = groundGrad;
+        this.ctx.fillRect(0, horizonY, this.width, this.height - horizonY);
+
+        // ═══════════════════════════════════════════════════════════════
+        // 10. HORIZON FOG - Seamless blend into ground/sky
+        // ═══════════════════════════════════════════════════════════════
+        const fogGrad = this.ctx.createLinearGradient(0, horizonY - 100, 0, horizonY + 50);
         fogGrad.addColorStop(0, 'transparent');
-        fogGrad.addColorStop(0.35, 'rgba(30, 25, 45, 0.4)');
-        fogGrad.addColorStop(0.5, 'rgba(22, 20, 38, 0.7)');
-        fogGrad.addColorStop(0.7, 'rgba(15, 15, 28, 0.9)');
-        fogGrad.addColorStop(1, 'rgba(12, 12, 22, 0.98)');
+        fogGrad.addColorStop(0.4, 'rgba(30, 25, 45, 0.5)'); // Sky blend
+        fogGrad.addColorStop(0.6, 'rgba(15, 19, 24, 0.9)'); // Ground blend
+        fogGrad.addColorStop(1, 'rgba(15, 19, 24, 0)');     // Fade out into solid ground
         this.ctx.fillStyle = fogGrad;
-        this.ctx.fillRect(0, horizonY - 100, this.width, 200);
+        this.ctx.fillRect(0, horizonY - 100, this.width, 150);
     }
 
     drawRoad() {
@@ -1598,7 +1607,7 @@ class MSKReviewRunner {
             this.ctx.fillStyle = '#f8fafc'; this.ctx.fillRect(-8, 38, 16, 12); // Shoe
             this.ctx.restore();
 
-            // BODY - feminine scrubs with shading
+            // BODY - Back of feminine scrubs with shading
             const bodyGrad = this.ctx.createLinearGradient(-25, -80, 25, -80);
             bodyGrad.addColorStop(0, this.getDarkerColor(outfitColor)); bodyGrad.addColorStop(0.2, outfitColor); bodyGrad.addColorStop(0.8, outfitColor); bodyGrad.addColorStop(1, this.getDarkerColor(outfitColor));
             this.ctx.fillStyle = bodyGrad;
@@ -1609,23 +1618,6 @@ class MSKReviewRunner {
             this.ctx.quadraticCurveTo(28, -50 + bounce, 22, -85 + bounce);
             this.ctx.closePath();
             this.ctx.fill();
-
-            // V-neck detail
-            this.ctx.fillStyle = '#e2e8f0'; // Undershirt
-            this.ctx.beginPath(); this.ctx.moveTo(-10, -85 + bounce); this.ctx.lineTo(0, -75 + bounce); this.ctx.lineTo(10, -85 + bounce); this.ctx.fill();
-            this.ctx.strokeStyle = pantsColor; this.ctx.lineWidth = 2;
-            this.ctx.beginPath(); this.ctx.moveTo(-10, -85 + bounce); this.ctx.lineTo(0, -70 + bounce); this.ctx.lineTo(10, -85 + bounce); this.ctx.stroke();
-
-            // ID Badge
-            this.ctx.fillStyle = '#fff'; this.ctx.fillRect(-18, -65 + bounce, 10, 7);
-            this.ctx.fillStyle = '#000'; this.ctx.fillRect(-17, -64 + bounce, 4, 4); // Photo
-            this.ctx.fillStyle = '#94a3b8'; this.ctx.fillRect(-12, -64 + bounce, 3, 2); // Text
-
-            // Pocket with pens
-            this.ctx.strokeStyle = this.getDarkerColor(outfitColor); this.ctx.lineWidth = 1;
-            this.ctx.strokeRect(10, -60 + bounce, 10, 12);
-            this.ctx.fillStyle = '#ef4444'; this.ctx.fillRect(12, -65 + bounce, 2, 8); // Red pen
-            this.ctx.fillStyle = '#3b82f6'; this.ctx.fillRect(16, -65 + bounce, 2, 8); // Blue pen
 
             // ARMS - Left arm
             this.ctx.save(); this.ctx.translate(-26, -75 + bounce); this.ctx.rotate(-armSwing * Math.PI / 180);
@@ -1639,121 +1631,70 @@ class MSKReviewRunner {
             this.ctx.fillStyle = '#ffe4c4'; this.ctx.beginPath(); this.ctx.arc(0, 34, 7, 0, Math.PI * 2); this.ctx.fill(); // Hand
             this.ctx.restore();
 
-            // STETHOSCOPE - Realistic Asymmetric Drape
+            // STETHOSCOPE - SITTING ON SHOULDERS (Back View)
+            // Just the tubing loop behind the neck
             const stethColor = '#cbd5e1'; // Light silver
-            const stethShadow = 'rgba(0,0,0,0.3)';
-            this.ctx.lineCap = 'round';
-            this.ctx.lineJoin = 'round';
-
-            // 1. Neck Loop (Behind/On Shoulders)
             this.ctx.strokeStyle = stethColor;
             this.ctx.lineWidth = 4;
+            this.ctx.lineCap = 'round';
             this.ctx.beginPath();
-            this.ctx.moveTo(-15, -86 + bounce);
-            this.ctx.quadraticCurveTo(0, -82 + bounce, 15, -86 + bounce);
+            // Curve from left shoulder, behind neck, to right shoulder
+            this.ctx.moveTo(-18, -84 + bounce);
+            this.ctx.quadraticCurveTo(0, -78 + bounce, 18, -84 + bounce);
             this.ctx.stroke();
 
-            // 2. RIGHT SIDE (Screen Left) - Chest Piece Side
-            // Tube hangs down
-            this.ctx.beginPath();
-            this.ctx.moveTo(-15, -86 + bounce);
-            this.ctx.quadraticCurveTo(-18, -70 + bounce, -14, -55 + bounce);
-            this.ctx.stroke();
+            // HEAD - BACK VIEW (Simple and Clean)
+            // Neck connection (shadow)
+            this.ctx.fillStyle = '#bcaaa4';
+            this.ctx.beginPath(); this.ctx.arc(0, -90 + bounce, 8, 0, Math.PI * 2); this.ctx.fill();
 
-            // Chest Piece (Metallic Disc + Diaphragm)
-            // Metal Casing
-            this.ctx.fillStyle = '#94a3b8';
-            this.ctx.beginPath(); this.ctx.arc(-14, -50 + bounce, 7, 0, Math.PI * 2); this.ctx.fill();
-            // White Diaphragm
-            const diaGrad = this.ctx.createRadialGradient(-14, -50 + bounce, 1, -14, -50 + bounce, 5);
-            diaGrad.addColorStop(0, '#ffffff'); diaGrad.addColorStop(1, '#e2e8f0');
-            this.ctx.fillStyle = diaGrad;
-            this.ctx.beginPath(); this.ctx.arc(-14, -50 + bounce, 5, 0, Math.PI * 2); this.ctx.fill();
-
-            // 3. LEFT SIDE (Screen Right) - Headset Side
-            // Tube hangs down to Y-Junction
-            this.ctx.beginPath();
-            this.ctx.moveTo(15, -86 + bounce);
-            this.ctx.quadraticCurveTo(18, -75 + bounce, 16, -65 + bounce);
-            this.ctx.stroke();
-
-            // Y-Junction (The metal V-shape)
-            this.ctx.fillStyle = '#64748b'; // Darker metal
-            this.ctx.beginPath();
-            this.ctx.moveTo(16, -65 + bounce);
-            this.ctx.lineTo(12, -55 + bounce); // Left ear tube start
-            this.ctx.lineTo(20, -55 + bounce); // Right ear tube start
-            this.ctx.fill();
-
-            // Ear Tubes & Tips hanging down
-            this.ctx.strokeStyle = '#94a3b8'; this.ctx.lineWidth = 2;
-            // Left Ear Tube
-            this.ctx.beginPath(); this.ctx.moveTo(12, -55 + bounce);
-            this.ctx.quadraticCurveTo(10, -50 + bounce, 11, -45 + bounce); this.ctx.stroke();
-            this.ctx.fillStyle = '#475569'; this.ctx.beginPath(); this.ctx.arc(11, -44 + bounce, 2, 0, Math.PI * 2); this.ctx.fill(); // Tip
-            // Right Ear Tube
-            this.ctx.beginPath(); this.ctx.moveTo(20, -55 + bounce);
-            this.ctx.quadraticCurveTo(22, -50 + bounce, 21, -45 + bounce); this.ctx.stroke();
-            this.ctx.fillStyle = '#475569'; this.ctx.beginPath(); this.ctx.arc(21, -44 + bounce, 2, 0, Math.PI * 2); this.ctx.fill(); // Tip
-
-            // HEAD - BACK VIEW (character running INTO screen, we see the back)
-            // Base head shape
-            const headGrad = this.ctx.createRadialGradient(0, -105 + bounce, 5, 0, -105 + bounce, 24);
-            headGrad.addColorStop(0, '#dec0a8'); headGrad.addColorStop(1, '#c9a889');
-            this.ctx.fillStyle = headGrad;
-            this.ctx.beginPath(); this.ctx.arc(0, -105 + bounce, 24, 0, Math.PI * 2); this.ctx.fill();
-
-            // HAIR - Full back coverage (we see the back of head)
-            this.ctx.fillStyle = '#3e2723';
-            // Main hair mass covering back of head
-            this.ctx.beginPath();
-            this.ctx.arc(0, -108 + bounce, 26, 0, Math.PI * 2);
-            this.ctx.fill();
-
-            // Hair highlight for volume
-            this.ctx.fillStyle = '#5d4037';
-            this.ctx.beginPath();
-            this.ctx.ellipse(0, -115 + bounce, 20, 12, 0, 0, Math.PI * 2);
-            this.ctx.fill();
-
-            // Small ears peeking out from hair
-            this.ctx.fillStyle = '#dec0a8';
-            this.ctx.beginPath(); this.ctx.ellipse(-24, -105 + bounce, 4, 6, 0, 0, Math.PI * 2); this.ctx.fill();
-            this.ctx.beginPath(); this.ctx.ellipse(24, -105 + bounce, 4, 6, 0, 0, Math.PI * 2); this.ctx.fill();
-
-            // PONYTAIL - Large and flowing back (bouncing with running)
+            // Hair/Head Mass
             this.ctx.fillStyle = '#3e2723';
             this.ctx.beginPath();
-            this.ctx.moveTo(0, -125 + bounce);
-            this.ctx.quadraticCurveTo(-10 - hairBounce, -115 + bounce, -15 - hairBounce * 1.5, -80 + bounce);
-            this.ctx.quadraticCurveTo(-5, -95 + bounce, 5, -95 + bounce);
-            this.ctx.quadraticCurveTo(0, -110 + bounce, 0, -125 + bounce);
+            this.ctx.arc(0, -108 + bounce, 25, 0, Math.PI * 2);
             this.ctx.fill();
 
-            // Ponytail hair tie
+            // Subtle Hair Highlight (shine on top)
+            const hairShine = this.ctx.createRadialGradient(0, -120 + bounce, 2, 0, -115 + bounce, 15);
+            hairShine.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+            hairShine.addColorStop(1, 'transparent');
+            this.ctx.fillStyle = hairShine;
+            this.ctx.beginPath(); this.ctx.arc(0, -108 + bounce, 25, 0, Math.PI * 2); this.ctx.fill();
+
+            // PONYTAIL - Clean, natural flow
+            this.ctx.fillStyle = '#3e2723';
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, -115 + bounce); // Start high on back of head
+            // Left curve
+            this.ctx.quadraticCurveTo(-15 - hairBounce, -100 + bounce, -12 - hairBounce * 1.5, -75 + bounce);
+            // Bottom tip
+            this.ctx.quadraticCurveTo(0, -85 + bounce, 12 + hairBounce * 1.5, -75 + bounce);
+            // Right curve back up
+            this.ctx.quadraticCurveTo(15 + hairBounce, -100 + bounce, 0, -115 + bounce);
+            this.ctx.fill();
+
+            // Ponytail hair tie (SCRUNCHIE)
             this.ctx.fillStyle = '#f472b6';
-            this.ctx.beginPath(); this.ctx.ellipse(-2, -120 + bounce, 5, 3, -0.2, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.beginPath(); this.ctx.arc(0, -115 + bounce, 6, 0, Math.PI * 2); this.ctx.fill();
 
-            // Nurse cap (on back of head, slightly tilted back)
+            // NURSE CAP - Sitting on top/back
             this.ctx.fillStyle = '#f8fafc';
             this.ctx.beginPath();
-            this.ctx.moveTo(-16, -130 + bounce);
-            this.ctx.lineTo(16, -130 + bounce);
-            this.ctx.lineTo(20, -140 + bounce);
-            this.ctx.lineTo(0, -145 + bounce);
-            this.ctx.lineTo(-20, -140 + bounce);
+            this.ctx.moveTo(-18, -128 + bounce);
+            this.ctx.lineTo(18, -128 + bounce);
+            this.ctx.lineTo(20, -138 + bounce);
+            this.ctx.lineTo(0, -142 + bounce);
+            this.ctx.lineTo(-20, -138 + bounce);
             this.ctx.closePath();
             this.ctx.fill();
-            // Red cross on cap
+            // Red cross
             this.ctx.fillStyle = '#ef4444';
-            this.ctx.shadowColor = '#ef4444'; this.ctx.shadowBlur = 5;
-            this.ctx.fillRect(-4, -142 + bounce, 8, 8);
-            this.ctx.fillStyle = '#fff';
-            this.ctx.fillRect(-2, -140 + bounce, 4, 4);
+            this.ctx.beginPath(); this.ctx.rect(-4, -138 + bounce, 8, 8); this.ctx.fill();
+            this.ctx.fillStyle = '#f8fafc';
+            this.ctx.beginPath(); this.ctx.rect(-2, -136 + bounce, 4, 4); this.ctx.fill(); // Cutout
             this.ctx.fillStyle = '#ef4444';
-            this.ctx.fillRect(-1, -140 + bounce, 2, 4);
-            this.ctx.fillRect(-2, -139 + bounce, 4, 2);
-            this.ctx.shadowBlur = 0;
+            this.ctx.beginPath(); this.ctx.rect(-1, -136 + bounce, 2, 4); this.ctx.fill();
+            this.ctx.beginPath(); this.ctx.rect(-2, -135 + bounce, 4, 2); this.ctx.fill();
 
             // Shield effect
             if (this.player.shield > 0) {
