@@ -399,15 +399,40 @@ class AnatomyRush {
     triggerQuestion() {
         this.state = 'question'; this.questionTimer = this.questionTimeLimit * 60;
         this.selectedAnswer = -1; this.questionResult = null;
-        if (typeof quizQuestionsBase !== 'undefined') {
-            const valid = quizQuestionsBase.filter(q => q.type !== 'sata');
-            if (valid.length) {
-                const q = valid[Math.floor(Math.random() * valid.length)];
-                this.currentQuestion = { text: q.q, options: this.shuffle([...q.options]).slice(0, 4), correct: q.correctAnswer };
-                return;
-            }
+
+        // ATI-aligned MSK questions
+        const atiQuestions = [
+            { q: "What are the 6 P's of compartment syndrome?", opts: ["Pain, Pressure, Paralysis, Paresthesia, Pallor, Pulselessness", "Pain, Pallor, Pulse, Pressure, Paralysis, Paresis", "Pain, Puffiness, Paralysis, Paresthesia, Pallor, Pressure", "Pain, Paralysis, Paresthesia, Pulse, Perfusion, Pallor"], ans: 0 },
+            { q: "Priority intervention for suspected compartment syndrome?", opts: ["Notify surgeon immediately", "Elevate the extremity", "Apply ice packs", "Administer analgesics"], ans: 0 },
+            { q: "After hip replacement, which position should be avoided?", opts: ["Hip flexion greater than 90 degrees", "Hip extension", "Slight abduction", "Neutral rotation"], ans: 0 },
+            { q: "When does fat embolism typically occur after long bone fracture?", opts: ["12-72 hours", "Immediately", "1 week later", "2-4 hours"], ans: 0 },
+            { q: "Signs of fat embolism include:", opts: ["Petechiae, confusion, dyspnea", "Fever and chills only", "Localized swelling", "Bradycardia"], ans: 0 },
+            { q: "Priority assessment for a client in skeletal traction?", opts: ["Pin sites for infection", "Blood pressure", "Urinary output", "Appetite"], ans: 0 },
+            { q: "Which medication requires the client to remain upright for 30 min?", opts: ["Alendronate (Fosamax)", "Calcium carbonate", "Ibuprofen", "Acetaminophen"], ans: 0 },
+            { q: "Key difference between osteoarthritis and rheumatoid arthritis?", opts: ["OA pain worsens with activity; RA has morning stiffness", "OA is symmetric; RA is not", "OA is autoimmune; RA is degenerative", "OA affects young people; RA affects elderly"], ans: 0 },
+            { q: "After cast application, the nurse should assess for:", opts: ["Pallor, pulselessness, paresthesia", "Weight gain", "Increased appetite", "Dry skin only"], ans: 0 },
+            { q: "DVT prevention after joint replacement includes:", opts: ["Early ambulation and anticoagulants", "Bed rest for 1 week", "Hot compresses to legs", "Crossing legs while sitting"], ans: 0 },
+            { q: "Heberden's nodes are found in which condition?", opts: ["Osteoarthritis", "Rheumatoid arthritis", "Gout", "Osteoporosis"], ans: 0 },
+            { q: "Dietary teaching for osteoporosis prevention includes:", opts: ["High calcium and vitamin D", "Low protein diet", "Sodium restriction", "Fluid restriction"], ans: 0 },
+            { q: "After laminectomy, the client should:", opts: ["Log roll when turning", "Sit up immediately", "Twist at the waist", "Sleep prone"], ans: 0 },
+            { q: "Traction weight should:", opts: ["Hang freely without touching the floor", "Rest on the floor at night", "Be removed for bathing", "Be increased if pain persists"], ans: 0 },
+            { q: "Client teaching for crutch walking includes:", opts: ["Bear weight on hands, not axillae", "Bear weight on axillae", "Keep elbows straight", "Look at feet while walking"], ans: 0 },
+            { q: "Phantom limb pain is:", opts: ["Real pain sensation requiring treatment", "Imaginary and needs no treatment", "Sign of infection", "Only psychological"], ans: 0 },
+            { q: "After total knee replacement, the priority is:", opts: ["Continuous passive motion as ordered", "Immediate full weight bearing", "Ice for 1 hour continuously", "Keeping knee fully extended always"], ans: 0 },
+            { q: "Buck's traction is used for:", opts: ["Hip fractures to reduce muscle spasm", "Cervical spine injuries", "Upper extremity fractures", "Pelvic fractures only"], ans: 0 },
+            { q: "Positive Phalen's test indicates:", opts: ["Carpal tunnel syndrome", "Compartment syndrome", "DVT", "Fracture"], ans: 0 },
+            { q: "For a client with gout, which food should be avoided?", opts: ["Organ meats and alcohol", "Dairy products", "Fresh vegetables", "Whole grains"], ans: 0 }
+        ];
+
+        const q = atiQuestions[Math.floor(Math.random() * atiQuestions.length)];
+        const shuffledOpts = [...q.opts];
+        const correctText = q.opts[q.ans];
+        // Shuffle options
+        for (let i = shuffledOpts.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffledOpts[i], shuffledOpts[j]] = [shuffledOpts[j], shuffledOpts[i]];
         }
-        this.currentQuestion = { text: "Priority intervention for compartment syndrome?", options: ["Notify surgeon immediately", "Elevate extremity", "Apply ice", "Give analgesics"], correct: "Notify surgeon immediately" };
+        this.currentQuestion = { text: q.q, options: shuffledOpts, correct: correctText };
     }
 
     shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
@@ -647,55 +672,163 @@ class AnatomyRush {
         const x = this.getLaneX(this.currentLane), groundY = this.height - 45, y = groundY - this.player.jumpHeight;
         if (this.player.invincible > 0 && Math.floor(this.player.invincible / 6) % 2 === 0) this.ctx.globalAlpha = 0.5;
         this.ctx.save(); this.ctx.translate(x, y);
-        let glow = '#38bdf8';
+
+        // Dynamic glow based on power-ups
+        let glow = '#ec4899'; // Pink for female nurse
         if (this.player.shield > 0) glow = '#06b6d4';
         if (this.player.speedBoost > 0) glow = '#22c55e';
         if (this.player.magnet > 0) glow = '#a855f7';
-        this.ctx.shadowColor = glow; this.ctx.shadowBlur = 40;
+        if (this.player.isDashing) glow = '#f472b6';
+        this.ctx.shadowColor = glow; this.ctx.shadowBlur = 45;
 
-        const bounce = this.player.isJumping ? 0 : Math.sin(this.player.animFrame * 0.6) * 6;
-        const armSwing = Math.sin(this.player.animFrame * 0.8) * 32;
-        const legSwing = Math.sin(this.player.animFrame * 0.8) * 28;
+        const bounce = this.player.isJumping ? 0 : Math.sin(this.player.animFrame * 0.6) * 5;
+        const armSwing = Math.sin(this.player.animFrame * 0.8) * 28;
+        const legSwing = Math.sin(this.player.animFrame * 0.8) * 24;
+        const hairBounce = Math.sin(this.player.animFrame * 0.5) * 4;
 
         if (this.player.isSliding) {
-            this.ctx.fillStyle = '#38bdf8'; this.ctx.beginPath(); this.ctx.ellipse(0, -20, 60, 26, 0, 0, Math.PI * 2); this.ctx.fill();
-            this.ctx.beginPath(); this.ctx.arc(32, -32, 24, 0, Math.PI * 2); this.ctx.fill();
-            this.ctx.fillStyle = '#fff'; this.ctx.fillRect(18, -58, 32, 12);
-            this.ctx.fillStyle = '#ef4444'; this.ctx.fillRect(30, -56, 8, 8); this.ctx.fillRect(26, -52, 16, 5);
+            // Sliding pose - compressed female form
+            this.ctx.fillStyle = '#06b6d4';
+            this.ctx.beginPath(); this.ctx.ellipse(0, -18, 55, 22, 0, 0, Math.PI * 2); this.ctx.fill();
+            // Head
+            this.ctx.fillStyle = '#fcd9b8'; this.ctx.beginPath(); this.ctx.arc(30, -30, 20, 0, Math.PI * 2); this.ctx.fill();
+            // Ponytail flowing back
+            this.ctx.fillStyle = '#8b4513';
+            this.ctx.beginPath(); this.ctx.ellipse(-15, -28, 30, 10, -0.3, 0, Math.PI * 2); this.ctx.fill();
         } else {
-            this.ctx.fillStyle = '#0284c7';
-            this.ctx.save(); this.ctx.translate(-16, -20 + bounce); this.ctx.rotate(legSwing * Math.PI / 180);
-            this.ctx.fillRect(-9, 0, 18, 46); this.ctx.fillStyle = '#1e3a5f'; this.ctx.fillRect(-11, 42, 22, 14); this.ctx.restore();
-            this.ctx.fillStyle = '#0284c7';
-            this.ctx.save(); this.ctx.translate(16, -20 + bounce); this.ctx.rotate(-legSwing * Math.PI / 180);
-            this.ctx.fillRect(-9, 0, 18, 46); this.ctx.fillStyle = '#1e3a5f'; this.ctx.fillRect(-11, 42, 22, 14); this.ctx.restore();
+            // LEGS - slimmer feminine proportions
+            this.ctx.fillStyle = '#0891b2';
+            this.ctx.save(); this.ctx.translate(-12, -18 + bounce); this.ctx.rotate(legSwing * Math.PI / 180);
+            this.ctx.fillRect(-7, 0, 14, 42);
+            this.ctx.fillStyle = '#fff'; this.ctx.fillRect(-8, 38, 16, 12); // White shoes
+            this.ctx.restore();
 
-            this.ctx.fillStyle = '#38bdf8'; this.ctx.beginPath(); this.ctx.roundRect(-30, -90 + bounce, 60, 75, 14); this.ctx.fill();
-            this.ctx.strokeStyle = '#0c4a6e'; this.ctx.lineWidth = 3;
-            this.ctx.beginPath(); this.ctx.moveTo(-15, -90 + bounce); this.ctx.lineTo(0, -70 + bounce); this.ctx.lineTo(15, -90 + bounce); this.ctx.stroke();
+            this.ctx.fillStyle = '#0891b2';
+            this.ctx.save(); this.ctx.translate(12, -18 + bounce); this.ctx.rotate(-legSwing * Math.PI / 180);
+            this.ctx.fillRect(-7, 0, 14, 42);
+            this.ctx.fillStyle = '#fff'; this.ctx.fillRect(-8, 38, 16, 12); // White shoes
+            this.ctx.restore();
 
-            this.ctx.save(); this.ctx.translate(-36, -78 + bounce); this.ctx.rotate(-armSwing * Math.PI / 180);
-            this.ctx.fillStyle = '#38bdf8'; this.ctx.fillRect(-8, 0, 16, 35);
-            this.ctx.fillStyle = '#fcd34d'; this.ctx.fillRect(-7, 30, 14, 28); this.ctx.restore();
-            this.ctx.save(); this.ctx.translate(36, -78 + bounce); this.ctx.rotate(armSwing * Math.PI / 180);
-            this.ctx.fillStyle = '#38bdf8'; this.ctx.fillRect(-8, 0, 16, 35);
-            this.ctx.fillStyle = '#fcd34d'; this.ctx.fillRect(-7, 30, 14, 28); this.ctx.restore();
+            // BODY - feminine scrubs with curves
+            this.ctx.fillStyle = '#06b6d4';
+            this.ctx.beginPath();
+            this.ctx.moveTo(-22, -85 + bounce);
+            this.ctx.quadraticCurveTo(-28, -50 + bounce, -20, -18 + bounce);
+            this.ctx.lineTo(20, -18 + bounce);
+            this.ctx.quadraticCurveTo(28, -50 + bounce, 22, -85 + bounce);
+            this.ctx.closePath();
+            this.ctx.fill();
 
-            this.ctx.fillStyle = '#fcd34d'; this.ctx.beginPath(); this.ctx.arc(0, -115 + bounce, 28, 0, Math.PI * 2); this.ctx.fill();
-            this.ctx.fillStyle = '#4a3728'; this.ctx.beginPath(); this.ctx.arc(0, -120 + bounce, 28, Math.PI, 0); this.ctx.fill();
-            this.ctx.fillStyle = '#fff'; this.ctx.fillRect(-24, -152 + bounce, 48, 16);
-            this.ctx.fillStyle = '#ef4444'; this.ctx.fillRect(-7, -149 + bounce, 14, 12); this.ctx.fillRect(-12, -145 + bounce, 24, 7);
-            this.ctx.fillStyle = '#fff'; this.ctx.beginPath(); this.ctx.ellipse(-11, -118 + bounce, 9, 10, 0, 0, Math.PI * 2); this.ctx.ellipse(11, -118 + bounce, 9, 10, 0, 0, Math.PI * 2); this.ctx.fill();
-            this.ctx.fillStyle = '#1e293b'; this.ctx.beginPath(); this.ctx.arc(-9, -117 + bounce, 5, 0, Math.PI * 2); this.ctx.arc(13, -117 + bounce, 5, 0, Math.PI * 2); this.ctx.fill();
-            this.ctx.strokeStyle = '#92400e'; this.ctx.lineWidth = 3; this.ctx.beginPath(); this.ctx.arc(0, -105 + bounce, 12, 0.2, Math.PI - 0.2); this.ctx.stroke();
-            this.ctx.strokeStyle = '#475569'; this.ctx.lineWidth = 4;
-            this.ctx.beginPath(); this.ctx.moveTo(-8, -88 + bounce); this.ctx.quadraticCurveTo(-22, -55 + bounce, 0, -48 + bounce); this.ctx.stroke();
-            this.ctx.fillStyle = '#64748b'; this.ctx.beginPath(); this.ctx.arc(0, -45 + bounce, 9, 0, Math.PI * 2); this.ctx.fill();
+            // V-neck detail
+            this.ctx.strokeStyle = '#0e7490'; this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(-10, -85 + bounce);
+            this.ctx.lineTo(0, -70 + bounce);
+            this.ctx.lineTo(10, -85 + bounce);
+            this.ctx.stroke();
 
+            // ARMS - slimmer with skin tone hands
+            this.ctx.save(); this.ctx.translate(-26, -75 + bounce); this.ctx.rotate(-armSwing * Math.PI / 180);
+            this.ctx.fillStyle = '#06b6d4'; this.ctx.fillRect(-6, 0, 12, 30);
+            this.ctx.fillStyle = '#fcd9b8'; this.ctx.beginPath(); this.ctx.arc(0, 34, 7, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.restore();
+
+            this.ctx.save(); this.ctx.translate(26, -75 + bounce); this.ctx.rotate(armSwing * Math.PI / 180);
+            this.ctx.fillStyle = '#06b6d4'; this.ctx.fillRect(-6, 0, 12, 30);
+            this.ctx.fillStyle = '#fcd9b8'; this.ctx.beginPath(); this.ctx.arc(0, 34, 7, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.restore();
+
+            // HEAD - feminine face
+            this.ctx.fillStyle = '#fcd9b8';
+            this.ctx.beginPath(); this.ctx.arc(0, -105 + bounce, 24, 0, Math.PI * 2); this.ctx.fill();
+
+            // HAIR - brown ponytail
+            this.ctx.fillStyle = '#8b4513';
+            // Top hair
+            this.ctx.beginPath();
+            this.ctx.arc(0, -112 + bounce, 26, Math.PI, 0);
+            this.ctx.fill();
+            // Side bangs
+            this.ctx.beginPath();
+            this.ctx.ellipse(-18, -108 + bounce, 8, 14, -0.3, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.beginPath();
+            this.ctx.ellipse(18, -108 + bounce, 8, 14, 0.3, 0, Math.PI * 2);
+            this.ctx.fill();
+            // Ponytail
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, -128 + bounce);
+            this.ctx.quadraticCurveTo(25 + hairBounce, -120 + bounce, 30 + hairBounce * 2, -90 + bounce);
+            this.ctx.quadraticCurveTo(25, -100 + bounce, 5, -115 + bounce);
+            this.ctx.fill();
+
+            // Nurse cap
+            this.ctx.fillStyle = '#fff';
+            this.ctx.beginPath();
+            this.ctx.moveTo(-16, -130 + bounce);
+            this.ctx.lineTo(16, -130 + bounce);
+            this.ctx.lineTo(20, -140 + bounce);
+            this.ctx.lineTo(0, -145 + bounce);
+            this.ctx.lineTo(-20, -140 + bounce);
+            this.ctx.closePath();
+            this.ctx.fill();
+            // Red cross on cap
+            this.ctx.fillStyle = '#ef4444';
+            this.ctx.fillRect(-4, -143 + bounce, 8, 12);
+            this.ctx.fillRect(-8, -139 + bounce, 16, 4);
+
+            // EYES - feminine with lashes
+            this.ctx.fillStyle = '#fff';
+            this.ctx.beginPath(); this.ctx.ellipse(-8, -108 + bounce, 7, 8, 0, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.beginPath(); this.ctx.ellipse(8, -108 + bounce, 7, 8, 0, 0, Math.PI * 2); this.ctx.fill();
+            // Pupils
+            this.ctx.fillStyle = '#3b82f6';
+            this.ctx.beginPath(); this.ctx.arc(-7, -107 + bounce, 4, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.beginPath(); this.ctx.arc(9, -107 + bounce, 4, 0, Math.PI * 2); this.ctx.fill();
+            // Eye highlights
+            this.ctx.fillStyle = '#fff';
+            this.ctx.beginPath(); this.ctx.arc(-5, -109 + bounce, 1.5, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.beginPath(); this.ctx.arc(11, -109 + bounce, 1.5, 0, Math.PI * 2); this.ctx.fill();
+            // Eyelashes
+            this.ctx.strokeStyle = '#1e293b'; this.ctx.lineWidth = 1.5;
+            this.ctx.beginPath(); this.ctx.moveTo(-14, -112 + bounce); this.ctx.lineTo(-16, -116 + bounce); this.ctx.stroke();
+            this.ctx.beginPath(); this.ctx.moveTo(-11, -114 + bounce); this.ctx.lineTo(-12, -118 + bounce); this.ctx.stroke();
+            this.ctx.beginPath(); this.ctx.moveTo(14, -112 + bounce); this.ctx.lineTo(16, -116 + bounce); this.ctx.stroke();
+            this.ctx.beginPath(); this.ctx.moveTo(11, -114 + bounce); this.ctx.lineTo(12, -118 + bounce); this.ctx.stroke();
+
+            // Blush
+            this.ctx.fillStyle = 'rgba(244, 114, 182, 0.4)';
+            this.ctx.beginPath(); this.ctx.ellipse(-14, -100 + bounce, 5, 3, 0, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.beginPath(); this.ctx.ellipse(14, -100 + bounce, 5, 3, 0, 0, Math.PI * 2); this.ctx.fill();
+
+            // Smile
+            this.ctx.strokeStyle = '#be185d'; this.ctx.lineWidth = 2;
+            this.ctx.beginPath(); this.ctx.arc(0, -98 + bounce, 8, 0.2, Math.PI - 0.2); this.ctx.stroke();
+
+            // Stethoscope
+            this.ctx.strokeStyle = '#374151'; this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
+            this.ctx.moveTo(-6, -85 + bounce);
+            this.ctx.quadraticCurveTo(-18, -55 + bounce, -5, -45 + bounce);
+            this.ctx.stroke();
+            this.ctx.fillStyle = '#6b7280';
+            this.ctx.beginPath(); this.ctx.arc(-5, -42 + bounce, 7, 0, Math.PI * 2); this.ctx.fill();
+
+            // Shield effect
             if (this.player.shield > 0) {
-                this.ctx.strokeStyle = '#06b6d4'; this.ctx.lineWidth = 5;
-                this.ctx.globalAlpha = 0.5 + Math.sin(this.globalTime * 0.012) * 0.3;
-                this.ctx.beginPath(); this.ctx.arc(0, -65 + bounce, 80, 0, Math.PI * 2); this.ctx.stroke();
+                this.ctx.strokeStyle = '#06b6d4'; this.ctx.lineWidth = 4;
+                this.ctx.globalAlpha = 0.5 + Math.sin(this.globalTime * 0.015) * 0.3;
+                this.ctx.beginPath(); this.ctx.arc(0, -60 + bounce, 75, 0, Math.PI * 2); this.ctx.stroke();
+                this.ctx.globalAlpha = 1;
+            }
+
+            // Dash effect
+            if (this.player.isDashing) {
+                this.ctx.strokeStyle = '#f472b6'; this.ctx.lineWidth = 3;
+                for (let i = 1; i <= 3; i++) {
+                    this.ctx.globalAlpha = 0.3 / i;
+                    this.ctx.beginPath(); this.ctx.arc(0 - i * 15, -60 + bounce, 50, 0, Math.PI * 2); this.ctx.stroke();
+                }
                 this.ctx.globalAlpha = 1;
             }
         }
