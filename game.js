@@ -781,9 +781,7 @@ class MSKReviewRunner {
 
     triggerQuestion() {
         this.state = 'question'; this.questionTimer = this.questionTimeLimit * 60;
-        this.selectedAnswer = -1; this.questionResult = null;
-
-        // ATI-aligned MSK questions
+        this.selectedAnswer = -1; this.selectedAnswers = []; this.questionResult = null;
 
         // Use Bag System for Non-Repeating Random Questions
         if (this.questionBag.length === 0) {
@@ -794,19 +792,41 @@ class MSKReviewRunner {
 
         const q = gameQuizQuestions[randomIdx];
         const shuffledOpts = [...q.options];
-        const correctText = q.correctAnswer;
+
         // Shuffle options
         for (let i = shuffledOpts.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [shuffledOpts[i], shuffledOpts[j]] = [shuffledOpts[j], shuffledOpts[i]];
         }
-        this.currentQuestion = { text: q.q, options: shuffledOpts, correct: correctText };
+
+        // Store question with all metadata
+        this.currentQuestion = {
+            text: q.q,
+            options: shuffledOpts,
+            type: q.type || 'single', // 'sata' or 'single'
+            correct: q.correctAnswer || null, // For single-answer
+            correctAnswers: q.correctAnswers || [], // For SATA
+            explanation: q.explanation || ''
+        };
     }
 
     shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
 
     selectAnswer(idx) {
         if (this.questionResult !== null || idx >= this.currentQuestion.options.length) return;
+
+        // SATA: Toggle selection (multi-select)
+        if (this.currentQuestion.type === 'sata') {
+            const arrIdx = this.selectedAnswers.indexOf(idx);
+            if (arrIdx === -1) {
+                this.selectedAnswers.push(idx);
+            } else {
+                this.selectedAnswers.splice(arrIdx, 1);
+            }
+            return; // Don't submit yet - wait for Submit button
+        }
+
+        // Single-answer: Immediate submission
         this.selectedAnswer = idx;
         const correct = this.currentQuestion.options[idx] === this.currentQuestion.correct;
         this.questionsAnswered++;
@@ -834,13 +854,58 @@ class MSKReviewRunner {
             this.questionResult = 'wrong'; this.lives--; this.streak = 0; this.multiplier = 1;
             this.shake = 18; this.flash = { color: '#ef4444', timer: 18 };
             this.perfectRun = false;
-            if (this.lives <= 0) { setTimeout(() => this.gameOver(), 900); return; }
+            if (this.lives <= 0) { setTimeout(() => this.gameOver(), 2500); return; }
         }
+        // Extended timeout to show rationale
         setTimeout(() => {
             this.state = 'playing';
             this.currentQuestion = null;
             this.player.invincible = 120; // 2s grace period
-        }, 1100);
+        }, 2500);
+    }
+
+    submitSATAAnswer() {
+        if (this.questionResult !== null || this.currentQuestion.type !== 'sata') return;
+        if (this.selectedAnswers.length === 0) return; // Must select at least one
+
+        // Get selected answer texts
+        const selectedTexts = this.selectedAnswers.map(i => this.currentQuestion.options[i]);
+        const correctTexts = this.currentQuestion.correctAnswers;
+
+        // Check if arrays match (order-independent)
+        const correct = selectedTexts.length === correctTexts.length &&
+            selectedTexts.every(t => correctTexts.includes(t));
+
+        this.questionsAnswered++;
+
+        // Track question for review
+        this.questionHistory.push({
+            question: this.currentQuestion.text,
+            userAnswer: selectedTexts.join(', '),
+            correctAnswer: correctTexts.join(', '),
+            correct: correct
+        });
+
+        if (correct) {
+            this.questionResult = 'correct'; this.streak++; this.questionsCorrectRun++;
+            this.multiplier = Math.min(5, 1 + Math.floor(this.streak / 2));
+            const reward = 35 * this.multiplier; // Bonus for SATA
+            this.coins += reward; this.totalCoins += reward;
+            localStorage.setItem('anatomyRush2025Coins', this.totalCoins);
+            this.flash = { color: '#22c55e', timer: 20 };
+        } else {
+            this.questionResult = 'wrong'; this.lives--; this.streak = 0; this.multiplier = 1;
+            this.shake = 18; this.flash = { color: '#ef4444', timer: 18 };
+            this.perfectRun = false;
+            if (this.lives <= 0) { setTimeout(() => this.gameOver(), 2500); return; }
+        }
+        // Extended timeout to show rationale
+        setTimeout(() => {
+            this.state = 'playing';
+            this.currentQuestion = null;
+            this.selectedAnswers = [];
+            this.player.invincible = 120;
+        }, 3000);
     }
 
     handleQuestionClick(e) {
@@ -848,10 +913,24 @@ class MSKReviewRunner {
         const rect = this.canvas.getBoundingClientRect();
         const x = (e.clientX - rect.left) * (this.width / rect.width);
         const y = (e.clientY - rect.top) * (this.height / rect.height);
-        const startY = this.height * 0.28, optH = 60, gap = 18, margin = this.width * 0.06;
+        const startY = this.height * 0.26, optH = 52, gap = 12, margin = this.width * 0.06;
+
+        // Check SATA submit button
+        if (this.currentQuestion.type === 'sata' && this.sataSubmitBtn) {
+            const btn = this.sataSubmitBtn;
+            if (x >= btn.x && x <= btn.x + btn.w && y >= btn.y && y <= btn.y + btn.h) {
+                this.submitSATAAnswer();
+                return;
+            }
+        }
+
+        // Check option clicks
         for (let i = 0; i < this.currentQuestion.options.length; i++) {
             const oY = startY + i * (optH + gap);
-            if (x >= margin && x <= this.width - margin && y >= oY && y <= oY + optH) { this.selectAnswer(i); break; }
+            if (x >= margin && x <= this.width - margin && y >= oY && y <= oY + optH) {
+                this.selectAnswer(i);
+                break;
+            }
         }
     }
 
@@ -1294,15 +1373,16 @@ class MSKReviewRunner {
             this.ctx.fillStyle = '#ef4444'; this.ctx.fillRect(12, -65 + bounce, 2, 8); // Red pen
             this.ctx.fillStyle = '#3b82f6'; this.ctx.fillRect(16, -65 + bounce, 2, 8); // Blue pen
 
-            // ARMS
+            // ARMS - Left arm
             this.ctx.save(); this.ctx.translate(-26, -75 + bounce); this.ctx.rotate(-armSwing * Math.PI / 180);
-            this.ctx.fillStyle = outfitColor; this.ctx.roundRect(-6, 0, 12, 30, 4); this.ctx.fill();
-            this.ctx.fillStyle = '#ffe4c4'; this.ctx.beginPath(); this.ctx.arc(0, 34, 7, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.beginPath(); this.ctx.fillStyle = outfitColor; this.ctx.roundRect(-6, 0, 12, 30, 4); this.ctx.fill();
+            this.ctx.fillStyle = '#ffe4c4'; this.ctx.beginPath(); this.ctx.arc(0, 34, 7, 0, Math.PI * 2); this.ctx.fill(); // Hand
             this.ctx.restore();
 
+            // ARMS - Right arm
             this.ctx.save(); this.ctx.translate(26, -75 + bounce); this.ctx.rotate(armSwing * Math.PI / 180);
-            this.ctx.fillStyle = outfitColor; this.ctx.roundRect(-6, 0, 12, 30, 4); this.ctx.fill();
-            this.ctx.fillStyle = '#ffe4c4'; this.ctx.beginPath(); this.ctx.arc(0, 34, 7, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.beginPath(); this.ctx.fillStyle = outfitColor; this.ctx.roundRect(-6, 0, 12, 30, 4); this.ctx.fill();
+            this.ctx.fillStyle = '#ffe4c4'; this.ctx.beginPath(); this.ctx.arc(0, 34, 7, 0, Math.PI * 2); this.ctx.fill(); // Hand
             this.ctx.restore();
 
             // REALISTIC STETHOSCOPE - High Visibility
@@ -1337,6 +1417,13 @@ class MSKReviewRunner {
             this.ctx.shadowColor = '#fff'; this.ctx.shadowBlur = 8;
             this.ctx.beginPath(); this.ctx.arc(-10, -55 + bounce, 8, 0, Math.PI * 2); this.ctx.fill();
             this.ctx.shadowBlur = 0;
+
+            // Ear tips (small olive-shaped ends) - goes up behind ears
+            this.ctx.fillStyle = '#94a3b8';
+            // Left ear tip
+            this.ctx.beginPath(); this.ctx.ellipse(-12, -92 + bounce, 3, 5, Math.PI / 4, 0, Math.PI * 2); this.ctx.fill();
+            // Right ear tip  
+            this.ctx.beginPath(); this.ctx.ellipse(12, -92 + bounce, 3, 5, -Math.PI / 4, 0, Math.PI * 2); this.ctx.fill();
 
             // HEAD - Shaded 3D Sphere
             const headGrad = this.ctx.createRadialGradient(-5, -112 + bounce, 2, 0, -105 + bounce, 24);
@@ -1698,33 +1785,156 @@ class MSKReviewRunner {
     }
 
     drawQuestion() {
-        if (this.questionResult === null) { this.questionTimer--; if (this.questionTimer <= 0) { this.questionResult = 'timeout'; this.lives--; this.streak = 0; this.multiplier = 1; this.shake = 15; this.flash = { color: '#ef4444', timer: 18 }; if (this.lives <= 0) setTimeout(() => this.gameOver(), 900); else setTimeout(() => { this.state = 'playing'; this.currentQuestion = null; this.player.invincible = 120; }, 1100); } }
-        this.ctx.fillStyle = 'rgba(5,5,20,0.98)'; this.ctx.fillRect(0, 0, this.width, this.height);
+        // Timer countdown
+        if (this.questionResult === null) {
+            this.questionTimer--;
+            if (this.questionTimer <= 0) {
+                this.questionResult = 'timeout'; this.lives--; this.streak = 0; this.multiplier = 1;
+                this.shake = 15; this.flash = { color: '#ef4444', timer: 18 };
+                if (this.lives <= 0) setTimeout(() => this.gameOver(), 2500);
+                else setTimeout(() => { this.state = 'playing'; this.currentQuestion = null; this.player.invincible = 120; }, 2500);
+            }
+        }
+
+        // Background
+        this.ctx.fillStyle = 'rgba(5,5,20,0.98)';
+        this.ctx.fillRect(0, 0, this.width, this.height);
         if (!this.currentQuestion) return;
-        const pct = this.questionTimer / (this.questionTimeLimit * 60), tc = pct > 0.5 ? '#22c55e' : pct > 0.25 ? '#f59e0b' : '#ef4444';
+
+        // Timer bar
+        const pct = this.questionTimer / (this.questionTimeLimit * 60);
+        const tc = pct > 0.5 ? '#22c55e' : pct > 0.25 ? '#f59e0b' : '#ef4444';
         this.ctx.fillStyle = '#1f2937'; this.ctx.fillRect(70, 20, this.width - 140, 28);
         this.ctx.fillStyle = tc; this.ctx.fillRect(70, 20, (this.width - 140) * pct, 28);
-        this.ctx.fillStyle = '#fff'; this.ctx.font = 'bold 20px Arial'; this.ctx.textAlign = 'center'; this.ctx.fillText(`${Math.ceil(this.questionTimer / 60)} s`, this.centerX, 42);
-        this.ctx.font = 'bold 21px Arial';
-        const words = this.currentQuestion.text.split(' '); let line = '', y = this.height * 0.11, maxW = this.width * 0.86;
-        words.forEach(w => { const test = line + w + ' '; if (this.ctx.measureText(test).width > maxW && line) { this.ctx.fillText(line.trim(), this.centerX, y); line = w + ' '; y += 32; } else line = test; });
-        this.ctx.fillText(line.trim(), this.centerX, y);
-        const startY = this.height * 0.28, optH = 60, gap = 18, margin = this.width * 0.06;
-        this.currentQuestion.options.forEach((opt, i) => {
-            const oY = startY + i * (optH + gap); let bg = '#1e1e40', border = 'rgba(139, 92, 246, 0.4)';
-            if (this.questionResult) { if (i === this.selectedAnswer) { bg = this.questionResult === 'correct' ? '#22c55e' : '#ef4444'; border = bg; } if (opt === this.currentQuestion.correct && this.questionResult !== 'correct') { bg = '#22c55e'; border = '#22c55e'; } }
-            this.ctx.fillStyle = bg; this.ctx.beginPath(); this.ctx.roundRect(margin, oY, this.width - margin * 2, optH, 15); this.ctx.fill();
-            this.ctx.strokeStyle = border; this.ctx.lineWidth = 3; this.ctx.stroke();
-            this.ctx.fillStyle = '#fff'; this.ctx.font = '18px Arial'; this.ctx.textAlign = 'left';
-            let text = `${i + 1}. ${opt} `; const maxT = this.width - margin * 2 - 45; while (this.ctx.measureText(text).width > maxT && text.length > 15) text = text.slice(0, -4) + '...';
-            this.ctx.fillText(text, margin + 22, oY + 39);
-        });
-        if (this.questionResult) {
-            this.ctx.textAlign = 'center'; this.ctx.font = 'bold 40px Arial';
-            if (this.questionResult === 'correct') { this.ctx.fillStyle = '#22c55e'; this.ctx.fillText(`✓ CORRECT! + ${25 * this.multiplier} coins`, this.centerX, this.height - 55); }
-            else if (this.questionResult === 'timeout') { this.ctx.fillStyle = '#ef4444'; this.ctx.fillText('⏱️ TIME UP!', this.centerX, this.height - 55); }
-            else { this.ctx.fillStyle = '#ef4444'; this.ctx.fillText('✗ WRONG!', this.centerX, this.height - 55); }
+        this.ctx.fillStyle = '#fff'; this.ctx.font = 'bold 20px Arial'; this.ctx.textAlign = 'center';
+        this.ctx.fillText(`${Math.ceil(this.questionTimer / 60)} s`, this.centerX, 42);
+
+        // Question type indicator
+        if (this.currentQuestion.type === 'sata') {
+            this.ctx.fillStyle = '#a855f7'; this.ctx.font = 'bold 14px Arial';
+            this.ctx.fillText('SELECT ALL THAT APPLY', this.centerX, 70);
         }
+
+        // Question text (word-wrapped)
+        this.ctx.fillStyle = '#fff'; this.ctx.font = 'bold 20px Arial';
+        const words = this.currentQuestion.text.split(' ');
+        let line = '', y = this.height * 0.12, maxW = this.width * 0.86;
+        words.forEach(w => {
+            const test = line + w + ' ';
+            if (this.ctx.measureText(test).width > maxW && line) {
+                this.ctx.fillText(line.trim(), this.centerX, y); line = w + ' '; y += 28;
+            } else line = test;
+        });
+        this.ctx.fillText(line.trim(), this.centerX, y);
+
+        // Options
+        const startY = this.height * 0.26, optH = 52, gap = 12, margin = this.width * 0.06;
+        const isSATA = this.currentQuestion.type === 'sata';
+
+        this.currentQuestion.options.forEach((opt, i) => {
+            const oY = startY + i * (optH + gap);
+            let bg = '#1e1e40', border = 'rgba(139, 92, 246, 0.4)';
+            const isSelected = isSATA ? this.selectedAnswers.includes(i) : (i === this.selectedAnswer);
+
+            // Before result: show selection state
+            if (!this.questionResult && isSelected) {
+                bg = '#3730a3'; border = '#6366f1';
+            }
+
+            // After result: show correct/wrong
+            if (this.questionResult) {
+                const isCorrect = isSATA
+                    ? this.currentQuestion.correctAnswers.includes(opt)
+                    : (opt === this.currentQuestion.correct);
+
+                if (isSelected && isCorrect) { bg = '#166534'; border = '#22c55e'; }
+                else if (isSelected && !isCorrect) { bg = '#991b1b'; border = '#ef4444'; }
+                else if (!isSelected && isCorrect) { bg = '#14532d'; border = '#22c55e'; } // Missed correct
+            }
+
+            // Draw option box
+            this.ctx.fillStyle = bg;
+            this.ctx.beginPath(); this.ctx.roundRect(margin, oY, this.width - margin * 2, optH, 12); this.ctx.fill();
+            this.ctx.strokeStyle = border; this.ctx.lineWidth = 2; this.ctx.stroke();
+
+            // Checkbox for SATA
+            if (isSATA) {
+                this.ctx.strokeStyle = isSelected ? '#6366f1' : '#475569';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath(); this.ctx.roundRect(margin + 12, oY + 14, 24, 24, 4); this.ctx.stroke();
+                if (isSelected) {
+                    this.ctx.fillStyle = '#6366f1'; this.ctx.fill();
+                    this.ctx.fillStyle = '#fff'; this.ctx.font = 'bold 18px Arial';
+                    this.ctx.fillText('✓', margin + 24, oY + 32);
+                }
+            }
+
+            // Option text
+            this.ctx.fillStyle = '#fff'; this.ctx.font = '16px Arial'; this.ctx.textAlign = 'left';
+            const textX = isSATA ? margin + 48 : margin + 20;
+            let text = opt;
+            const maxT = this.width - margin * 2 - (isSATA ? 70 : 40);
+            while (this.ctx.measureText(text).width > maxT && text.length > 15) text = text.slice(0, -4) + '...';
+            this.ctx.fillText(text, textX, oY + 33);
+        });
+
+        // SATA Submit Button (only if not yet answered)
+        if (isSATA && !this.questionResult) {
+            const btnY = startY + this.currentQuestion.options.length * (optH + gap) + 10;
+            const btnW = 200, btnH = 50;
+            const canSubmit = this.selectedAnswers.length > 0;
+
+            this.ctx.fillStyle = canSubmit ? '#6366f1' : '#374151';
+            this.ctx.beginPath(); this.ctx.roundRect(this.centerX - btnW / 2, btnY, btnW, btnH, 25); this.ctx.fill();
+
+            this.ctx.fillStyle = '#fff'; this.ctx.font = 'bold 18px Arial'; this.ctx.textAlign = 'center';
+            this.ctx.fillText('SUBMIT ANSWER', this.centerX, btnY + 32);
+
+            // Store button coords for click handling
+            this.sataSubmitBtn = { x: this.centerX - btnW / 2, y: btnY, w: btnW, h: btnH };
+        }
+
+        // Result feedback + Rationale
+        if (this.questionResult) {
+            this.ctx.textAlign = 'center';
+
+            // Result text
+            this.ctx.font = 'bold 32px Arial';
+            const resultY = this.height - 100;
+            if (this.questionResult === 'correct') {
+                const reward = isSATA ? 35 * this.multiplier : 25 * this.multiplier;
+                this.ctx.fillStyle = '#22c55e';
+                this.ctx.fillText(`✓ CORRECT! +${reward} coins`, this.centerX, resultY);
+            } else if (this.questionResult === 'timeout') {
+                this.ctx.fillStyle = '#ef4444';
+                this.ctx.fillText('⏱️ TIME UP!', this.centerX, resultY);
+            } else {
+                this.ctx.fillStyle = '#ef4444';
+                this.ctx.fillText('✗ INCORRECT', this.centerX, resultY);
+            }
+
+            // Rationale
+            if (this.currentQuestion.explanation) {
+                this.ctx.fillStyle = '#94a3b8'; this.ctx.font = '15px Arial';
+                const lines = this.wrapText(this.currentQuestion.explanation, this.width * 0.8);
+                lines.forEach((ln, i) => this.ctx.fillText(ln, this.centerX, resultY + 35 + i * 20));
+            }
+        }
+    }
+
+    wrapText(text, maxWidth) {
+        const words = text.split(' ');
+        const lines = [];
+        let currentLine = '';
+        words.forEach(word => {
+            const test = currentLine + word + ' ';
+            if (this.ctx.measureText(test).width > maxWidth && currentLine) {
+                lines.push(currentLine.trim());
+                currentLine = word + ' ';
+            } else currentLine = test;
+        });
+        if (currentLine) lines.push(currentLine.trim());
+        return lines;
     }
 
     drawGameOver() {
