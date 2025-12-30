@@ -1152,12 +1152,12 @@ class MSKReviewRunner {
         const pantsColor = this.getDarkerColor(outfitColor);
 
         // Dynamic glow based on power-ups or outfit
-        let glow = outfitColor;
+        let glow = 'rgba(0,0,0,0.3)';
         if (this.player.shield > 0) glow = '#06b6d4';
         if (this.player.speedBoost > 0) glow = '#22c55e';
         if (this.player.magnet > 0) glow = '#a855f7';
         if (this.player.isDashing) glow = '#f472b6';
-        this.ctx.shadowColor = glow; this.ctx.shadowBlur = 45;
+        this.ctx.shadowColor = glow; this.ctx.shadowBlur = this.player.isDashing ? 45 : 15;
 
         const bounce = this.player.isJumping ? 0 : Math.sin(this.player.animFrame * 0.6) * 5;
         const armSwing = Math.sin(this.player.animFrame * 0.8) * 28;
@@ -1165,30 +1165,37 @@ class MSKReviewRunner {
         const hairBounce = Math.sin(this.player.animFrame * 0.5) * 4;
 
         if (this.player.isSliding) {
-            // Sliding pose - compressed female form
+            // Sliding pose - compressed
             this.ctx.fillStyle = outfitColor;
             this.ctx.beginPath(); this.ctx.ellipse(0, -18, 55, 22, 0, 0, Math.PI * 2); this.ctx.fill();
             // Head
-            this.ctx.fillStyle = '#fcd9b8'; this.ctx.beginPath(); this.ctx.arc(30, -30, 20, 0, Math.PI * 2); this.ctx.fill();
+            const headGrad = this.ctx.createRadialGradient(25, -35, 2, 30, -30, 22);
+            headGrad.addColorStop(0, '#ffe4c4'); headGrad.addColorStop(1, '#eaa');
+            this.ctx.fillStyle = headGrad;
+            this.ctx.beginPath(); this.ctx.arc(30, -30, 20, 0, Math.PI * 2); this.ctx.fill();
             // Ponytail flowing back
-            this.ctx.fillStyle = '#8b4513';
+            this.ctx.fillStyle = '#5d4037';
             this.ctx.beginPath(); this.ctx.ellipse(-15, -28, 30, 10, -0.3, 0, Math.PI * 2); this.ctx.fill();
         } else {
-            // LEGS - slimmer feminine proportions
-            this.ctx.fillStyle = pantsColor;
+            // LEGS - 3D shaded
+            const legLGrad = this.ctx.createLinearGradient(-15, 0, -5, 0); legLGrad.addColorStop(0, '#1e293b'); legLGrad.addColorStop(0.5, pantsColor); legLGrad.addColorStop(1, '#1e293b');
+            this.ctx.fillStyle = legLGrad;
             this.ctx.save(); this.ctx.translate(-12, -18 + bounce); this.ctx.rotate(legSwing * Math.PI / 180);
             this.ctx.fillRect(-7, 0, 14, 42);
-            this.ctx.fillStyle = '#fff'; this.ctx.fillRect(-8, 38, 16, 12); // White shoes
+            this.ctx.fillStyle = '#f8fafc'; this.ctx.fillRect(-8, 38, 16, 12); // Shoe
             this.ctx.restore();
 
-            this.ctx.fillStyle = pantsColor;
+            const legRGrad = this.ctx.createLinearGradient(5, 0, 15, 0); legRGrad.addColorStop(0, '#1e293b'); legRGrad.addColorStop(0.5, pantsColor); legRGrad.addColorStop(1, '#1e293b');
+            this.ctx.fillStyle = legRGrad;
             this.ctx.save(); this.ctx.translate(12, -18 + bounce); this.ctx.rotate(-legSwing * Math.PI / 180);
             this.ctx.fillRect(-7, 0, 14, 42);
-            this.ctx.fillStyle = '#fff'; this.ctx.fillRect(-8, 38, 16, 12); // White shoes
+            this.ctx.fillStyle = '#f8fafc'; this.ctx.fillRect(-8, 38, 16, 12); // Shoe
             this.ctx.restore();
 
-            // BODY - feminine scrubs with curves
-            this.ctx.fillStyle = outfitColor;
+            // BODY - feminine scrubs with shading
+            const bodyGrad = this.ctx.createLinearGradient(-25, -80, 25, -80);
+            bodyGrad.addColorStop(0, this.getDarkerColor(outfitColor)); bodyGrad.addColorStop(0.2, outfitColor); bodyGrad.addColorStop(0.8, outfitColor); bodyGrad.addColorStop(1, this.getDarkerColor(outfitColor));
+            this.ctx.fillStyle = bodyGrad;
             this.ctx.beginPath();
             this.ctx.moveTo(-22, -85 + bounce);
             this.ctx.quadraticCurveTo(-28, -50 + bounce, -20, -18 + bounce);
@@ -1198,100 +1205,146 @@ class MSKReviewRunner {
             this.ctx.fill();
 
             // V-neck detail
+            this.ctx.fillStyle = '#e2e8f0'; // Undershirt
+            this.ctx.beginPath(); this.ctx.moveTo(-10, -85 + bounce); this.ctx.lineTo(0, -75 + bounce); this.ctx.lineTo(10, -85 + bounce); this.ctx.fill();
             this.ctx.strokeStyle = pantsColor; this.ctx.lineWidth = 2;
-            this.ctx.beginPath();
-            this.ctx.moveTo(-10, -85 + bounce);
-            this.ctx.lineTo(0, -70 + bounce);
-            this.ctx.lineTo(10, -85 + bounce);
-            this.ctx.stroke();
+            this.ctx.beginPath(); this.ctx.moveTo(-10, -85 + bounce); this.ctx.lineTo(0, -70 + bounce); this.ctx.lineTo(10, -85 + bounce); this.ctx.stroke();
 
-            // ARMS - slimmer with skin tone hands
+            // ID Badge
+            this.ctx.fillStyle = '#fff'; this.ctx.fillRect(-18, -65 + bounce, 10, 7);
+            this.ctx.fillStyle = '#000'; this.ctx.fillRect(-17, -64 + bounce, 4, 4); // Photo
+            this.ctx.fillStyle = '#94a3b8'; this.ctx.fillRect(-12, -64 + bounce, 3, 2); // Text
+
+            // Pocket with pens
+            this.ctx.strokeStyle = this.getDarkerColor(outfitColor); this.ctx.lineWidth = 1;
+            this.ctx.strokeRect(10, -60 + bounce, 10, 12);
+            this.ctx.fillStyle = '#ef4444'; this.ctx.fillRect(12, -65 + bounce, 2, 8); // Red pen
+            this.ctx.fillStyle = '#3b82f6'; this.ctx.fillRect(16, -65 + bounce, 2, 8); // Blue pen
+
+            // ARMS
             this.ctx.save(); this.ctx.translate(-26, -75 + bounce); this.ctx.rotate(-armSwing * Math.PI / 180);
-            this.ctx.fillStyle = outfitColor; this.ctx.fillRect(-6, 0, 12, 30);
-            this.ctx.fillStyle = '#fcd9b8'; this.ctx.beginPath(); this.ctx.arc(0, 34, 7, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.fillStyle = outfitColor; this.ctx.roundRect(-6, 0, 12, 30, 4); this.ctx.fill();
+            this.ctx.fillStyle = '#ffe4c4'; this.ctx.beginPath(); this.ctx.arc(0, 34, 7, 0, Math.PI * 2); this.ctx.fill();
             this.ctx.restore();
 
             this.ctx.save(); this.ctx.translate(26, -75 + bounce); this.ctx.rotate(armSwing * Math.PI / 180);
-            this.ctx.fillStyle = outfitColor; this.ctx.fillRect(-6, 0, 12, 30);
-            this.ctx.fillStyle = '#fcd9b8'; this.ctx.beginPath(); this.ctx.arc(0, 34, 7, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.fillStyle = outfitColor; this.ctx.roundRect(-6, 0, 12, 30, 4); this.ctx.fill();
+            this.ctx.fillStyle = '#ffe4c4'; this.ctx.beginPath(); this.ctx.arc(0, 34, 7, 0, Math.PI * 2); this.ctx.fill();
             this.ctx.restore();
 
-            // HEAD - feminine face
-            this.ctx.fillStyle = '#fcd9b8';
+            // REALISTIC STETHOSCOPE
+            this.ctx.lineCap = 'round'; this.ctx.lineJoin = 'round';
+            // Tubing around neck
+            this.ctx.strokeStyle = '#374151'; this.ctx.lineWidth = 4;
+            this.ctx.beginPath();
+            this.ctx.moveTo(-15, -86 + bounce);
+            this.ctx.quadraticCurveTo(0, -82 + bounce, 15, -86 + bounce); // Back of neck
+            this.ctx.stroke();
+
+            // Hanging tubing
+            this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
+            this.ctx.moveTo(-15, -86 + bounce);
+            this.ctx.quadraticCurveTo(-22, -80 + bounce, -18, -65 + bounce); // Left drape
+            this.ctx.shadowBlur = 0;
+
+            this.ctx.moveTo(15, -86 + bounce);
+            this.ctx.quadraticCurveTo(22, -80 + bounce, 18, -65 + bounce); // Right drape
+            this.ctx.stroke();
+
+            // Y-Junction and Chest Piece
+            this.ctx.beginPath();
+            this.ctx.moveTo(-18, -65 + bounce);
+            this.ctx.quadraticCurveTo(0, -55 + bounce, 18, -65 + bounce); // Y connector
+            this.ctx.stroke();
+
+            // Single tube down
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, -59 + bounce); // Middle of Y
+            this.ctx.quadraticCurveTo(5 + armSwing * 0.1, -45 + bounce, 0, -35 + bounce);
+            this.ctx.stroke();
+
+            // Chest piece (Metallic)
+            const diaphragmGrad = this.ctx.createRadialGradient(0, -35 + bounce, 1, 0, -35 + bounce, 8);
+            diaphragmGrad.addColorStop(0, '#e5e7eb'); diaphragmGrad.addColorStop(0.5, '#9ca3af'); diaphragmGrad.addColorStop(1, '#4b5563');
+            this.ctx.fillStyle = diaphragmGrad;
+            this.ctx.shadowColor = '#000'; this.ctx.shadowBlur = 5;
+            this.ctx.beginPath(); this.ctx.arc(0, -35 + bounce, 8, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.shadowBlur = 0;
+
+            // HEAD - Shaded 3D Sphere
+            const headGrad = this.ctx.createRadialGradient(-5, -112 + bounce, 2, 0, -105 + bounce, 24);
+            headGrad.addColorStop(0, '#fff1e6'); headGrad.addColorStop(1, '#dec0a8');
+            this.ctx.fillStyle = headGrad;
             this.ctx.beginPath(); this.ctx.arc(0, -105 + bounce, 24, 0, Math.PI * 2); this.ctx.fill();
 
-            // HAIR - brown ponytail
-            this.ctx.fillStyle = '#8b4513';
+            // HAIR - Shaded with volume
+            this.ctx.fillStyle = '#3e2723';
             // Top hair
-            this.ctx.beginPath();
-            this.ctx.arc(0, -112 + bounce, 26, Math.PI, 0);
-            this.ctx.fill();
-            // Side bangs
-            this.ctx.beginPath();
-            this.ctx.ellipse(-18, -108 + bounce, 8, 14, -0.3, 0, Math.PI * 2);
-            this.ctx.fill();
-            this.ctx.beginPath();
-            this.ctx.ellipse(18, -108 + bounce, 8, 14, 0.3, 0, Math.PI * 2);
-            this.ctx.fill();
-            // Ponytail
+            this.ctx.beginPath(); this.ctx.arc(0, -112 + bounce, 26, Math.PI, 0); this.ctx.fill();
+            // Side bangs (voluminous)
+            this.ctx.beginPath(); this.ctx.ellipse(-18, -108 + bounce, 10, 16, -0.2, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.beginPath(); this.ctx.ellipse(18, -108 + bounce, 10, 16, 0.2, 0, Math.PI * 2); this.ctx.fill();
+            // Ponytail (bouncing)
             this.ctx.beginPath();
             this.ctx.moveTo(0, -128 + bounce);
-            this.ctx.quadraticCurveTo(25 + hairBounce, -120 + bounce, 30 + hairBounce * 2, -90 + bounce);
-            this.ctx.quadraticCurveTo(25, -100 + bounce, 5, -115 + bounce);
+            this.ctx.quadraticCurveTo(35 + hairBounce, -125 + bounce, 40 + hairBounce * 2, -90 + bounce);
+            this.ctx.quadraticCurveTo(30, -110 + bounce, 10, -115 + bounce);
             this.ctx.fill();
 
-            // Nurse cap
-            this.ctx.fillStyle = '#fff';
+            // Nurse cap (3D)
+            this.ctx.fillStyle = '#f8fafc';
             this.ctx.beginPath();
-            this.ctx.moveTo(-16, -130 + bounce);
-            this.ctx.lineTo(16, -130 + bounce);
-            this.ctx.lineTo(20, -140 + bounce);
-            this.ctx.lineTo(0, -145 + bounce);
-            this.ctx.lineTo(-20, -140 + bounce);
+            this.ctx.moveTo(-18, -130 + bounce);
+            this.ctx.lineTo(18, -130 + bounce);
+            this.ctx.lineTo(22, -145 + bounce);
+            this.ctx.lineTo(0, -148 + bounce);
+            this.ctx.lineTo(-22, -145 + bounce);
             this.ctx.closePath();
             this.ctx.fill();
-            // Red cross on cap
+            // Red cross
             this.ctx.fillStyle = '#ef4444';
-            this.ctx.fillRect(-4, -143 + bounce, 8, 12);
-            this.ctx.fillRect(-8, -139 + bounce, 16, 4);
+            this.ctx.shadowColor = '#ef4444'; this.ctx.shadowBlur = 5;
+            this.ctx.fillRect(-5, -145 + bounce, 10, 10);
+            this.ctx.fillStyle = '#fff';
+            this.ctx.fillRect(-3, -143 + bounce, 6, 6); // Cutout center
+            this.ctx.fillStyle = '#ef4444';
+            this.ctx.fillRect(-1.5, -143 + bounce, 3, 6);
+            this.ctx.fillRect(-3, -141.5 + bounce, 6, 3);
+            this.ctx.shadowBlur = 0;
 
-            // EYES - feminine with lashes
+            // EYES - Detailed anime/disney style
+            // Whites
             this.ctx.fillStyle = '#fff';
-            this.ctx.beginPath(); this.ctx.ellipse(-8, -108 + bounce, 7, 8, 0, 0, Math.PI * 2); this.ctx.fill();
-            this.ctx.beginPath(); this.ctx.ellipse(8, -108 + bounce, 7, 8, 0, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.beginPath(); this.ctx.ellipse(-9, -108 + bounce, 8, 9, 0, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.beginPath(); this.ctx.ellipse(9, -108 + bounce, 8, 9, 0, 0, Math.PI * 2); this.ctx.fill();
+            // Irises
+            const eyeGrad = this.ctx.createRadialGradient(-9, -108 + bounce, 1, -9, -108 + bounce, 6);
+            eyeGrad.addColorStop(0, '#60a5fa'); eyeGrad.addColorStop(1, '#2563eb');
+            this.ctx.fillStyle = eyeGrad;
+            this.ctx.beginPath(); this.ctx.ellipse(-9, -108 + bounce, 5, 6, 0, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.save(); this.ctx.translate(18, 0); this.ctx.beginPath(); this.ctx.ellipse(-9, -108 + bounce, 5, 6, 0, 0, Math.PI * 2); this.ctx.fill(); this.ctx.restore();
             // Pupils
-            this.ctx.fillStyle = '#3b82f6';
-            this.ctx.beginPath(); this.ctx.arc(-7, -107 + bounce, 4, 0, Math.PI * 2); this.ctx.fill();
-            this.ctx.beginPath(); this.ctx.arc(9, -107 + bounce, 4, 0, Math.PI * 2); this.ctx.fill();
-            // Eye highlights
+            this.ctx.fillStyle = '#000';
+            this.ctx.beginPath(); this.ctx.arc(-9, -108 + bounce, 2.5, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.beginPath(); this.ctx.arc(9, -108 + bounce, 2.5, 0, Math.PI * 2); this.ctx.fill();
+            // Highlights
             this.ctx.fillStyle = '#fff';
-            this.ctx.beginPath(); this.ctx.arc(-5, -109 + bounce, 1.5, 0, Math.PI * 2); this.ctx.fill();
-            this.ctx.beginPath(); this.ctx.arc(11, -109 + bounce, 1.5, 0, Math.PI * 2); this.ctx.fill();
-            // Eyelashes
-            this.ctx.strokeStyle = '#1e293b'; this.ctx.lineWidth = 1.5;
-            this.ctx.beginPath(); this.ctx.moveTo(-14, -112 + bounce); this.ctx.lineTo(-16, -116 + bounce); this.ctx.stroke();
-            this.ctx.beginPath(); this.ctx.moveTo(-11, -114 + bounce); this.ctx.lineTo(-12, -118 + bounce); this.ctx.stroke();
-            this.ctx.beginPath(); this.ctx.moveTo(14, -112 + bounce); this.ctx.lineTo(16, -116 + bounce); this.ctx.stroke();
-            this.ctx.beginPath(); this.ctx.moveTo(11, -114 + bounce); this.ctx.lineTo(12, -118 + bounce); this.ctx.stroke();
+            this.ctx.beginPath(); this.ctx.arc(-7, -110 + bounce, 2, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.beginPath(); this.ctx.arc(11, -110 + bounce, 2, 0, Math.PI * 2); this.ctx.fill();
+            // Lashes
+            this.ctx.strokeStyle = '#000'; this.ctx.lineWidth = 1.5;
+            this.ctx.beginPath(); this.ctx.moveTo(-16, -110 + bounce); this.ctx.quadraticCurveTo(-18, -115 + bounce, -20, -112 + bounce); this.ctx.stroke();
+            this.ctx.beginPath(); this.ctx.moveTo(16, -110 + bounce); this.ctx.quadraticCurveTo(18, -115 + bounce, 20, -112 + bounce); this.ctx.stroke();
 
             // Blush
-            this.ctx.fillStyle = 'rgba(244, 114, 182, 0.4)';
-            this.ctx.beginPath(); this.ctx.ellipse(-14, -100 + bounce, 5, 3, 0, 0, Math.PI * 2); this.ctx.fill();
-            this.ctx.beginPath(); this.ctx.ellipse(14, -100 + bounce, 5, 3, 0, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.fillStyle = 'rgba(244, 114, 182, 0.3)';
+            this.ctx.beginPath(); this.ctx.ellipse(-14, -100 + bounce, 6, 4, 0, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.beginPath(); this.ctx.ellipse(14, -100 + bounce, 6, 4, 0, 0, Math.PI * 2); this.ctx.fill();
 
             // Smile
-            this.ctx.strokeStyle = '#be185d'; this.ctx.lineWidth = 2;
-            this.ctx.beginPath(); this.ctx.arc(0, -98 + bounce, 8, 0.2, Math.PI - 0.2); this.ctx.stroke();
-
-            // Stethoscope
-            this.ctx.strokeStyle = '#374151'; this.ctx.lineWidth = 3;
-            this.ctx.beginPath();
-            this.ctx.moveTo(-6, -85 + bounce);
-            this.ctx.quadraticCurveTo(-18, -55 + bounce, -5, -45 + bounce);
-            this.ctx.stroke();
-            this.ctx.fillStyle = '#6b7280';
-            this.ctx.beginPath(); this.ctx.arc(-5, -42 + bounce, 7, 0, Math.PI * 2); this.ctx.fill();
-
+            this.ctx.strokeStyle = '#9f1239'; this.ctx.lineWidth = 1.5;
+            this.ctx.beginPath(); this.ctx.arc(0, -96 + bounce, 6, 0.3, Math.PI - 0.3); this.ctx.stroke();
             // Shield effect
             if (this.player.shield > 0) {
                 this.ctx.strokeStyle = '#06b6d4'; this.ctx.lineWidth = 4;
@@ -1299,18 +1352,19 @@ class MSKReviewRunner {
                 this.ctx.beginPath(); this.ctx.arc(0, -60 + bounce, 75, 0, Math.PI * 2); this.ctx.stroke();
                 this.ctx.globalAlpha = 1;
             }
-
-            // Dash effect
-            if (this.player.isDashing) {
-                this.ctx.strokeStyle = '#f472b6'; this.ctx.lineWidth = 3;
-                for (let i = 1; i <= 3; i++) {
-                    this.ctx.globalAlpha = 0.3 / i;
-                    this.ctx.beginPath(); this.ctx.arc(0 - i * 15, -60 + bounce, 50, 0, Math.PI * 2); this.ctx.stroke();
-                }
-                this.ctx.globalAlpha = 1;
-            }
         }
-        this.ctx.restore(); this.ctx.globalAlpha = 1;
+        this.ctx.restore();
+
+        if (this.player.isDashing) {
+            this.ctx.save(); this.ctx.translate(x, y);
+            this.ctx.strokeStyle = '#f472b6'; this.ctx.lineWidth = 3;
+            for (let i = 1; i <= 3; i++) {
+                this.ctx.globalAlpha = 0.3 / i;
+                this.ctx.beginPath(); this.ctx.arc(0 - i * 15, -60, 50, 0, Math.PI * 2); this.ctx.stroke();
+            }
+            this.ctx.restore();
+            this.ctx.globalAlpha = 1;
+        }
     }
 
     drawParticles() {
