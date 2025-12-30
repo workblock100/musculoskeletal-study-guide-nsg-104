@@ -29,13 +29,13 @@ class AnatomyRush {
         this.particles = [];
         this.buildings = [];
 
-        // Questions much less frequent - first at 2500, then every 2000+
-        this.questionDistance = 2500;
+        // Questions MUCH less frequent - first at 5000, then every 3000+
+        this.questionDistance = 5000;
         this.nextQuestionAt = this.questionDistance;
-        this.questionIncrement = 2000;
+        this.questionIncrement = 3000;
         this.currentQuestion = null;
         this.questionTimer = 0;
-        this.questionTimeLimit = 12;
+        this.questionTimeLimit = 15;
         this.selectedAnswer = -1;
         this.questionResult = null;
 
