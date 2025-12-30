@@ -7,6 +7,7 @@ class AnatomyRush {
         this.resize();
 
         this.state = 'menu';
+        this.shopScroll = 0; // For outfit shop navigation
         this.score = 0;
         this.coins = 0;
         this.lives = 3;
@@ -52,8 +53,8 @@ class AnatomyRush {
         this.achievements = JSON.parse(localStorage.getItem('anatomyAchievements')) || {};
         this.newAchievement = null;
 
-        this.speed = 1.8;
-        this.maxSpeed = 4.5;
+        this.speed = 2.8;
+        this.maxSpeed = 6.5;
 
         this.obstacles = [];
         this.coins_arr = [];
@@ -85,7 +86,7 @@ class AnatomyRush {
             });
         }
 
-        this.questionDistance = 7000;
+        this.questionDistance = 12000;
         this.nextQuestionAt = this.questionDistance;
         this.questionIncrement = 5000;
         this.currentQuestion = null;
@@ -172,10 +173,39 @@ class AnatomyRush {
 
     bindEvents() {
         const handleKey = (e) => {
-            const keys = ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Enter'];
+            const keys = ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Enter', 'KeyO', 'KeyB', 'Escape'];
             if (keys.includes(e.code) && this.running) { e.preventDefault(); e.stopPropagation(); }
 
-            if (this.state === 'menu' && (e.code === 'Space' || e.code === 'Enter')) { this.startGame(); return; }
+            // Menu state - O opens shop, Space starts game
+            if (this.state === 'menu') {
+                if (e.code === 'KeyO') { this.state = 'shop'; this.shopScroll = 0; return; }
+                if (e.code === 'Space' || e.code === 'Enter') { this.startGame(); return; }
+            }
+
+            // Shop state - navigation and selection
+            if (this.state === 'shop') {
+                const outfitKeys = Object.keys(this.outfits);
+                if (e.code === 'Escape' || e.code === 'KeyO') { this.state = 'menu'; return; }
+                if (e.code === 'ArrowUp' || e.code === 'KeyW') { this.shopScroll = Math.max(0, this.shopScroll - 1); return; }
+                if (e.code === 'ArrowDown' || e.code === 'KeyS') { this.shopScroll = Math.min(outfitKeys.length - 1, this.shopScroll + 1); return; }
+                if (e.code === 'Enter') {
+                    const selectedKey = outfitKeys[this.shopScroll];
+                    if (this.outfits[selectedKey].owned) {
+                        this.equipOutfit(selectedKey);
+                        this.playSound('coin');
+                    }
+                    return;
+                }
+                if (e.code === 'KeyB') {
+                    const selectedKey = outfitKeys[this.shopScroll];
+                    if (this.buyOutfit(selectedKey)) {
+                        this.addFloatingText(this.centerX, this.height / 2, '🎉 Outfit Purchased!', '#22c55e');
+                    }
+                    return;
+                }
+                return;
+            }
+
             if (this.state === 'gameover' && (e.code === 'Space' || e.code === 'Enter')) { this.state = 'menu'; return; }
             if (this.state === 'question') {
                 const n = parseInt(e.code.replace('Digit', ''));
@@ -378,7 +408,7 @@ class AnatomyRush {
     startGame() {
         this.state = 'playing';
         this.score = 0; this.coins = 0; this.lives = 3; this.streak = 0; this.multiplier = 1;
-        this.distance = 0; this.speed = 1.8; this.currentLane = 1; this.targetLane = 1;
+        this.distance = 0; this.speed = 2.8; this.currentLane = 1; this.targetLane = 1;
         this.combo = 0; this.comboTimer = 0; this.level = 1;
         this.obstacles = []; this.coins_arr = []; this.powerups = []; this.particles = []; this.floatingTexts = [];
         this.player.isJumping = false; this.player.isSliding = false; this.player.jumpHeight = 0;
@@ -418,11 +448,49 @@ class AnatomyRush {
             const weathers = ['clear', 'clear', 'clear', 'rain', 'snow'];
             this.weather = weathers[Math.floor(Math.random() * weathers.length)];
             this.weatherTimer = 1800 + Math.random() * 1800;
+            // Reset puddles when weather changes
+            if (this.weather !== 'rain') {
+                this.puddles = [];
+            }
         }
         if (this.weather === 'rain') {
             if (this.raindrops.length < 100) this.raindrops.push({ x: Math.random() * this.width, y: -10, speed: 8 + Math.random() * 6 });
             this.raindrops = this.raindrops.filter(r => { r.y += r.speed; r.x -= 2; return r.y < this.height; });
-        } else { this.raindrops = []; }
+
+            // Lightning system
+            if (this.lightning.timer > 0) {
+                this.lightning.timer--;
+                if (this.lightning.timer <= 0) this.lightning.active = false;
+            }
+            if (this.lightning.flash > 0) this.lightning.flash--;
+            // Random lightning strike
+            if (Math.random() < 0.0008 && !this.lightning.active) {
+                this.lightning.active = true;
+                this.lightning.timer = 8 + Math.floor(Math.random() * 12);
+                this.lightning.flash = 12;
+            }
+
+            // Spawn puddles during rain
+            if (this.puddles.length < 8 && Math.random() < 0.005) {
+                this.puddles.push({
+                    x: this.centerX + (Math.random() - 0.5) * 400,
+                    z: 1500 + Math.random() * 700,
+                    width: 40 + Math.random() * 60,
+                    shimmer: Math.random() * 6.28
+                });
+            }
+            // Update puddles
+            const speedMod = this.player.speedBoost > 0 ? 1.5 : 1;
+            this.puddles = this.puddles.filter(p => {
+                p.z -= this.speed * speedMod * 22;
+                p.shimmer += 0.08;
+                return p.z > -100;
+            });
+        } else {
+            this.raindrops = [];
+            this.lightning.active = false;
+            this.lightning.flash = 0;
+        }
         if (this.weather === 'snow') {
             if (this.snowflakes.length < 80) this.snowflakes.push({ x: Math.random() * this.width, y: -10, speed: 1 + Math.random() * 2, wobble: Math.random() * 6.28 });
             this.snowflakes = this.snowflakes.filter(s => { s.y += s.speed; s.x += Math.sin(s.wobble += 0.05) * 0.5; return s.y < this.height; });
@@ -445,7 +513,7 @@ class AnatomyRush {
 
         const speedMod = this.player.speedBoost > 0 ? 1.5 : 1;
         const feverMod = this.feverMode ? 1.3 : 1;
-        if (this.speed < this.maxSpeed) this.speed += 0.0003;
+        if (this.speed < this.maxSpeed) this.speed += 0.0006;
         this.distance += this.speed * speedMod * 12;
         this.score = Math.floor(this.distance / 10) * this.multiplier * (this.feverMode ? 2 : 1);
 
@@ -741,6 +809,7 @@ class AnatomyRush {
         this.drawConfetti();
         if (this.state === 'playing') { this.drawHUD(); this.drawAchievement(); }
         else if (this.state === 'menu') this.drawMenu();
+        else if (this.state === 'shop') this.drawShop();
         else if (this.state === 'question') this.drawQuestion();
         else if (this.state === 'gameover') this.drawGameOver();
         if (this.flash) { this.ctx.fillStyle = this.flash.color; this.ctx.globalAlpha = this.flash.timer / 30; this.ctx.fillRect(0, 0, this.width, this.height); this.ctx.globalAlpha = 1; }
@@ -762,6 +831,13 @@ class AnatomyRush {
 
     drawWeather() {
         if (this.weather === 'rain') {
+            // Lightning flash effect
+            if (this.lightning.flash > 0) {
+                this.ctx.fillStyle = `rgba(255, 255, 255, ${this.lightning.flash / 15})`;
+                this.ctx.fillRect(0, 0, this.width, this.height);
+            }
+
+            // Raindrops
             this.ctx.strokeStyle = 'rgba(100, 150, 255, 0.5)';
             this.ctx.lineWidth = 1.5;
             this.raindrops.forEach(r => {
@@ -769,6 +845,35 @@ class AnatomyRush {
                 this.ctx.moveTo(r.x, r.y);
                 this.ctx.lineTo(r.x - 4, r.y + 12);
                 this.ctx.stroke();
+            });
+
+            // Draw puddles on road
+            const horizonY = this.height * 0.4;
+            this.puddles.forEach(p => {
+                const z = p.z / 2200;
+                const perspective = 1 / (1 + z * 5);
+                const y = horizonY + (this.height - horizonY) * (1 - Math.pow(z, 0.55));
+                const w = p.width * perspective;
+                const h = 8 * perspective;
+                const x = this.centerX + (p.x - this.centerX) * perspective;
+
+                // Puddle base (dark reflection)
+                const puddleGrad = this.ctx.createRadialGradient(x, y, 0, x, y, w);
+                puddleGrad.addColorStop(0, 'rgba(100, 150, 200, 0.4)');
+                puddleGrad.addColorStop(0.5, 'rgba(50, 80, 130, 0.3)');
+                puddleGrad.addColorStop(1, 'rgba(30, 50, 80, 0.1)');
+                this.ctx.fillStyle = puddleGrad;
+                this.ctx.beginPath();
+                this.ctx.ellipse(x, y, w, h, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                // Shimmer highlight
+                const shimmerX = x + Math.sin(p.shimmer) * w * 0.3;
+                const shimmerAlpha = 0.3 + Math.sin(p.shimmer * 2) * 0.2;
+                this.ctx.fillStyle = `rgba(200, 220, 255, ${shimmerAlpha})`;
+                this.ctx.beginPath();
+                this.ctx.ellipse(shimmerX, y - h * 0.2, w * 0.2, h * 0.3, 0, 0, Math.PI * 2);
+                this.ctx.fill();
             });
         }
         if (this.weather === 'snow') {
@@ -1428,17 +1533,125 @@ class AnatomyRush {
         this.ctx.fillStyle = '#f472b6'; this.ctx.font = '18px Arial'; this.ctx.fillText('✨ LEGENDARY EDITION ✨', this.centerX, this.height * 0.19);
         this.ctx.fillStyle = '#94a3b8'; this.ctx.font = '20px Arial'; this.ctx.fillText('Master nursing concepts through gameplay', this.centerX, this.height * 0.26);
         this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 30px Arial';
-        this.ctx.fillText(`🏆 Best: ${this.highScore.toLocaleString()}`, this.centerX, this.height * 0.38);
-        this.ctx.fillText(`💰 Coins: ${this.totalCoins.toLocaleString()}`, this.centerX, this.height * 0.46);
+        this.ctx.fillText(`🏆 Best: ${this.highScore.toLocaleString()}`, this.centerX, this.height * 0.36);
+        this.ctx.fillText(`💰 Coins: ${this.totalCoins.toLocaleString()}`, this.centerX, this.height * 0.44);
+
+        // Show current outfit
+        const currentOutfitName = this.outfits[this.currentOutfit].name;
+        this.ctx.fillStyle = this.getOutfitColor();
+        this.ctx.font = 'bold 20px Arial';
+        this.ctx.fillText(`👕 Outfit: ${currentOutfitName}`, this.centerX, this.height * 0.52);
+
         const achCount = Object.keys(this.achievements).length;
-        if (achCount > 0) { this.ctx.fillStyle = '#a855f7'; this.ctx.font = '18px Arial'; this.ctx.fillText(`🏅 ${achCount} Achievement${achCount > 1 ? 's' : ''} Unlocked`, this.centerX, this.height * 0.53); }
+        if (achCount > 0) { this.ctx.fillStyle = '#a855f7'; this.ctx.font = '18px Arial'; this.ctx.fillText(`🏅 ${achCount} Achievement${achCount > 1 ? 's' : ''} Unlocked`, this.centerX, this.height * 0.58); }
         this.ctx.fillStyle = '#fff'; this.ctx.font = '16px Arial';
-        this.ctx.fillText('← → Lanes | SPACE Double Jump | ↓ Slide | SHIFT Dash', this.centerX, this.height * 0.63);
+        this.ctx.fillText('← → Lanes | SPACE Double Jump | ↓ Slide | SHIFT Dash', this.centerX, this.height * 0.66);
         this.ctx.fillStyle = '#a855f7'; this.ctx.font = '14px Arial';
-        this.ctx.fillText('🛡️ Shield | 🧲 Magnet | ⚡ Speed | ❤️ Life | 💰 Burst | 🌧️ Weather', this.centerX, this.height * 0.7);
+        this.ctx.fillText('🛡️ Shield | 🧲 Magnet | ⚡ Speed | ❤️ Life | 💰 Burst | 🌧️ Weather', this.centerX, this.height * 0.72);
+
         const pulse = 0.6 + Math.sin(this.globalTime * 0.005) * 0.4;
         this.ctx.globalAlpha = pulse; this.ctx.fillStyle = '#06b6d4'; this.ctx.font = 'bold 32px Arial';
-        this.ctx.fillText('[ TAP OR PRESS SPACE ]', this.centerX, this.height * 0.86); this.ctx.globalAlpha = 1;
+        this.ctx.fillText('[ TAP OR PRESS SPACE ]', this.centerX, this.height * 0.84); this.ctx.globalAlpha = 1;
+
+        // Shop hint
+        this.ctx.fillStyle = '#ec4899'; this.ctx.font = 'bold 20px Arial';
+        this.ctx.fillText('[O] OUTFIT SHOP 👗', this.centerX, this.height * 0.93);
+    }
+
+    drawShop() {
+        this.ctx.fillStyle = 'rgba(0,0,0,0.95)'; this.ctx.fillRect(0, 0, this.width, this.height);
+
+        // Title
+        this.ctx.shadowColor = '#ec4899'; this.ctx.shadowBlur = 60;
+        this.ctx.fillStyle = '#ec4899'; this.ctx.font = 'bold 48px "Space Grotesk", Arial'; this.ctx.textAlign = 'center';
+        this.ctx.fillText('👗 OUTFIT SHOP', this.centerX, this.height * 0.1); this.ctx.shadowBlur = 0;
+
+        // Coins display
+        this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 24px Arial';
+        this.ctx.fillText(`💰 ${this.totalCoins.toLocaleString()} coins`, this.centerX, this.height * 0.17);
+
+        const outfitKeys = Object.keys(this.outfits);
+        const itemHeight = 70;
+        const startY = this.height * 0.23;
+
+        outfitKeys.forEach((key, i) => {
+            const outfit = this.outfits[key];
+            const y = startY + i * itemHeight;
+            const isSelected = i === this.shopScroll;
+            const isEquipped = this.currentOutfit === key;
+
+            // Background
+            const bgAlpha = isSelected ? 0.4 : 0.15;
+            this.ctx.fillStyle = `rgba(255,255,255,${bgAlpha})`;
+            this.ctx.beginPath();
+            this.ctx.roundRect(60, y, this.width - 120, itemHeight - 10, 12);
+            this.ctx.fill();
+
+            // Selection border
+            if (isSelected) {
+                this.ctx.strokeStyle = '#ec4899';
+                this.ctx.lineWidth = 3;
+                this.ctx.stroke();
+            }
+
+            // Color swatch
+            const swatchColor = outfit.color === 'rainbow' ?
+                `hsl(${(this.globalTime * 0.1) % 360}, 80%, 55%)` : outfit.color;
+            this.ctx.fillStyle = swatchColor;
+            this.ctx.shadowColor = swatchColor;
+            this.ctx.shadowBlur = isSelected ? 15 : 8;
+            this.ctx.beginPath();
+            this.ctx.arc(110, y + 28, 22, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.shadowBlur = 0;
+
+            // Outfit name
+            this.ctx.fillStyle = '#fff'; this.ctx.font = 'bold 22px Arial'; this.ctx.textAlign = 'left';
+            this.ctx.fillText(outfit.name, 150, y + 25);
+
+            // Status / Price
+            this.ctx.textAlign = 'right';
+            if (outfit.owned) {
+                if (isEquipped) {
+                    this.ctx.fillStyle = '#22c55e'; this.ctx.font = 'bold 20px Arial';
+                    this.ctx.fillText('✓ EQUIPPED', this.width - 80, y + 25);
+                } else {
+                    this.ctx.fillStyle = '#a855f7'; this.ctx.font = '18px Arial';
+                    this.ctx.fillText('OWNED', this.width - 80, y + 25);
+                    if (isSelected) {
+                        this.ctx.fillStyle = '#06b6d4'; this.ctx.font = '14px Arial';
+                        this.ctx.fillText('[ENTER] Equip', this.width - 80, y + 45);
+                    }
+                }
+            } else {
+                this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 20px Arial';
+                this.ctx.fillText(`💰 ${outfit.price}`, this.width - 80, y + 25);
+                if (isSelected) {
+                    const canAfford = this.totalCoins >= outfit.price;
+                    this.ctx.fillStyle = canAfford ? '#22c55e' : '#ef4444';
+                    this.ctx.font = '14px Arial';
+                    this.ctx.fillText(canAfford ? '[B] Buy' : 'Not enough coins', this.width - 80, y + 45);
+                }
+            }
+        });
+
+        // Preview character
+        this.ctx.save();
+        this.ctx.translate(this.centerX, this.height * 0.92);
+        const previewColor = this.getOutfitColor();
+
+        // Simple nurse preview
+        this.ctx.fillStyle = '#ffd5b4'; // Face
+        this.ctx.beginPath(); this.ctx.arc(0, -70, 18, 0, Math.PI * 2); this.ctx.fill();
+        this.ctx.fillStyle = previewColor; // Top (scrubs)
+        this.ctx.fillRect(-20, -50, 40, 35);
+        this.ctx.fillStyle = this.getDarkerColor(previewColor); // Pants
+        this.ctx.fillRect(-18, -15, 36, 30);
+        this.ctx.restore();
+
+        // Instructions
+        this.ctx.fillStyle = '#888'; this.ctx.font = '16px Arial'; this.ctx.textAlign = 'center';
+        this.ctx.fillText('↑↓ Navigate • [B] Buy • [ENTER] Equip • [ESC] Back', this.centerX, this.height * 0.99);
     }
 
     drawQuestion() {
