@@ -1,4 +1,5 @@
-// ANATOMY RUSH - Ultimate Edition 2025
+// ANATOMY RUSH - Legendary Edition 2025
+// With dash, weather, achievements, and more!
 class AnatomyRush {
     constructor(canvas) {
         this.canvas = canvas;
@@ -35,8 +36,21 @@ class AnatomyRush {
             shield: 0,
             magnet: 0,
             speedBoost: 0,
-            trail: []
+            trail: [],
+            dashCooldown: 0,
+            isDashing: false,
+            dashTimer: 0
         };
+
+        // Weather system
+        this.weather = 'clear';
+        this.weatherTimer = 0;
+        this.raindrops = [];
+        this.snowflakes = [];
+
+        // Achievements
+        this.achievements = JSON.parse(localStorage.getItem('anatomyAchievements')) || {};
+        this.newAchievement = null;
 
         this.speed = 1;
         this.maxSpeed = 3.5;
@@ -107,6 +121,7 @@ class AnatomyRush {
                 if (e.code === 'ArrowRight' || e.code === 'KeyD') this.switchLane(1);
                 if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') this.jump();
                 if (e.code === 'ArrowDown' || e.code === 'KeyS') this.slide();
+                if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyX') this.dash();
             }
         };
         if (this._kh) document.removeEventListener('keydown', this._kh);
@@ -148,6 +163,18 @@ class AnatomyRush {
         if (!this.player.isJumping && !this.player.isSliding) {
             this.player.isSliding = true;
             this.player.slideTimer = 50;
+            this.addParticles(this.getLaneX(this.currentLane), this.height - 40, 12, '#f59e0b');
+        }
+    }
+
+    dash() {
+        if (this.player.dashCooldown <= 0 && !this.player.isDashing) {
+            this.player.isDashing = true;
+            this.player.dashTimer = 15;
+            this.player.dashCooldown = 120;
+            this.player.invincible = Math.max(this.player.invincible, 20);
+            this.addFloatingText(this.getLaneX(this.currentLane), this.height - 200, 'DASH!', '#f472b6');
+            for (let i = 0; i < 30; i++) this.addParticles(this.getLaneX(this.currentLane), this.height - 80, 1, '#f472b6');
             this.addParticles(this.getLaneX(this.currentLane), this.height - 40, 10, '#f59e0b');
         }
     }
@@ -185,6 +212,25 @@ class AnatomyRush {
         if (this.player.magnet > 0) this.player.magnet--;
         if (this.player.speedBoost > 0) this.player.speedBoost--;
         if (this.comboTimer > 0) { this.comboTimer--; if (this.comboTimer <= 0) this.combo = 0; }
+        if (this.player.dashCooldown > 0) this.player.dashCooldown--;
+        if (this.player.dashTimer > 0) { this.player.dashTimer--; if (this.player.dashTimer <= 0) this.player.isDashing = false; }
+        if (this.newAchievement) { this.newAchievement.timer--; if (this.newAchievement.timer <= 0) this.newAchievement = null; }
+
+        // Weather system
+        this.weatherTimer--;
+        if (this.weatherTimer <= 0) {
+            const weathers = ['clear', 'clear', 'clear', 'rain', 'snow'];
+            this.weather = weathers[Math.floor(Math.random() * weathers.length)];
+            this.weatherTimer = 1800 + Math.random() * 1800;
+        }
+        if (this.weather === 'rain') {
+            if (this.raindrops.length < 100) this.raindrops.push({ x: Math.random() * this.width, y: -10, speed: 8 + Math.random() * 6 });
+            this.raindrops = this.raindrops.filter(r => { r.y += r.speed; r.x -= 2; return r.y < this.height; });
+        } else { this.raindrops = []; }
+        if (this.weather === 'snow') {
+            if (this.snowflakes.length < 80) this.snowflakes.push({ x: Math.random() * this.width, y: -10, speed: 1 + Math.random() * 2, wobble: Math.random() * 6.28 });
+            this.snowflakes = this.snowflakes.filter(s => { s.y += s.speed; s.x += Math.sin(s.wobble += 0.05) * 0.5; return s.y < this.height; });
+        } else { this.snowflakes = []; }
 
         this.particles = this.particles.filter(p => { p.x += p.vx; p.y += p.vy; p.vy += 0.3; p.life--; p.size *= 0.94; return p.life > 0; });
         this.floatingTexts = this.floatingTexts.filter(t => { t.y += t.vy; t.life--; return t.life > 0; });
@@ -205,6 +251,10 @@ class AnatomyRush {
             this.level = newLevel;
             this.addFloatingText(this.centerX, this.height / 2, `LEVEL ${this.level}!`, '#fbbf24');
             this.flash = { color: '#fbbf24', timer: 20 };
+            if (this.level === 2) this.unlockAchievement('level2', 'Warming Up - Reach Level 2');
+            if (this.level === 3) this.unlockAchievement('level3', 'Getting Serious - Reach Level 3');
+            if (this.level === 5) this.unlockAchievement('level5', 'Expert Runner - Reach Level 5');
+            if (this.level === 10) this.unlockAchievement('level10', 'Legendary - Reach Level 10');
         }
 
         this.currentLane += (this.targetLane - this.currentLane) * 0.2;
@@ -397,6 +447,7 @@ class AnatomyRush {
         this.ctx.save();
         if (this.shake > 0) this.ctx.translate((Math.random() - 0.5) * this.shake * 2.5, (Math.random() - 0.5) * this.shake * 2.5);
         this.drawBackground();
+        this.drawWeather();
         this.drawRoad();
         this.drawObstacles();
         this.drawCoins();
@@ -405,12 +456,62 @@ class AnatomyRush {
         this.drawPlayer();
         this.drawParticles();
         this.drawFloatingTexts();
-        if (this.state === 'playing') this.drawHUD();
+        if (this.state === 'playing') { this.drawHUD(); this.drawAchievement(); }
         else if (this.state === 'menu') this.drawMenu();
         else if (this.state === 'question') this.drawQuestion();
         else if (this.state === 'gameover') this.drawGameOver();
         if (this.flash) { this.ctx.fillStyle = this.flash.color; this.ctx.globalAlpha = this.flash.timer / 30; this.ctx.fillRect(0, 0, this.width, this.height); this.ctx.globalAlpha = 1; }
         this.ctx.restore();
+    }
+
+    drawWeather() {
+        if (this.weather === 'rain') {
+            this.ctx.strokeStyle = 'rgba(100, 150, 255, 0.5)';
+            this.ctx.lineWidth = 1.5;
+            this.raindrops.forEach(r => {
+                this.ctx.beginPath();
+                this.ctx.moveTo(r.x, r.y);
+                this.ctx.lineTo(r.x - 4, r.y + 12);
+                this.ctx.stroke();
+            });
+        }
+        if (this.weather === 'snow') {
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            this.snowflakes.forEach(s => {
+                this.ctx.beginPath();
+                this.ctx.arc(s.x, s.y, 2 + Math.sin(s.wobble) * 1, 0, Math.PI * 2);
+                this.ctx.fill();
+            });
+        }
+    }
+
+    drawAchievement() {
+        if (this.newAchievement) {
+            const a = this.newAchievement;
+            this.ctx.globalAlpha = Math.min(1, a.timer / 30);
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+            this.ctx.beginPath();
+            this.ctx.roundRect(this.centerX - 180, 80, 360, 70, 15);
+            this.ctx.fill();
+            this.ctx.strokeStyle = '#fbbf24';
+            this.ctx.lineWidth = 3;
+            this.ctx.stroke();
+            this.ctx.fillStyle = '#fbbf24';
+            this.ctx.font = 'bold 22px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('🏆 ACHIEVEMENT!', this.centerX, 108);
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = '18px Arial';
+            this.ctx.fillText(a.name, this.centerX, 135);
+            this.ctx.globalAlpha = 1;
+        }
+    }
+
+    unlockAchievement(id, name) {
+        if (this.achievements[id]) return;
+        this.achievements[id] = true;
+        localStorage.setItem('anatomyAchievements', JSON.stringify(this.achievements));
+        this.newAchievement = { id, name, timer: 180 };
     }
 
     drawBackground() {
@@ -635,18 +736,20 @@ class AnatomyRush {
         this.ctx.fillStyle = 'rgba(0,0,0,0.9)'; this.ctx.fillRect(0, 0, this.width, this.height);
         this.ctx.shadowColor = '#d946ef'; this.ctx.shadowBlur = 80; this.ctx.fillStyle = '#d946ef';
         this.ctx.font = `bold ${Math.min(68, this.width * 0.055)}px "Space Grotesk", Arial`; this.ctx.textAlign = 'center';
-        this.ctx.fillText('🏃 ANATOMY RUSH', this.centerX, this.height * 0.14); this.ctx.shadowBlur = 0;
-        this.ctx.fillStyle = '#a855f7'; this.ctx.font = '18px Arial'; this.ctx.fillText('ULTIMATE EDITION', this.centerX, this.height * 0.2);
-        this.ctx.fillStyle = '#94a3b8'; this.ctx.font = '22px Arial'; this.ctx.fillText('Master nursing concepts through gameplay', this.centerX, this.height * 0.27);
-        this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 32px Arial';
-        this.ctx.fillText(`🏆 Best: ${this.highScore.toLocaleString()}`, this.centerX, this.height * 0.4);
-        this.ctx.fillText(`💰 Coins: ${this.totalCoins.toLocaleString()}`, this.centerX, this.height * 0.49);
-        this.ctx.fillStyle = '#fff'; this.ctx.font = '18px Arial';
-        this.ctx.fillText('← → Lanes | SPACE Jump (Double!) | ↓ Slide', this.centerX, this.height * 0.62);
-        this.ctx.fillStyle = '#a855f7'; this.ctx.font = '15px Arial';
-        this.ctx.fillText('🛡️ Shield | 🧲 Magnet | ⚡ Speed | ❤️ Life | 💰 Coin Burst', this.centerX, this.height * 0.69);
+        this.ctx.fillText('🏃 ANATOMY RUSH', this.centerX, this.height * 0.13); this.ctx.shadowBlur = 0;
+        this.ctx.fillStyle = '#f472b6'; this.ctx.font = '18px Arial'; this.ctx.fillText('✨ LEGENDARY EDITION ✨', this.centerX, this.height * 0.19);
+        this.ctx.fillStyle = '#94a3b8'; this.ctx.font = '20px Arial'; this.ctx.fillText('Master nursing concepts through gameplay', this.centerX, this.height * 0.26);
+        this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 30px Arial';
+        this.ctx.fillText(`🏆 Best: ${this.highScore.toLocaleString()}`, this.centerX, this.height * 0.38);
+        this.ctx.fillText(`💰 Coins: ${this.totalCoins.toLocaleString()}`, this.centerX, this.height * 0.46);
+        const achCount = Object.keys(this.achievements).length;
+        if (achCount > 0) { this.ctx.fillStyle = '#a855f7'; this.ctx.font = '18px Arial'; this.ctx.fillText(`🏅 ${achCount} Achievement${achCount > 1 ? 's' : ''} Unlocked`, this.centerX, this.height * 0.53); }
+        this.ctx.fillStyle = '#fff'; this.ctx.font = '16px Arial';
+        this.ctx.fillText('← → Lanes | SPACE Double Jump | ↓ Slide | SHIFT Dash', this.centerX, this.height * 0.63);
+        this.ctx.fillStyle = '#a855f7'; this.ctx.font = '14px Arial';
+        this.ctx.fillText('🛡️ Shield | 🧲 Magnet | ⚡ Speed | ❤️ Life | 💰 Burst | 🌧️ Weather', this.centerX, this.height * 0.7);
         const pulse = 0.6 + Math.sin(this.globalTime * 0.005) * 0.4;
-        this.ctx.globalAlpha = pulse; this.ctx.fillStyle = '#06b6d4'; this.ctx.font = 'bold 34px Arial';
+        this.ctx.globalAlpha = pulse; this.ctx.fillStyle = '#06b6d4'; this.ctx.font = 'bold 32px Arial';
         this.ctx.fillText('[ TAP OR PRESS SPACE ]', this.centerX, this.height * 0.86); this.ctx.globalAlpha = 1;
     }
 
