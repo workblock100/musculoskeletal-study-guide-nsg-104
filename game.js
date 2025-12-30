@@ -263,6 +263,18 @@ class AnatomyRush {
         this.player.invincible = 0; this.player.shield = 0; this.player.magnet = 0; this.player.speedBoost = 0;
         this.player.trail = []; this.player.canDoubleJump = true;
         this.lastObstacle = 0; this.nextQuestionAt = this.questionDistance;
+
+        // Reset new features
+        this.questionHistory = [];
+        this.questionsAnswered = 0;
+        this.questionsCorrectRun = 0;
+        this.timeOfDay = 'dawn';
+        this.confetti = [];
+        this.feverMode = false;
+        this.feverTimer = 0;
+        this.coinRush = false;
+        this.coinRushTimer = 0;
+        this.perfectRun = true;
     }
 
     update(dt) {
