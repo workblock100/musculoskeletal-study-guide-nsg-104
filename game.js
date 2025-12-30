@@ -1,281 +1,386 @@
 // ============================================
-// ANATOMY RUNNER - Endless Runner Learning Game
-// An award-winning gamified learning experience
+// ANATOMY RUSH - 3D Subway Surfers Style Game
+// Premium endless runner with lane mechanics
 // ============================================
 
-class AnatomyRunner {
+class AnatomyRush {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
-        this.width = canvas.width;
-        this.height = canvas.height;
+        this.resize();
 
         // Game state
-        this.gameState = 'menu'; // menu, playing, paused, question, gameover
+        this.state = 'menu'; // menu, playing, question, gameover
         this.score = 0;
         this.coins = 0;
         this.lives = 3;
         this.streak = 0;
         this.multiplier = 1;
-        this.distance = 0;
-        this.highScore = parseInt(localStorage.getItem('anatomyRunnerHighScore')) || 0;
-        this.totalCoins = parseInt(localStorage.getItem('anatomyRunnerCoins')) || 0;
+        this.highScore = parseInt(localStorage.getItem('anatomyRushHighScore')) || 0;
+        this.totalCoins = parseInt(localStorage.getItem('anatomyRushCoins')) || 0;
+        this.gamesPlayed = parseInt(localStorage.getItem('anatomyRushGames')) || 0;
 
-        // Speed and difficulty
-        this.baseSpeed = 5;
-        this.speed = this.baseSpeed;
-        this.maxSpeed = 12;
-        this.speedIncrement = 0.001;
+        // 3D Perspective settings
+        this.horizon = 0.35; // Where the horizon sits (0-1)
+        this.fov = 0.84; // Field of view
+        this.cameraHeight = 1000;
+        this.cameraDepth = 1 / Math.tan((this.fov / 2) * Math.PI / 180);
+
+        // Lanes (Subway Surfers style - 3 lanes)
+        this.lanes = [-1, 0, 1]; // Left, Center, Right
+        this.laneWidth = 120;
+        this.currentLane = 0; // Start in center
+        this.targetLane = 0;
+        this.laneTransition = 0;
+        this.laneSpeed = 0.15;
 
         // Player
         this.player = {
-            x: 80,
-            y: this.height - 150,
+            x: 0,
+            y: 0,
+            z: 0,
             width: 60,
-            height: 80,
-            velocityY: 0,
+            height: 100,
             isJumping: false,
-            isSliding: false,
-            slideTimer: 0,
-            groundY: this.height - 150,
-            frame: 0,
-            frameTimer: 0
+            jumpHeight: 0,
+            maxJumpHeight: 180,
+            jumpVelocity: 0,
+            isRolling: false,
+            rollTimer: 0,
+            rollDuration: 25,
+            animFrame: 0,
+            animTimer: 0
         };
 
-        // Physics
-        this.gravity = 0.6;
-        this.jumpForce = -14;
-        this.slideDuration = 30;
+        // Speed and difficulty
+        this.speed = 1;
+        this.baseSpeed = 1;
+        this.maxSpeed = 2.5;
+        this.acceleration = 0.0003;
+
+        // Road segments for 3D effect
+        this.segments = [];
+        this.segmentLength = 200;
+        this.visibleSegments = 100;
+        this.roadWidth = 400;
+        this.rumbleLength = 3;
+        this.position = 0;
 
         // Game objects
         this.obstacles = [];
         this.collectibles = [];
         this.particles = [];
-        this.backgrounds = [];
 
         // Timing
-        this.obstacleTimer = 0;
-        this.obstacleInterval = 120;
-        this.collectibleTimer = 0;
+        this.lastObstacle = 0;
+        this.obstacleGap = 80;
 
-        // Current question
+        // Question system
         this.currentQuestion = null;
         this.selectedAnswer = -1;
         this.questionResult = null;
-        this.questionTimer = 0;
 
         // Visual effects
-        this.screenShake = 0;
-        this.flashColor = null;
-        this.flashTimer = 0;
+        this.shake = 0;
+        this.flash = { active: false, color: '', timer: 0 };
 
         // Animation
-        this.animationId = null;
+        this.running = false;
         this.lastTime = 0;
 
-        // Input
-        this.keys = {};
-        this.touchStartY = 0;
-
-        // Colors - Premium dark theme
+        // Colors
         this.colors = {
-            bg: '#0a0a1a',
-            ground: '#1a1a2e',
-            groundLine: '#00d4ff',
+            sky: ['#0c0c20', '#1a1a3a', '#2d2d5a'],
+            road: '#1a1a2e',
+            roadLine: '#00d4ff',
+            rumble: '#2a2a4e',
+            lane: 'rgba(0, 212, 255, 0.3)',
             player: '#00d4ff',
-            playerGlow: 'rgba(0, 212, 255, 0.3)',
             obstacle: '#ff4757',
             coin: '#ffd700',
             heart: '#ff6b81',
-            text: '#ffffff',
-            accent: '#00d4ff',
-            success: '#2ed573',
-            danger: '#ff4757'
+            question: '#a855f7'
         };
 
-        this.initBackgrounds();
+        this.initRoad();
         this.bindEvents();
     }
 
-    initBackgrounds() {
-        // Parallax hospital hallway layers
-        this.backgrounds = [
-            { speed: 0.2, elements: this.generateBgLayer(0.2, 5) },
-            { speed: 0.5, elements: this.generateBgLayer(0.5, 8) },
-            { speed: 0.8, elements: this.generateBgLayer(0.8, 12) }
-        ];
+    resize() {
+        const container = this.canvas.parentElement;
+        this.canvas.width = Math.min(container.offsetWidth - 40, 900);
+        this.canvas.height = 550;
+        this.width = this.canvas.width;
+        this.height = this.canvas.height;
+        this.centerX = this.width / 2;
+        this.centerY = this.height / 2;
     }
 
-    generateBgLayer(speed, count) {
-        const elements = [];
-        for (let i = 0; i < count; i++) {
-            elements.push({
-                x: i * (this.width / count) + Math.random() * 50,
-                type: Math.random() > 0.5 ? 'window' : 'door',
-                height: 60 + Math.random() * 40
+    initRoad() {
+        this.segments = [];
+        for (let i = 0; i < this.visibleSegments; i++) {
+            this.segments.push({
+                index: i,
+                curve: 0,
+                y: 0
             });
         }
-        return elements;
     }
 
     bindEvents() {
-        // Keyboard
-        document.addEventListener('keydown', (e) => {
-            this.keys[e.code] = true;
-            if (this.gameState === 'playing') {
-                if (e.code === 'Space' || e.code === 'ArrowUp') {
-                    e.preventDefault();
-                    this.jump();
+        // Keyboard - BULLETPROOF event handling
+        const handleKeyDown = (e) => {
+            // Always prevent default for game keys when game panel is active
+            const gameKeys = ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'Digit1', 'Digit2', 'Digit3', 'Digit4'];
+
+            if (gameKeys.includes(e.code)) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            if (this.state === 'menu') {
+                if (e.code === 'Space' || e.code === 'Enter') {
+                    this.startGame();
                 }
-                if (e.code === 'ArrowDown') {
-                    e.preventDefault();
-                    this.slide();
+                return;
+            }
+
+            if (this.state === 'gameover') {
+                if (e.code === 'Space' || e.code === 'Enter') {
+                    this.resetToMenu();
                 }
+                return;
             }
-            if (this.gameState === 'menu' && e.code === 'Space') {
-                this.startGame();
-            }
-            if (this.gameState === 'gameover' && e.code === 'Space') {
-                this.resetGame();
-            }
-            if (this.gameState === 'question') {
+
+            if (this.state === 'question') {
                 if (e.code >= 'Digit1' && e.code <= 'Digit4') {
                     this.selectAnswer(parseInt(e.code.slice(-1)) - 1);
                 }
+                return;
             }
-        });
 
-        document.addEventListener('keyup', (e) => {
-            this.keys[e.code] = false;
-        });
+            if (this.state === 'playing') {
+                // Lane switching (Subway Surfers style)
+                if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+                    this.switchLane(-1);
+                }
+                if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+                    this.switchLane(1);
+                }
+                // Jump
+                if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+                    this.jump();
+                }
+                // Roll/Slide
+                if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+                    this.roll();
+                }
+            }
+        };
 
-        // Touch controls
+        // Remove any existing listeners and add new one
+        document.removeEventListener('keydown', this.keyHandler);
+        this.keyHandler = handleKeyDown;
+        document.addEventListener('keydown', this.keyHandler);
+
+        // Touch controls for mobile
+        let touchStartX = 0;
+        let touchStartY = 0;
+
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            this.touchStartY = e.touches[0].clientY;
-            if (this.gameState === 'menu') this.startGame();
-            if (this.gameState === 'gameover') this.resetGame();
-        });
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+
+            if (this.state === 'menu') this.startGame();
+            if (this.state === 'gameover') this.resetToMenu();
+        }, { passive: false });
 
         this.canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
-            const touchY = e.touches[0].clientY;
-            const diff = this.touchStartY - touchY;
-            if (this.gameState === 'playing') {
-                if (diff > 30) this.jump();
-                if (diff < -30) this.slide();
+            if (this.state !== 'playing') return;
+
+            const dx = e.touches[0].clientX - touchStartX;
+            const dy = e.touches[0].clientY - touchStartY;
+
+            if (Math.abs(dx) > 30) {
+                this.switchLane(dx > 0 ? 1 : -1);
+                touchStartX = e.touches[0].clientX;
+            }
+            if (dy < -40) {
+                this.jump();
+                touchStartY = e.touches[0].clientY;
+            }
+            if (dy > 40) {
+                this.roll();
+                touchStartY = e.touches[0].clientY;
+            }
+        }, { passive: false });
+
+        // Click handling
+        this.canvas.addEventListener('click', (e) => {
+            if (this.state === 'menu') {
+                this.startGame();
+                return;
+            }
+            if (this.state === 'gameover') {
+                this.resetToMenu();
+                return;
+            }
+            if (this.state === 'question') {
+                this.handleQuestionClick(e);
             }
         });
 
-        // Canvas click for answers
-        this.canvas.addEventListener('click', (e) => {
-            if (this.gameState === 'question') {
-                const rect = this.canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                this.handleQuestionClick(x, y);
-            }
-            if (this.gameState === 'menu') this.startGame();
-            if (this.gameState === 'gameover') this.resetGame();
-        });
+        // Resize handler
+        window.addEventListener('resize', () => this.resize());
+    }
+
+    switchLane(direction) {
+        const newLane = this.targetLane + direction;
+        if (newLane >= -1 && newLane <= 1) {
+            this.targetLane = newLane;
+            // Add swipe particles
+            this.addSwipeParticles(direction);
+        }
     }
 
     jump() {
-        if (!this.player.isJumping && !this.player.isSliding) {
-            this.player.velocityY = this.jumpForce;
+        if (!this.player.isJumping && !this.player.isRolling) {
             this.player.isJumping = true;
+            this.player.jumpVelocity = 22;
             this.addJumpParticles();
         }
     }
 
-    slide() {
-        if (!this.player.isJumping && !this.player.isSliding) {
-            this.player.isSliding = true;
-            this.player.slideTimer = this.slideDuration;
-            this.player.height = 40;
-            this.player.y = this.player.groundY + 40;
+    roll() {
+        if (!this.player.isJumping && !this.player.isRolling) {
+            this.player.isRolling = true;
+            this.player.rollTimer = this.player.rollDuration;
         }
     }
 
     addJumpParticles() {
-        for (let i = 0; i < 8; i++) {
+        const px = this.centerX + this.currentLane * this.laneWidth * 0.6;
+        const py = this.height - 100;
+        for (let i = 0; i < 10; i++) {
             this.particles.push({
-                x: this.player.x + this.player.width / 2,
-                y: this.player.y + this.player.height,
-                vx: (Math.random() - 0.5) * 4,
-                vy: Math.random() * 2,
+                x: px + (Math.random() - 0.5) * 40,
+                y: py,
+                vx: (Math.random() - 0.5) * 6,
+                vy: Math.random() * 3 + 1,
+                size: 4 + Math.random() * 4,
+                life: 25,
+                color: '#00d4ff'
+            });
+        }
+    }
+
+    addSwipeParticles(dir) {
+        const px = this.centerX + this.currentLane * this.laneWidth * 0.6;
+        for (let i = 0; i < 6; i++) {
+            this.particles.push({
+                x: px,
+                y: this.height - 150 + Math.random() * 100,
+                vx: -dir * (3 + Math.random() * 3),
+                vy: (Math.random() - 0.5) * 2,
                 size: 3 + Math.random() * 3,
-                life: 30,
-                color: this.colors.accent
+                life: 20,
+                color: '#a855f7'
             });
         }
     }
 
     startGame() {
-        this.gameState = 'playing';
+        this.state = 'playing';
         this.score = 0;
         this.coins = 0;
         this.lives = 3;
         this.streak = 0;
         this.multiplier = 1;
-        this.distance = 0;
         this.speed = this.baseSpeed;
+        this.position = 0;
+        this.currentLane = 0;
+        this.targetLane = 0;
         this.obstacles = [];
         this.collectibles = [];
         this.particles = [];
-        this.player.y = this.player.groundY;
-        this.player.height = 80;
         this.player.isJumping = false;
-        this.player.isSliding = false;
-        this.player.velocityY = 0;
+        this.player.isRolling = false;
+        this.player.jumpHeight = 0;
+        this.lastObstacle = 0;
+
+        this.gamesPlayed++;
+        localStorage.setItem('anatomyRushGames', this.gamesPlayed);
+        this.updateStatsDisplay();
     }
 
-    resetGame() {
-        this.gameState = 'menu';
+    resetToMenu() {
+        this.state = 'menu';
     }
 
-    update(deltaTime) {
-        if (this.gameState === 'playing') {
-            this.updatePlaying(deltaTime);
-        }
-
-        // Always update particles
+    update(dt) {
+        // Update particles always
         this.updateParticles();
 
-        // Update screen effects
-        if (this.screenShake > 0) this.screenShake -= 0.5;
-        if (this.flashTimer > 0) this.flashTimer--;
-    }
-
-    updatePlaying(deltaTime) {
-        // Increase speed over time
-        if (this.speed < this.maxSpeed) {
-            this.speed += this.speedIncrement;
+        // Update effects
+        if (this.shake > 0) this.shake *= 0.9;
+        if (this.flash.active) {
+            this.flash.timer--;
+            if (this.flash.timer <= 0) this.flash.active = false;
         }
 
-        // Update distance/score
-        this.distance += this.speed;
-        this.score = Math.floor(this.distance / 10) * this.multiplier;
+        if (this.state !== 'playing') return;
 
-        // Update player
-        this.updatePlayer();
+        // Increase speed
+        if (this.speed < this.maxSpeed) {
+            this.speed += this.acceleration;
+        }
 
-        // Update backgrounds
-        this.updateBackgrounds();
+        // Update position (distance traveled)
+        this.position += this.speed * 10;
+        this.score = Math.floor(this.position / 50) * this.multiplier;
+
+        // Smooth lane transition
+        const laneDiff = this.targetLane - this.currentLane;
+        this.currentLane += laneDiff * this.laneSpeed;
+
+        // Update player jump
+        if (this.player.isJumping) {
+            this.player.jumpHeight += this.player.jumpVelocity;
+            this.player.jumpVelocity -= 1.2;
+
+            if (this.player.jumpHeight <= 0) {
+                this.player.jumpHeight = 0;
+                this.player.isJumping = false;
+                this.player.jumpVelocity = 0;
+            }
+        }
+
+        // Update roll
+        if (this.player.isRolling) {
+            this.player.rollTimer--;
+            if (this.player.rollTimer <= 0) {
+                this.player.isRolling = false;
+            }
+        }
+
+        // Update player animation
+        this.player.animTimer++;
+        if (this.player.animTimer >= 5) {
+            this.player.animFrame = (this.player.animFrame + 1) % 4;
+            this.player.animTimer = 0;
+        }
 
         // Spawn obstacles
-        this.obstacleTimer++;
-        if (this.obstacleTimer >= this.obstacleInterval) {
+        if (this.position - this.lastObstacle > this.obstacleGap * this.segmentLength / this.speed) {
             this.spawnObstacle();
-            this.obstacleTimer = 0;
-            this.obstacleInterval = 80 + Math.random() * 60;
+            this.lastObstacle = this.position;
         }
 
         // Spawn collectibles
-        this.collectibleTimer++;
-        if (this.collectibleTimer >= 60) {
-            if (Math.random() > 0.6) this.spawnCollectible();
-            this.collectibleTimer = 0;
+        if (Math.random() < 0.02) {
+            this.spawnCollectible();
         }
 
         // Update obstacles
@@ -283,287 +388,116 @@ class AnatomyRunner {
 
         // Update collectibles
         this.updateCollectibles();
-
-        // Update player animation
-        this.player.frameTimer++;
-        if (this.player.frameTimer >= 6) {
-            this.player.frame = (this.player.frame + 1) % 4;
-            this.player.frameTimer = 0;
-        }
-    }
-
-    updatePlayer() {
-        // Apply gravity
-        this.player.velocityY += this.gravity;
-        this.player.y += this.player.velocityY;
-
-        // Ground collision
-        if (this.player.y >= this.player.groundY) {
-            this.player.y = this.player.groundY;
-            this.player.velocityY = 0;
-            this.player.isJumping = false;
-        }
-
-        // Sliding
-        if (this.player.isSliding) {
-            this.player.slideTimer--;
-            if (this.player.slideTimer <= 0) {
-                this.player.isSliding = false;
-                this.player.height = 80;
-                this.player.y = this.player.groundY;
-            }
-        }
-    }
-
-    updateBackgrounds() {
-        this.backgrounds.forEach(layer => {
-            layer.elements.forEach(el => {
-                el.x -= this.speed * layer.speed;
-                if (el.x < -100) {
-                    el.x = this.width + 50;
-                }
-            });
-        });
     }
 
     spawnObstacle() {
-        const types = ['low', 'high', 'question'];
+        const lane = Math.floor(Math.random() * 3) - 1;
+        const types = ['barrier', 'barrier', 'barrier', 'high', 'question'];
         const type = types[Math.floor(Math.random() * types.length)];
 
-        if (type === 'question') {
-            this.obstacles.push({
-                x: this.width,
-                y: this.height - 200,
-                width: 60,
-                height: 60,
-                type: 'question',
-                active: true
-            });
-        } else if (type === 'low') {
-            this.obstacles.push({
-                x: this.width,
-                y: this.height - 130,
-                width: 40,
-                height: 50,
-                type: 'low',
-                active: true
-            });
-        } else {
-            this.obstacles.push({
-                x: this.width,
-                y: this.height - 180,
-                width: 60,
-                height: 40,
-                type: 'high',
-                active: true
-            });
-        }
+        this.obstacles.push({
+            lane: lane,
+            z: this.position + this.segmentLength * 60,
+            type: type,
+            width: 80,
+            height: type === 'high' ? 60 : (type === 'question' ? 70 : 90),
+            active: true
+        });
     }
 
     spawnCollectible() {
-        const y = this.height - 180 - Math.random() * 80;
+        const lane = Math.floor(Math.random() * 3) - 1;
+        const type = Math.random() > 0.92 ? 'heart' : 'coin';
+        const jumpHeight = Math.random() > 0.5 ? 80 : 0;
+
         this.collectibles.push({
-            x: this.width,
-            y: y,
-            size: 20,
-            type: Math.random() > 0.9 ? 'heart' : 'coin',
+            lane: lane,
+            z: this.position + this.segmentLength * 50,
+            type: type,
+            jumpHeight: jumpHeight,
             collected: false,
-            bobOffset: Math.random() * Math.PI * 2
+            bobPhase: Math.random() * Math.PI * 2
         });
     }
 
     updateObstacles() {
         this.obstacles = this.obstacles.filter(obs => {
-            obs.x -= this.speed;
+            // Move toward player
+            const relativeZ = obs.z - this.position;
 
-            if (obs.active && this.checkCollision(this.player, obs)) {
-                if (obs.type === 'question') {
-                    this.triggerQuestion();
-                    obs.active = false;
-                } else {
-                    this.hitObstacle();
-                    obs.active = false;
+            // Check collision when obstacle is near player
+            if (relativeZ < 200 && relativeZ > -50 && obs.active) {
+                // Lane collision check
+                const playerLane = Math.round(this.currentLane);
+                if (obs.lane === playerLane) {
+                    // Type-specific collision
+                    if (obs.type === 'question') {
+                        this.triggerQuestion();
+                        obs.active = false;
+                    } else if (obs.type === 'high') {
+                        // High obstacle - need to roll under
+                        if (!this.player.isRolling) {
+                            this.hitObstacle();
+                            obs.active = false;
+                        }
+                    } else {
+                        // Low obstacle - need to jump over
+                        if (this.player.jumpHeight < 60) {
+                            this.hitObstacle();
+                            obs.active = false;
+                        }
+                    }
                 }
             }
 
-            return obs.x > -100;
+            // Remove if too far behind
+            return relativeZ > -500;
         });
     }
 
     updateCollectibles() {
         this.collectibles = this.collectibles.filter(col => {
-            col.x -= this.speed;
-            col.bobOffset += 0.1;
+            const relativeZ = col.z - this.position;
+            col.bobPhase += 0.1;
 
-            if (!col.collected && this.checkCollision(this.player, {
-                x: col.x - col.size / 2,
-                y: col.y + Math.sin(col.bobOffset) * 5 - col.size / 2,
-                width: col.size,
-                height: col.size
-            })) {
-                col.collected = true;
-                if (col.type === 'coin') {
-                    this.coins++;
-                    this.totalCoins++;
-                    localStorage.setItem('anatomyRunnerCoins', this.totalCoins);
-                    this.addCollectParticles(col.x, col.y, this.colors.coin);
-                } else {
-                    if (this.lives < 3) {
-                        this.lives++;
-                        this.addCollectParticles(col.x, col.y, this.colors.heart);
+            // Check collection
+            if (relativeZ < 150 && relativeZ > -50 && !col.collected) {
+                const playerLane = Math.round(this.currentLane);
+                if (col.lane === playerLane) {
+                    // Check if player is at correct height for elevated coins
+                    if (col.jumpHeight === 0 || this.player.jumpHeight > 40) {
+                        col.collected = true;
+                        if (col.type === 'coin') {
+                            this.coins++;
+                            this.totalCoins++;
+                            localStorage.setItem('anatomyRushCoins', this.totalCoins);
+                            this.addCollectParticles(col, '#ffd700');
+                        } else {
+                            if (this.lives < 3) {
+                                this.lives++;
+                                this.addCollectParticles(col, '#ff6b81');
+                            }
+                        }
+                        this.updateStatsDisplay();
                     }
                 }
             }
 
-            return col.x > -50 && !col.collected;
+            return relativeZ > -500 && !col.collected;
         });
     }
 
-    checkCollision(a, b) {
-        return a.x < b.x + b.width &&
-            a.x + a.width > b.x &&
-            a.y < b.y + b.height &&
-            a.y + a.height > b.y;
-    }
-
-    hitObstacle() {
-        this.lives--;
-        this.streak = 0;
-        this.multiplier = 1;
-        this.screenShake = 10;
-        this.flashColor = this.colors.danger;
-        this.flashTimer = 10;
-
-        // Hit particles
+    addCollectParticles(col, color) {
+        const x = this.centerX + col.lane * this.laneWidth * 0.5;
+        const y = this.height - 200;
         for (let i = 0; i < 15; i++) {
-            this.particles.push({
-                x: this.player.x + this.player.width,
-                y: this.player.y + this.player.height / 2,
-                vx: Math.random() * 6 + 2,
-                vy: (Math.random() - 0.5) * 8,
-                size: 4 + Math.random() * 4,
-                life: 40,
-                color: this.colors.danger
-            });
-        }
-
-        if (this.lives <= 0) {
-            this.gameOver();
-        }
-    }
-
-    gameOver() {
-        this.gameState = 'gameover';
-        if (this.score > this.highScore) {
-            this.highScore = this.score;
-            localStorage.setItem('anatomyRunnerHighScore', this.highScore);
-        }
-        // Award XP if function exists
-        if (typeof awardXP === 'function') {
-            awardXP(Math.floor(this.score / 10), 'game');
-        }
-    }
-
-    triggerQuestion() {
-        this.gameState = 'question';
-        // Get random question from quiz data
-        if (typeof quizQuestionsBase !== 'undefined' && quizQuestionsBase.length > 0) {
-            const q = quizQuestionsBase[Math.floor(Math.random() * quizQuestionsBase.length)];
-            if (q.type !== 'sata') { // Only use single-answer questions
-                this.currentQuestion = {
-                    text: q.q,
-                    options: this.shuffleArray([...q.options]),
-                    correct: q.correctAnswer,
-                    explanation: q.explanation
-                };
-            } else {
-                // Skip SATA, continue playing
-                this.gameState = 'playing';
-                this.streak++;
-                this.coins += 2;
-            }
-        } else {
-            // Fallback question
-            this.currentQuestion = {
-                text: "What are the 6 P's of neurovascular assessment?",
-                options: ["Pain, Pallor, Pulse, Paralysis, Paresthesia, Poikilothermia", "Pressure, Pain, Pallor, Pulse, Position, Paresthesia", "Pain, Pressure, Pallor, Paralysis, Position, Pulse", "None of the above"],
-                correct: "Pain, Pallor, Pulse, Paralysis, Paresthesia, Poikilothermia",
-                explanation: "The 6 P's are critical for neurovascular assessment."
-            };
-        }
-        this.selectedAnswer = -1;
-        this.questionResult = null;
-        this.questionTimer = 0;
-    }
-
-    shuffleArray(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array.slice(0, 4); // Max 4 options
-    }
-
-    selectAnswer(index) {
-        if (this.questionResult !== null) return;
-        this.selectedAnswer = index;
-        const selected = this.currentQuestion.options[index];
-
-        if (selected === this.currentQuestion.correct) {
-            this.questionResult = 'correct';
-            this.streak++;
-            this.multiplier = Math.min(5, 1 + Math.floor(this.streak / 3));
-            this.coins += 5 * this.multiplier;
-            this.flashColor = this.colors.success;
-            this.flashTimer = 15;
-            this.addCollectParticles(this.width / 2, this.height / 2, this.colors.success);
-        } else {
-            this.questionResult = 'wrong';
-            this.lives--;
-            this.streak = 0;
-            this.multiplier = 1;
-            this.screenShake = 8;
-            this.flashColor = this.colors.danger;
-            this.flashTimer = 10;
-
-            if (this.lives <= 0) {
-                setTimeout(() => this.gameOver(), 1500);
-                return;
-            }
-        }
-
-        setTimeout(() => {
-            this.gameState = 'playing';
-            this.currentQuestion = null;
-        }, 1500);
-    }
-
-    handleQuestionClick(x, y) {
-        if (!this.currentQuestion || this.questionResult !== null) return;
-
-        const startY = 200;
-        const optionHeight = 60;
-        const margin = 50;
-
-        for (let i = 0; i < this.currentQuestion.options.length; i++) {
-            const optY = startY + i * (optionHeight + 15);
-            if (x >= margin && x <= this.width - margin &&
-                y >= optY && y <= optY + optionHeight) {
-                this.selectAnswer(i);
-                break;
-            }
-        }
-    }
-
-    addCollectParticles(x, y, color) {
-        for (let i = 0; i < 12; i++) {
-            const angle = (Math.PI * 2 / 12) * i;
+            const angle = (Math.PI * 2 / 15) * i;
             this.particles.push({
                 x: x,
                 y: y,
-                vx: Math.cos(angle) * 4,
-                vy: Math.sin(angle) * 4,
-                size: 4,
+                vx: Math.cos(angle) * 5,
+                vy: Math.sin(angle) * 5,
+                size: 5,
                 life: 30,
                 color: color
             });
@@ -574,50 +508,198 @@ class AnatomyRunner {
         this.particles = this.particles.filter(p => {
             p.x += p.vx;
             p.y += p.vy;
-            p.vy += 0.1;
+            p.vy += 0.15;
             p.life--;
             p.size *= 0.95;
-            return p.life > 0;
+            return p.life > 0 && p.size > 0.5;
         });
     }
 
-    // ========== RENDERING ==========
+    hitObstacle() {
+        this.lives--;
+        this.streak = 0;
+        this.multiplier = 1;
+        this.shake = 15;
+        this.flash = { active: true, color: '#ff4757', timer: 10 };
+
+        // Explosion particles
+        const px = this.centerX + this.currentLane * this.laneWidth * 0.5;
+        for (let i = 0; i < 20; i++) {
+            this.particles.push({
+                x: px,
+                y: this.height - 150,
+                vx: (Math.random() - 0.5) * 15,
+                vy: (Math.random() - 0.5) * 15,
+                size: 5 + Math.random() * 5,
+                life: 35,
+                color: '#ff4757'
+            });
+        }
+
+        if (this.lives <= 0) {
+            this.gameOver();
+        }
+    }
+
+    gameOver() {
+        this.state = 'gameover';
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('anatomyRushHighScore', this.highScore);
+        }
+
+        // Award XP
+        if (typeof awardXP === 'function') {
+            awardXP(Math.floor(this.score / 10), 'game');
+        }
+
+        this.updateStatsDisplay();
+    }
+
+    triggerQuestion() {
+        this.state = 'question';
+
+        // Get question from quiz bank
+        if (typeof quizQuestionsBase !== 'undefined') {
+            const nonSataQuestions = quizQuestionsBase.filter(q => q.type !== 'sata');
+            if (nonSataQuestions.length > 0) {
+                const q = nonSataQuestions[Math.floor(Math.random() * nonSataQuestions.length)];
+                this.currentQuestion = {
+                    text: q.q,
+                    options: this.shuffleArray([...q.options]).slice(0, 4),
+                    correct: q.correctAnswer,
+                    explanation: q.explanation
+                };
+            }
+        }
+
+        if (!this.currentQuestion) {
+            // Fallback
+            this.currentQuestion = {
+                text: "What is the priority nursing action for compartment syndrome?",
+                options: [
+                    "Notify surgeon immediately",
+                    "Elevate the extremity high",
+                    "Apply warm compresses",
+                    "Administer pain medication"
+                ],
+                correct: "Notify surgeon immediately",
+                explanation: "Compartment syndrome is a surgical emergency requiring fasciotomy."
+            };
+        }
+
+        this.selectedAnswer = -1;
+        this.questionResult = null;
+    }
+
+    shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    selectAnswer(index) {
+        if (this.questionResult !== null || index >= this.currentQuestion.options.length) return;
+
+        this.selectedAnswer = index;
+        const selected = this.currentQuestion.options[index];
+
+        if (selected === this.currentQuestion.correct) {
+            this.questionResult = 'correct';
+            this.streak++;
+            this.multiplier = Math.min(5, 1 + Math.floor(this.streak / 2));
+            this.coins += 5 * this.multiplier;
+            this.totalCoins += 5 * this.multiplier;
+            localStorage.setItem('anatomyRushCoins', this.totalCoins);
+            this.flash = { active: true, color: '#10b981', timer: 15 };
+        } else {
+            this.questionResult = 'wrong';
+            this.lives--;
+            this.streak = 0;
+            this.multiplier = 1;
+            this.shake = 10;
+            this.flash = { active: true, color: '#ff4757', timer: 10 };
+
+            if (this.lives <= 0) {
+                setTimeout(() => this.gameOver(), 1200);
+                return;
+            }
+        }
+
+        setTimeout(() => {
+            this.state = 'playing';
+            this.currentQuestion = null;
+            this.updateStatsDisplay();
+        }, 1200);
+    }
+
+    handleQuestionClick(e) {
+        if (!this.currentQuestion || this.questionResult !== null) return;
+
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const startY = 180;
+        const optHeight = 55;
+        const gap = 12;
+        const margin = 60;
+
+        for (let i = 0; i < this.currentQuestion.options.length; i++) {
+            const optY = startY + i * (optHeight + gap);
+            if (x >= margin && x <= this.width - margin && y >= optY && y <= optY + optHeight) {
+                this.selectAnswer(i);
+                break;
+            }
+        }
+    }
+
+    updateStatsDisplay() {
+        const hs = document.getElementById('gameHighScore');
+        const tc = document.getElementById('gameTotalCoins');
+        const gp = document.getElementById('gamesPlayed');
+        if (hs) hs.textContent = this.highScore;
+        if (tc) tc.textContent = this.totalCoins;
+        if (gp) gp.textContent = this.gamesPlayed;
+    }
+
+    // =========== RENDERING ===========
 
     render() {
-        // Apply screen shake
         this.ctx.save();
-        if (this.screenShake > 0) {
+
+        // Screen shake
+        if (this.shake > 0) {
             this.ctx.translate(
-                (Math.random() - 0.5) * this.screenShake,
-                (Math.random() - 0.5) * this.screenShake
+                (Math.random() - 0.5) * this.shake * 2,
+                (Math.random() - 0.5) * this.shake * 2
             );
         }
 
-        // Clear and draw background
-        this.drawBackground();
+        // Draw based on state
+        this.drawSky();
+        this.draw3DRoad();
+        this.drawObstacles();
+        this.drawCollectibles();
+        this.drawPlayer();
+        this.drawParticles();
 
-        // Draw based on game state
-        switch (this.gameState) {
-            case 'menu':
-                this.drawMenu();
-                break;
-            case 'playing':
-                this.drawGame();
-                break;
-            case 'question':
-                this.drawGame();
-                this.drawQuestion();
-                break;
-            case 'gameover':
-                this.drawGame();
-                this.drawGameOver();
-                break;
+        if (this.state === 'playing') {
+            this.drawHUD();
+        } else if (this.state === 'menu') {
+            this.drawMenu();
+        } else if (this.state === 'question') {
+            this.drawQuestion();
+        } else if (this.state === 'gameover') {
+            this.drawGameOver();
         }
 
         // Flash effect
-        if (this.flashTimer > 0 && this.flashColor) {
-            this.ctx.fillStyle = this.flashColor;
-            this.ctx.globalAlpha = this.flashTimer / 20;
+        if (this.flash.active) {
+            this.ctx.fillStyle = this.flash.color;
+            this.ctx.globalAlpha = this.flash.timer / 20;
             this.ctx.fillRect(0, 0, this.width, this.height);
             this.ctx.globalAlpha = 1;
         }
@@ -625,321 +707,470 @@ class AnatomyRunner {
         this.ctx.restore();
     }
 
-    drawBackground() {
-        // Gradient background
-        const gradient = this.ctx.createLinearGradient(0, 0, 0, this.height);
-        gradient.addColorStop(0, '#0a0a1a');
-        gradient.addColorStop(1, '#1a1a2e');
-        this.ctx.fillStyle = gradient;
+    drawSky() {
+        // Gradient sky
+        const grad = this.ctx.createLinearGradient(0, 0, 0, this.height);
+        grad.addColorStop(0, '#0a0a1a');
+        grad.addColorStop(0.5, '#1a1a3a');
+        grad.addColorStop(1, '#2d2d5a');
+        this.ctx.fillStyle = grad;
         this.ctx.fillRect(0, 0, this.width, this.height);
 
-        // Draw parallax layers
-        this.backgrounds.forEach((layer, idx) => {
-            this.ctx.globalAlpha = 0.3 + idx * 0.2;
-            layer.elements.forEach(el => {
-                this.ctx.fillStyle = '#2a2a4e';
-                if (el.type === 'window') {
-                    this.ctx.fillRect(el.x, 100, 40, el.height);
-                    this.ctx.fillStyle = '#00d4ff22';
-                    this.ctx.fillRect(el.x + 5, 105, 30, el.height - 10);
-                } else {
-                    this.ctx.fillRect(el.x, 80, 50, el.height + 20);
+        // Stars
+        this.ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        for (let i = 0; i < 50; i++) {
+            const sx = (i * 137.5 + this.position * 0.01) % this.width;
+            const sy = (i * 73.7) % (this.height * 0.4);
+            this.ctx.beginPath();
+            this.ctx.arc(sx, sy, 1 + (i % 2), 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+    }
+
+    draw3DRoad() {
+        const horizonY = this.height * this.horizon;
+        const roadBottom = this.height;
+
+        // Draw road with 3D perspective
+        const segments = 30;
+
+        for (let i = segments; i >= 0; i--) {
+            const z = (i / segments);
+            const nextZ = ((i + 1) / segments);
+
+            // Perspective scaling
+            const scale = 1 / (1 + z * 3);
+            const nextScale = 1 / (1 + nextZ * 3);
+
+            const y = horizonY + (roadBottom - horizonY) * (1 - Math.pow(z, 0.7));
+            const nextY = horizonY + (roadBottom - horizonY) * (1 - Math.pow(nextZ, 0.7));
+
+            const roadWidth = this.roadWidth * scale;
+            const nextRoadWidth = this.roadWidth * nextScale;
+
+            // Road segment
+            const stripe = Math.floor((i + this.position / 50) % 4) < 2;
+            this.ctx.fillStyle = stripe ? '#1e1e38' : '#16162a';
+
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.centerX - nextRoadWidth, nextY);
+            this.ctx.lineTo(this.centerX + nextRoadWidth, nextY);
+            this.ctx.lineTo(this.centerX + roadWidth, y);
+            this.ctx.lineTo(this.centerX - roadWidth, y);
+            this.ctx.closePath();
+            this.ctx.fill();
+
+            // Lane dividers
+            if (i < segments - 1) {
+                this.ctx.strokeStyle = 'rgba(0, 212, 255, 0.3)';
+                this.ctx.lineWidth = 2 * scale;
+
+                for (let lane = -1; lane <= 1; lane++) {
+                    const lx = this.centerX + lane * this.laneWidth * scale * 0.8;
+                    const nlx = this.centerX + lane * this.laneWidth * nextScale * 0.8;
+
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(nlx, nextY);
+                    this.ctx.lineTo(lx, y);
+                    this.ctx.stroke();
                 }
-            });
-            this.ctx.globalAlpha = 1;
-        });
+            }
+        }
 
-        // Ground
-        this.ctx.fillStyle = this.colors.ground;
-        this.ctx.fillRect(0, this.height - 80, this.width, 80);
-
-        // Ground line with glow
-        this.ctx.shadowColor = this.colors.groundLine;
-        this.ctx.shadowBlur = 10;
-        this.ctx.strokeStyle = this.colors.groundLine;
+        // Side rails with glow
+        this.ctx.shadowColor = '#00d4ff';
+        this.ctx.shadowBlur = 15;
+        this.ctx.strokeStyle = '#00d4ff';
         this.ctx.lineWidth = 3;
+
+        // Left rail
         this.ctx.beginPath();
-        this.ctx.moveTo(0, this.height - 80);
-        this.ctx.lineTo(this.width, this.height - 80);
+        this.ctx.moveTo(this.centerX - 30, horizonY);
+        this.ctx.lineTo(this.centerX - this.roadWidth, roadBottom);
         this.ctx.stroke();
+
+        // Right rail
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.centerX + 30, horizonY);
+        this.ctx.lineTo(this.centerX + this.roadWidth, roadBottom);
+        this.ctx.stroke();
+
         this.ctx.shadowBlur = 0;
     }
 
-    drawGame() {
-        // Draw collectibles
-        this.collectibles.forEach(col => {
-            const bobY = col.y + Math.sin(col.bobOffset) * 5;
-            this.ctx.save();
-            this.ctx.translate(col.x, bobY);
+    drawObstacles() {
+        // Sort by z (far to near)
+        const sorted = [...this.obstacles].sort((a, b) => b.z - a.z);
 
-            if (col.type === 'coin') {
-                // Coin glow
-                this.ctx.shadowColor = this.colors.coin;
-                this.ctx.shadowBlur = 15;
-                this.ctx.fillStyle = this.colors.coin;
-                this.ctx.beginPath();
-                this.ctx.arc(0, 0, col.size / 2, 0, Math.PI * 2);
-                this.ctx.fill();
-                this.ctx.fillStyle = '#fff';
-                this.ctx.font = 'bold 14px Arial';
-                this.ctx.textAlign = 'center';
-                this.ctx.textBaseline = 'middle';
-                this.ctx.fillText('💰', 0, 0);
-            } else {
-                this.ctx.shadowColor = this.colors.heart;
-                this.ctx.shadowBlur = 15;
-                this.ctx.font = '24px Arial';
-                this.ctx.textAlign = 'center';
-                this.ctx.textBaseline = 'middle';
-                this.ctx.fillText('❤️', 0, 0);
-            }
-            this.ctx.restore();
-        });
-
-        // Draw obstacles
-        this.obstacles.forEach(obs => {
+        sorted.forEach(obs => {
             if (!obs.active) return;
+
+            const relZ = obs.z - this.position;
+            if (relZ < 0 || relZ > this.segmentLength * 50) return;
+
+            const zNorm = relZ / (this.segmentLength * 50);
+            const scale = 1 / (1 + zNorm * 3);
+            const y = this.height * this.horizon + (this.height - this.height * this.horizon) * (1 - Math.pow(zNorm, 0.7));
+
+            const x = this.centerX + obs.lane * this.laneWidth * scale * 0.7;
+            const w = obs.width * scale;
+            const h = obs.height * scale;
+
             this.ctx.save();
 
             if (obs.type === 'question') {
-                // Question block - glowing
-                this.ctx.shadowColor = this.colors.accent;
-                this.ctx.shadowBlur = 20;
-                this.ctx.fillStyle = this.colors.accent;
-                this.ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                // Question block - purple glow
+                this.ctx.shadowColor = '#a855f7';
+                this.ctx.shadowBlur = 20 * scale;
+
+                // 3D cube effect
+                this.ctx.fillStyle = '#7c3aed';
+                this.ctx.fillRect(x - w / 2 + 5 * scale, y - h + 5 * scale, w - 5 * scale, h - 5 * scale);
+
+                this.ctx.fillStyle = '#a855f7';
+                this.ctx.fillRect(x - w / 2, y - h, w - 5 * scale, h - 5 * scale);
+
+                // Question mark
                 this.ctx.fillStyle = '#fff';
-                this.ctx.font = 'bold 30px Arial';
+                this.ctx.font = `bold ${28 * scale}px Arial`;
                 this.ctx.textAlign = 'center';
                 this.ctx.textBaseline = 'middle';
-                this.ctx.fillText('?', obs.x + obs.width / 2, obs.y + obs.height / 2);
+                this.ctx.fillText('?', x - 2 * scale, y - h / 2 - 2 * scale);
+            } else if (obs.type === 'high') {
+                // High obstacle (need to roll)
+                this.ctx.fillStyle = '#f59e0b';
+                this.ctx.shadowColor = '#f59e0b';
+                this.ctx.shadowBlur = 15 * scale;
+                this.ctx.fillRect(x - w / 2, y - h - 50 * scale, w, h);
+
+                // Warning stripes
+                this.ctx.fillStyle = '#000';
+                const stripeW = 10 * scale;
+                for (let s = 0; s < 3; s++) {
+                    this.ctx.fillRect(x - w / 2 + s * stripeW * 2 + 5 * scale, y - h - 50 * scale, stripeW, h);
+                }
             } else {
-                // Regular obstacle
-                this.ctx.shadowColor = this.colors.obstacle;
-                this.ctx.shadowBlur = 10;
-                this.ctx.fillStyle = this.colors.obstacle;
-                this.ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                // Barrier (need to jump)
+                this.ctx.shadowColor = '#ff4757';
+                this.ctx.shadowBlur = 15 * scale;
+
+                // 3D barrier
+                this.ctx.fillStyle = '#dc2626';
+                this.ctx.fillRect(x - w / 2 + 5 * scale, y - h + 5 * scale, w - 5 * scale, h - 10 * scale);
+
+                this.ctx.fillStyle = '#ff4757';
+                this.ctx.fillRect(x - w / 2, y - h, w - 5 * scale, h - 10 * scale);
+
                 // Hazard stripes
                 this.ctx.fillStyle = '#000';
-                for (let i = 0; i < 3; i++) {
-                    this.ctx.fillRect(obs.x + i * 15, obs.y, 5, obs.height);
+                const stripeW = 8 * scale;
+                for (let s = 0; s < 4; s++) {
+                    this.ctx.fillRect(x - w / 2 + s * stripeW * 2, y - h, stripeW, h - 10 * scale);
                 }
             }
+
             this.ctx.restore();
         });
+    }
 
-        // Draw player
-        this.drawPlayer();
+    drawCollectibles() {
+        this.collectibles.forEach(col => {
+            if (col.collected) return;
 
-        // Draw particles
-        this.particles.forEach(p => {
-            this.ctx.globalAlpha = p.life / 40;
-            this.ctx.fillStyle = p.color;
-            this.ctx.beginPath();
-            this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            this.ctx.fill();
-            this.ctx.globalAlpha = 1;
+            const relZ = col.z - this.position;
+            if (relZ < 0 || relZ > this.segmentLength * 50) return;
+
+            const zNorm = relZ / (this.segmentLength * 50);
+            const scale = 1 / (1 + zNorm * 3);
+            const baseY = this.height * this.horizon + (this.height - this.height * this.horizon) * (1 - Math.pow(zNorm, 0.7));
+
+            const bob = Math.sin(col.bobPhase) * 5 * scale;
+            const x = this.centerX + col.lane * this.laneWidth * scale * 0.7;
+            const y = baseY - 50 * scale - col.jumpHeight * scale + bob;
+
+            this.ctx.save();
+
+            if (col.type === 'coin') {
+                this.ctx.shadowColor = '#ffd700';
+                this.ctx.shadowBlur = 15 * scale;
+                this.ctx.fillStyle = '#ffd700';
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, 15 * scale, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = '#fff';
+                this.ctx.font = `${12 * scale}px Arial`;
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText('$', x, y);
+            } else {
+                this.ctx.shadowColor = '#ff6b81';
+                this.ctx.shadowBlur = 15 * scale;
+                this.ctx.font = `${24 * scale}px Arial`;
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText('❤️', x, y);
+            }
+
+            this.ctx.restore();
         });
-
-        // Draw HUD
-        this.drawHUD();
     }
 
     drawPlayer() {
+        const px = this.centerX + this.currentLane * this.laneWidth * 0.6;
+        const groundY = this.height - 80;
+        const py = groundY - this.player.jumpHeight;
+
         this.ctx.save();
-        this.ctx.translate(this.player.x, this.player.y);
+        this.ctx.translate(px, py);
 
         // Player glow
-        this.ctx.shadowColor = this.colors.playerGlow;
-        this.ctx.shadowBlur = 20;
+        this.ctx.shadowColor = '#00d4ff';
+        this.ctx.shadowBlur = 25;
 
-        // Body
-        this.ctx.fillStyle = this.colors.player;
-        if (this.player.isSliding) {
-            // Sliding pose
-            this.ctx.fillRect(0, 0, this.player.width + 20, this.player.height);
+        if (this.player.isRolling) {
+            // Rolling - circular shape
+            this.ctx.fillStyle = '#00d4ff';
+            this.ctx.beginPath();
+            this.ctx.ellipse(0, -20, 40, 25, 0, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Rolling effect
+            const rot = this.player.animFrame * 0.5;
+            this.ctx.strokeStyle = '#fff';
+            this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
+            this.ctx.arc(0, -20, 15, rot, rot + Math.PI);
+            this.ctx.stroke();
         } else {
-            // Running pose with animation
-            this.ctx.fillRect(0, 0, this.player.width, this.player.height);
+            // Standing/Running character
+            const bounce = this.player.isJumping ? 0 : Math.sin(this.player.animFrame * 0.8) * 3;
+
+            // Body
+            this.ctx.fillStyle = '#00d4ff';
+            this.ctx.beginPath();
+            this.ctx.roundRect(-22, -70 + bounce, 44, 55, 10);
+            this.ctx.fill();
 
             // Head
             this.ctx.beginPath();
-            this.ctx.arc(this.player.width / 2, -15, 20, 0, Math.PI * 2);
+            this.ctx.arc(0, -90 + bounce, 22, 0, Math.PI * 2);
             this.ctx.fill();
 
             // Nurse cap
             this.ctx.fillStyle = '#fff';
-            this.ctx.fillRect(this.player.width / 2 - 15, -35, 30, 10);
+            this.ctx.fillRect(-18, -115 + bounce, 36, 12);
             this.ctx.fillStyle = '#ff4757';
-            this.ctx.fillRect(this.player.width / 2 - 3, -32, 6, 6);
+            this.ctx.fillRect(-4, -112 + bounce, 8, 8);
 
-            // Running legs animation
-            const legOffset = Math.sin(this.player.frame * 0.8) * 15;
-            this.ctx.fillStyle = this.colors.player;
-            this.ctx.fillRect(10, this.player.height, 15, 20 + legOffset);
-            this.ctx.fillRect(35, this.player.height, 15, 20 - legOffset);
+            // Legs with running animation
+            const legSwing = this.player.isJumping ? 0 : Math.sin(this.player.animFrame * 1.2) * 15;
+            this.ctx.fillStyle = '#0891b2';
+            this.ctx.fillRect(-15, -18 + bounce, 12, 25 + legSwing);
+            this.ctx.fillRect(3, -18 + bounce, 12, 25 - legSwing);
+
+            // Eyes
+            this.ctx.fillStyle = '#fff';
+            this.ctx.beginPath();
+            this.ctx.arc(-7, -92 + bounce, 5, 0, Math.PI * 2);
+            this.ctx.arc(7, -92 + bounce, 5, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Pupils
+            this.ctx.fillStyle = '#000';
+            this.ctx.beginPath();
+            this.ctx.arc(-5, -92 + bounce, 2, 0, Math.PI * 2);
+            this.ctx.arc(9, -92 + bounce, 2, 0, Math.PI * 2);
+            this.ctx.fill();
         }
 
         this.ctx.restore();
     }
 
+    drawParticles() {
+        this.particles.forEach(p => {
+            this.ctx.globalAlpha = p.life / 35;
+            this.ctx.fillStyle = p.color;
+            this.ctx.beginPath();
+            this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+        this.ctx.globalAlpha = 1;
+    }
+
     drawHUD() {
         // Score
         this.ctx.fillStyle = '#fff';
-        this.ctx.font = 'bold 24px Arial';
+        this.ctx.font = 'bold 28px "Space Grotesk", Arial';
         this.ctx.textAlign = 'left';
-        this.ctx.fillText(`Score: ${this.score}`, 20, 40);
+        this.ctx.fillText(`${this.score}`, 25, 45);
 
         // Multiplier
         if (this.multiplier > 1) {
-            this.ctx.fillStyle = this.colors.coin;
-            this.ctx.fillText(`x${this.multiplier}`, 20, 70);
+            this.ctx.fillStyle = '#ffd700';
+            this.ctx.font = 'bold 20px Arial';
+            this.ctx.fillText(`x${this.multiplier}`, 25, 72);
         }
 
         // Coins
-        this.ctx.fillStyle = this.colors.coin;
+        this.ctx.fillStyle = '#ffd700';
         this.ctx.textAlign = 'right';
-        this.ctx.fillText(`💰 ${this.coins}`, this.width - 20, 40);
+        this.ctx.font = 'bold 24px Arial';
+        this.ctx.fillText(`💰 ${this.coins}`, this.width - 25, 45);
 
         // Lives
-        let heartsStr = '';
+        let hearts = '';
         for (let i = 0; i < 3; i++) {
-            heartsStr += i < this.lives ? '❤️' : '🖤';
+            hearts += i < this.lives ? '❤️' : '🖤';
         }
-        this.ctx.font = '28px Arial';
-        this.ctx.fillText(heartsStr, this.width - 20, 75);
+        this.ctx.font = '26px Arial';
+        this.ctx.fillText(hearts, this.width - 25, 80);
 
         // Streak
         if (this.streak > 0) {
-            this.ctx.fillStyle = this.colors.success;
-            this.ctx.font = 'bold 18px Arial';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText(`🔥 ${this.streak} Streak!`, this.width / 2, 40);
+            this.ctx.fillStyle = '#10b981';
+            this.ctx.font = 'bold 20px Arial';
+            this.ctx.fillText(`🔥 ${this.streak} Streak!`, this.centerX, 45);
         }
+
+        // Speed indicator
+        this.ctx.textAlign = 'left';
+        this.ctx.fillStyle = '#888';
+        this.ctx.font = '14px Arial';
+        this.ctx.fillText(`Speed: ${this.speed.toFixed(1)}x`, 25, this.height - 20);
     }
 
     drawMenu() {
-        // Overlay
-        this.ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        // Dark overlay
+        this.ctx.fillStyle = 'rgba(0,0,0,0.75)';
         this.ctx.fillRect(0, 0, this.width, this.height);
 
         // Title with glow
-        this.ctx.shadowColor = this.colors.accent;
-        this.ctx.shadowBlur = 30;
-        this.ctx.fillStyle = this.colors.accent;
-        this.ctx.font = 'bold 48px Arial';
+        this.ctx.shadowColor = '#a855f7';
+        this.ctx.shadowBlur = 40;
+        this.ctx.fillStyle = '#a855f7';
+        this.ctx.font = 'bold 52px "Space Grotesk", Arial';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('🏃 ANATOMY RUNNER', this.width / 2, 150);
+        this.ctx.fillText('🏃 ANATOMY RUSH', this.centerX, 130);
         this.ctx.shadowBlur = 0;
 
         // Subtitle
-        this.ctx.fillStyle = '#aaa';
-        this.ctx.font = '20px Arial';
-        this.ctx.fillText('Learn nursing concepts while running!', this.width / 2, 190);
+        this.ctx.fillStyle = '#94a3b8';
+        this.ctx.font = '18px Arial';
+        this.ctx.fillText('3D Endless Runner • Learn While You Play', this.centerX, 170);
 
         // High score
-        this.ctx.fillStyle = this.colors.coin;
-        this.ctx.font = 'bold 24px Arial';
-        this.ctx.fillText(`🏆 High Score: ${this.highScore}`, this.width / 2, 250);
-        this.ctx.fillText(`💰 Total Coins: ${this.totalCoins}`, this.width / 2, 285);
+        this.ctx.fillStyle = '#ffd700';
+        this.ctx.font = 'bold 26px Arial';
+        this.ctx.fillText(`🏆 High Score: ${this.highScore}`, this.centerX, 230);
+        this.ctx.fillText(`💰 Total Coins: ${this.totalCoins}`, this.centerX, 270);
 
-        // Instructions
+        // Controls
         this.ctx.fillStyle = '#fff';
-        this.ctx.font = '18px Arial';
-        this.ctx.fillText('⬆️ SPACE/UP - Jump over low obstacles', this.width / 2, 340);
-        this.ctx.fillText('⬇️ DOWN - Slide under high obstacles', this.width / 2, 370);
-        this.ctx.fillText('❓ Hit question blocks to answer!', this.width / 2, 400);
+        this.ctx.font = '16px Arial';
+        this.ctx.fillText('← → or A/D : Switch Lanes', this.centerX, 330);
+        this.ctx.fillText('SPACE or W : Jump', this.centerX, 360);
+        this.ctx.fillText('↓ or S : Roll/Slide', this.centerX, 390);
+        this.ctx.fillText('❓ Hit question blocks for bonus points!', this.centerX, 430);
 
         // Start prompt
-        this.ctx.fillStyle = this.colors.accent;
-        this.ctx.font = 'bold 28px Arial';
-        const pulse = Math.sin(Date.now() / 300) * 0.3 + 0.7;
+        const pulse = 0.7 + Math.sin(Date.now() / 300) * 0.3;
         this.ctx.globalAlpha = pulse;
-        this.ctx.fillText('[ TAP OR PRESS SPACE TO START ]', this.width / 2, 480);
+        this.ctx.fillStyle = '#00d4ff';
+        this.ctx.font = 'bold 28px Arial';
+        this.ctx.fillText('[ TAP OR PRESS SPACE ]', this.centerX, 500);
         this.ctx.globalAlpha = 1;
     }
 
     drawQuestion() {
-        // Dim background
-        this.ctx.fillStyle = 'rgba(0,0,0,0.85)';
+        // Overlay
+        this.ctx.fillStyle = 'rgba(0,0,0,0.9)';
         this.ctx.fillRect(0, 0, this.width, this.height);
 
         if (!this.currentQuestion) return;
 
         // Question text
         this.ctx.fillStyle = '#fff';
-        this.ctx.font = 'bold 20px Arial';
+        this.ctx.font = 'bold 18px Arial';
         this.ctx.textAlign = 'center';
 
-        // Word wrap question
+        // Word wrap
         const words = this.currentQuestion.text.split(' ');
         let line = '';
-        let y = 100;
-        const maxWidth = this.width - 100;
+        let y = 80;
+        const maxW = this.width - 100;
 
         words.forEach(word => {
-            const testLine = line + word + ' ';
-            const metrics = this.ctx.measureText(testLine);
-            if (metrics.width > maxWidth && line !== '') {
-                this.ctx.fillText(line, this.width / 2, y);
+            const test = line + word + ' ';
+            if (this.ctx.measureText(test).width > maxW && line) {
+                this.ctx.fillText(line, this.centerX, y);
                 line = word + ' ';
-                y += 28;
+                y += 26;
             } else {
-                line = testLine;
+                line = test;
             }
         });
-        this.ctx.fillText(line, this.width / 2, y);
+        this.ctx.fillText(line, this.centerX, y);
 
         // Options
-        const startY = 200;
-        const optionHeight = 55;
-        const margin = 50;
+        const startY = 180;
+        const optH = 55;
+        const gap = 12;
+        const margin = 60;
 
         this.currentQuestion.options.forEach((opt, i) => {
-            const optY = startY + i * (optionHeight + 12);
+            const optY = startY + i * (optH + gap);
+
+            let bg = '#2a2a4e';
+            if (this.questionResult && i === this.selectedAnswer) {
+                bg = this.questionResult === 'correct' ? '#10b981' : '#ef4444';
+            }
+            if (this.questionResult === 'wrong' && opt === this.currentQuestion.correct) {
+                bg = '#10b981';
+            }
 
             // Option background
-            let bgColor = '#2a2a4e';
-            if (this.questionResult !== null && i === this.selectedAnswer) {
-                bgColor = this.questionResult === 'correct' ? this.colors.success : this.colors.danger;
-            }
-            if (this.questionResult !== null && opt === this.currentQuestion.correct && this.questionResult === 'wrong') {
-                bgColor = this.colors.success;
-            }
-
-            this.ctx.fillStyle = bgColor;
+            this.ctx.fillStyle = bg;
             this.ctx.beginPath();
-            this.ctx.roundRect(margin, optY, this.width - margin * 2, optionHeight, 10);
+            this.ctx.roundRect(margin, optY, this.width - margin * 2, optH, 12);
             this.ctx.fill();
 
-            // Option text
+            // Border
+            this.ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            this.ctx.lineWidth = 1;
+            this.ctx.stroke();
+
+            // Text
             this.ctx.fillStyle = '#fff';
-            this.ctx.font = '16px Arial';
+            this.ctx.font = '15px Arial';
             this.ctx.textAlign = 'left';
 
-            // Truncate if too long
-            let displayText = `${i + 1}. ${opt}`;
-            while (this.ctx.measureText(displayText).width > this.width - margin * 2 - 20) {
-                displayText = displayText.slice(0, -1);
+            let text = `${i + 1}. ${opt}`;
+            const maxText = this.width - margin * 2 - 30;
+            while (this.ctx.measureText(text).width > maxText && text.length > 10) {
+                text = text.slice(0, -4) + '...';
             }
-            this.ctx.fillText(displayText, margin + 15, optY + 35);
+            this.ctx.fillText(text, margin + 18, optY + 35);
         });
 
         // Result feedback
         if (this.questionResult) {
-            this.ctx.font = 'bold 36px Arial';
             this.ctx.textAlign = 'center';
+            this.ctx.font = 'bold 32px Arial';
+
             if (this.questionResult === 'correct') {
-                this.ctx.fillStyle = this.colors.success;
-                this.ctx.fillText('✓ CORRECT! +' + (5 * this.multiplier) + ' coins', this.width / 2, this.height - 80);
+                this.ctx.fillStyle = '#10b981';
+                this.ctx.fillText(`✓ CORRECT! +${5 * this.multiplier} coins`, this.centerX, this.height - 60);
             } else {
-                this.ctx.fillStyle = this.colors.danger;
-                this.ctx.fillText('✗ WRONG!', this.width / 2, this.height - 80);
+                this.ctx.fillStyle = '#ef4444';
+                this.ctx.fillText('✗ WRONG!', this.centerX, this.height - 60);
             }
         } else {
-            this.ctx.fillStyle = '#888';
-            this.ctx.font = '16px Arial';
             this.ctx.textAlign = 'center';
-            this.ctx.fillText('Click an answer or press 1-4', this.width / 2, this.height - 40);
+            this.ctx.fillStyle = '#64748b';
+            this.ctx.font = '14px Arial';
+            this.ctx.fillText('Click an answer or press 1-4', this.centerX, this.height - 30);
         }
     }
 
@@ -948,90 +1179,106 @@ class AnatomyRunner {
         this.ctx.fillStyle = 'rgba(0,0,0,0.85)';
         this.ctx.fillRect(0, 0, this.width, this.height);
 
-        // Game Over text
-        this.ctx.shadowColor = this.colors.danger;
-        this.ctx.shadowBlur = 30;
-        this.ctx.fillStyle = this.colors.danger;
-        this.ctx.font = 'bold 56px Arial';
+        // Game Over
+        this.ctx.shadowColor = '#ef4444';
+        this.ctx.shadowBlur = 40;
+        this.ctx.fillStyle = '#ef4444';
+        this.ctx.font = 'bold 56px "Space Grotesk", Arial';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('GAME OVER', this.width / 2, 180);
+        this.ctx.fillText('GAME OVER', this.centerX, 160);
         this.ctx.shadowBlur = 0;
 
-        // Stats
+        // Score
         this.ctx.fillStyle = '#fff';
-        this.ctx.font = 'bold 28px Arial';
-        this.ctx.fillText(`Score: ${this.score}`, this.width / 2, 260);
+        this.ctx.font = 'bold 32px Arial';
+        this.ctx.fillText(`Score: ${this.score}`, this.centerX, 240);
 
+        // High score
         if (this.score >= this.highScore) {
-            this.ctx.fillStyle = this.colors.coin;
-            this.ctx.fillText('🏆 NEW HIGH SCORE! 🏆', this.width / 2, 310);
+            this.ctx.fillStyle = '#ffd700';
+            this.ctx.fillText('🏆 NEW HIGH SCORE! 🏆', this.centerX, 300);
         } else {
             this.ctx.fillStyle = '#888';
-            this.ctx.fillText(`High Score: ${this.highScore}`, this.width / 2, 310);
+            this.ctx.font = '24px Arial';
+            this.ctx.fillText(`High Score: ${this.highScore}`, this.centerX, 300);
         }
 
-        this.ctx.fillStyle = this.colors.coin;
-        this.ctx.fillText(`💰 Coins Earned: ${this.coins}`, this.width / 2, 360);
+        // Coins earned
+        this.ctx.fillStyle = '#ffd700';
+        this.ctx.font = 'bold 26px Arial';
+        this.ctx.fillText(`💰 Coins: ${this.coins}`, this.centerX, 360);
 
-        this.ctx.fillStyle = this.colors.success;
+        // XP
+        this.ctx.fillStyle = '#10b981';
         this.ctx.font = '20px Arial';
-        this.ctx.fillText(`XP Earned: +${Math.floor(this.score / 10)}`, this.width / 2, 400);
+        this.ctx.fillText(`+${Math.floor(this.score / 10)} XP earned!`, this.centerX, 400);
 
-        // Restart prompt
-        this.ctx.fillStyle = this.colors.accent;
-        this.ctx.font = 'bold 24px Arial';
-        const pulse = Math.sin(Date.now() / 300) * 0.3 + 0.7;
+        // Retry prompt
+        const pulse = 0.7 + Math.sin(Date.now() / 300) * 0.3;
         this.ctx.globalAlpha = pulse;
-        this.ctx.fillText('[ TAP OR PRESS SPACE TO RETRY ]', this.width / 2, 480);
+        this.ctx.fillStyle = '#00d4ff';
+        this.ctx.font = 'bold 26px Arial';
+        this.ctx.fillText('[ TAP OR PRESS SPACE TO RETRY ]', this.centerX, 480);
         this.ctx.globalAlpha = 1;
     }
 
     // Game loop
-    gameLoop(timestamp) {
-        const deltaTime = timestamp - this.lastTime;
+    loop(timestamp) {
+        const dt = Math.min(timestamp - this.lastTime, 50);
         this.lastTime = timestamp;
 
-        this.update(deltaTime);
+        this.update(dt);
         this.render();
 
-        this.animationId = requestAnimationFrame((t) => this.gameLoop(t));
+        if (this.running) {
+            requestAnimationFrame((t) => this.loop(t));
+        }
     }
 
     start() {
-        this.gameLoop(0);
+        if (!this.running) {
+            this.running = true;
+            this.lastTime = performance.now();
+            this.updateStatsDisplay();
+            requestAnimationFrame((t) => this.loop(t));
+        }
     }
 
     stop() {
-        if (this.animationId) {
-            cancelAnimationFrame(this.animationId);
+        this.running = false;
+        if (this.keyHandler) {
+            document.removeEventListener('keydown', this.keyHandler);
         }
     }
 }
 
-// Initialize game when tab is shown
+// Global game instance
 let anatomyRunner = null;
 
 function initGame() {
     const canvas = document.getElementById('gameCanvas');
-    if (canvas && !anatomyRunner) {
-        // Set canvas size
-        canvas.width = canvas.parentElement.offsetWidth - 40;
-        canvas.height = 550;
-        anatomyRunner = new AnatomyRunner(canvas);
-        anatomyRunner.start();
+    if (!canvas) return;
+
+    // Stop existing game if any
+    if (anatomyRunner) {
+        anatomyRunner.stop();
     }
+
+    // Create new game
+    anatomyRunner = new AnatomyRush(canvas);
+    anatomyRunner.start();
 }
 
 function stopGame() {
     if (anatomyRunner) {
         anatomyRunner.stop();
+        anatomyRunner = null;
     }
 }
 
-// Resize handler
+// Handle resize
 window.addEventListener('resize', () => {
-    if (anatomyRunner && anatomyRunner.canvas) {
-        anatomyRunner.canvas.width = anatomyRunner.canvas.parentElement.offsetWidth - 40;
-        anatomyRunner.width = anatomyRunner.canvas.width;
+    if (anatomyRunner) {
+        anatomyRunner.resize();
     }
 });
