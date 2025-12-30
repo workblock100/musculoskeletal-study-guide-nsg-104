@@ -1,6 +1,6 @@
-// ANATOMY RUSH - Legendary Edition 2025
-// With dash, weather, achievements, and more!
-class AnatomyRush {
+// MSK REVIEW RUNNER - Study Game 2025
+// Musculoskeletal nursing review game with questions
+class MSKReviewRunner {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
@@ -75,8 +75,8 @@ class AnatomyRush {
         this.coinsThisRun = 0;
         this.questionsCorrect = 0;
 
-        // Generate stars for parallax
-        for (let i = 0; i < 200; i++) {
+        // Generate stars for parallax (reduced for performance)
+        for (let i = 0; i < 80; i++) {
             this.stars.push({
                 x: Math.random() * 2000,
                 y: Math.random() * 400,
@@ -99,6 +99,7 @@ class AnatomyRush {
         this.questionHistory = [];
         this.questionsAnswered = 0;
         this.questionsCorrectRun = 0;
+        this.askedQuestionIndices = []; // Track which questions have been asked this run
 
         // Time of day (changes based on distance)
         this.timeOfDay = 'dawn'; // dawn, day, dusk, night
@@ -124,8 +125,8 @@ class AnatomyRush {
         this.running = false;
         this.lastTime = 0;
         this.globalTime = 0;
-
-        for (let i = 0; i < 30; i++) {
+        // Generate buildings (reduced for performance)
+        for (let i = 0; i < 15; i++) {
             this.buildings.push({
                 x: i * 90 - 200,
                 height: 60 + Math.random() * 280,
@@ -246,12 +247,12 @@ class AnatomyRush {
             this.player.isJumping = true;
             this.player.jumpVelocity = 24;
             this.player.canDoubleJump = true;
-            this.addParticles(this.getLaneX(this.currentLane), this.height - 60, 18, '#06b6d4');
+            this.addParticles(this.getLaneX(this.currentLane), this.height - 60, 8, '#06b6d4');
             this.playSound('jump');
         } else if (this.player.isJumping && this.player.canDoubleJump) {
             this.player.jumpVelocity = 20;
             this.player.canDoubleJump = false;
-            this.addParticles(this.getLaneX(this.currentLane), this.height - 60 - this.player.jumpHeight, 25, '#22c55e');
+            this.addParticles(this.getLaneX(this.currentLane), this.height - 60 - this.player.jumpHeight, 10, '#22c55e');
             this.addFloatingText(this.getLaneX(this.currentLane), this.height - 150, 'DOUBLE JUMP!', '#22c55e');
             this.playSound('jump');
         }
@@ -272,7 +273,7 @@ class AnatomyRush {
             this.player.dashCooldown = 120;
             this.player.invincible = Math.max(this.player.invincible, 20);
             this.addFloatingText(this.getLaneX(this.currentLane), this.height - 200, 'DASH!', '#f472b6');
-            for (let i = 0; i < 30; i++) this.addParticles(this.getLaneX(this.currentLane), this.height - 80, 1, '#f472b6');
+            for (let i = 0; i < 15; i++) this.addParticles(this.getLaneX(this.currentLane), this.height - 80, 1, '#f472b6');
             this.addParticles(this.getLaneX(this.currentLane), this.height - 40, 10, '#f59e0b');
         }
     }
@@ -420,6 +421,7 @@ class AnatomyRush {
         this.questionHistory = [];
         this.questionsAnswered = 0;
         this.questionsCorrectRun = 0;
+        this.askedQuestionIndices = []; // Reset for new run
         this.timeOfDay = 'dawn';
         this.confetti = [];
         this.feverMode = false;
@@ -454,7 +456,7 @@ class AnatomyRush {
             }
         }
         if (this.weather === 'rain') {
-            if (this.raindrops.length < 100) this.raindrops.push({ x: Math.random() * this.width, y: -10, speed: 8 + Math.random() * 6 });
+            if (this.raindrops.length < 50) this.raindrops.push({ x: Math.random() * this.width, y: -10, speed: 8 + Math.random() * 6 });
             this.raindrops = this.raindrops.filter(r => { r.y += r.speed; r.x -= 2; return r.y < this.height; });
 
             // Lightning system
@@ -695,7 +697,7 @@ class AnatomyRush {
     hitObstacle() {
         this.lives--; this.streak = 0; this.multiplier = 1; this.combo = 0; this.shake = 25;
         this.flash = { color: '#ef4444', timer: 20 }; this.player.invincible = 120;
-        this.addParticles(this.getLaneX(Math.round(this.currentLane)), this.height - 120, 40, '#ef4444');
+        this.addParticles(this.getLaneX(Math.round(this.currentLane)), this.height - 120, 15, '#ef4444');
         this.playSound('hit');
         if (this.lives <= 0) this.gameOver();
     }
@@ -734,7 +736,25 @@ class AnatomyRush {
             { q: "For a client with gout, which food should be avoided?", opts: ["Organ meats and alcohol", "Dairy products", "Fresh vegetables", "Whole grains"], ans: 0 }
         ];
 
-        const q = atiQuestions[Math.floor(Math.random() * atiQuestions.length)];
+        // Get available question indices (ones not yet asked this run)
+        let availableIndices = [];
+        for (let i = 0; i < atiQuestions.length; i++) {
+            if (!this.askedQuestionIndices.includes(i)) {
+                availableIndices.push(i);
+            }
+        }
+
+        // If all questions asked, reset and reshuffle
+        if (availableIndices.length === 0) {
+            this.askedQuestionIndices = [];
+            availableIndices = atiQuestions.map((_, i) => i);
+        }
+
+        // Pick a random question from available ones
+        const randomIdx = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+        this.askedQuestionIndices.push(randomIdx);
+
+        const q = atiQuestions[randomIdx];
         const shuffledOpts = [...q.opts];
         const correctText = q.opts[q.ans];
         // Shuffle options
@@ -1526,36 +1546,75 @@ class AnatomyRush {
     }
 
     drawMenu() {
-        this.ctx.fillStyle = 'rgba(0,0,0,0.9)'; this.ctx.fillRect(0, 0, this.width, this.height);
-        this.ctx.shadowColor = '#d946ef'; this.ctx.shadowBlur = 80; this.ctx.fillStyle = '#d946ef';
-        this.ctx.font = `bold ${Math.min(68, this.width * 0.055)}px "Space Grotesk", Arial`; this.ctx.textAlign = 'center';
-        this.ctx.fillText('🏃 ANATOMY RUSH', this.centerX, this.height * 0.13); this.ctx.shadowBlur = 0;
-        this.ctx.fillStyle = '#f472b6'; this.ctx.font = '18px Arial'; this.ctx.fillText('✨ LEGENDARY EDITION ✨', this.centerX, this.height * 0.19);
-        this.ctx.fillStyle = '#94a3b8'; this.ctx.font = '20px Arial'; this.ctx.fillText('Master nursing concepts through gameplay', this.centerX, this.height * 0.26);
-        this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 30px Arial';
-        this.ctx.fillText(`🏆 Best: ${this.highScore.toLocaleString()}`, this.centerX, this.height * 0.36);
-        this.ctx.fillText(`💰 Coins: ${this.totalCoins.toLocaleString()}`, this.centerX, this.height * 0.44);
+        this.ctx.fillStyle = 'rgba(10, 15, 30, 0.95)';
+        this.ctx.fillRect(0, 0, this.width, this.height);
 
-        // Show current outfit
+        // Title with glow
+        this.ctx.shadowColor = '#06b6d4';
+        this.ctx.shadowBlur = 40;
+        this.ctx.fillStyle = '#06b6d4';
+        this.ctx.font = `bold ${Math.min(52, this.width * 0.045)}px "Segoe UI", "SF Pro Display", Arial`;
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('🦴 MSK Review Runner', this.centerX, this.height * 0.12);
+        this.ctx.shadowBlur = 0;
+
+        // Subtitle
+        this.ctx.fillStyle = '#94a3b8';
+        this.ctx.font = '17px "Segoe UI", Arial';
+        this.ctx.fillText('Musculoskeletal Nursing Study Game', this.centerX, this.height * 0.18);
+
+        // Stats section with card background
+        this.ctx.fillStyle = 'rgba(255,255,255,0.05)';
+        this.ctx.beginPath();
+        this.ctx.roundRect(this.centerX - 160, this.height * 0.24, 320, 100, 12);
+        this.ctx.fill();
+
+        this.ctx.fillStyle = '#fbbf24';
+        this.ctx.font = 'bold 26px "Segoe UI", Arial';
+        this.ctx.fillText(`🏆 Best: ${this.highScore.toLocaleString()}`, this.centerX, this.height * 0.30);
+        this.ctx.font = 'bold 22px "Segoe UI", Arial';
+        this.ctx.fillText(`💰 Coins: ${this.totalCoins.toLocaleString()}`, this.centerX, this.height * 0.37);
+
+        // Current outfit
         const currentOutfitName = this.outfits[this.currentOutfit].name;
         this.ctx.fillStyle = this.getOutfitColor();
-        this.ctx.font = 'bold 20px Arial';
-        this.ctx.fillText(`👕 Outfit: ${currentOutfitName}`, this.centerX, this.height * 0.52);
+        this.ctx.font = '18px "Segoe UI", Arial';
+        this.ctx.fillText(`👕 ${currentOutfitName}`, this.centerX, this.height * 0.46);
 
+        // Achievements if any
         const achCount = Object.keys(this.achievements).length;
-        if (achCount > 0) { this.ctx.fillStyle = '#a855f7'; this.ctx.font = '18px Arial'; this.ctx.fillText(`🏅 ${achCount} Achievement${achCount > 1 ? 's' : ''} Unlocked`, this.centerX, this.height * 0.58); }
-        this.ctx.fillStyle = '#fff'; this.ctx.font = '16px Arial';
-        this.ctx.fillText('← → Lanes | SPACE Double Jump | ↓ Slide | SHIFT Dash', this.centerX, this.height * 0.66);
-        this.ctx.fillStyle = '#a855f7'; this.ctx.font = '14px Arial';
-        this.ctx.fillText('🛡️ Shield | 🧲 Magnet | ⚡ Speed | ❤️ Life | 💰 Burst | 🌧️ Weather', this.centerX, this.height * 0.72);
+        if (achCount > 0) {
+            this.ctx.fillStyle = '#a855f7';
+            this.ctx.font = '16px "Segoe UI", Arial';
+            this.ctx.fillText(`🏅 ${achCount} Achievement${achCount > 1 ? 's' : ''}`, this.centerX, this.height * 0.52);
+        }
 
+        // Controls - cleaner format
+        this.ctx.fillStyle = 'rgba(255,255,255,0.08)';
+        this.ctx.beginPath();
+        this.ctx.roundRect(this.centerX - 200, this.height * 0.56, 400, 80, 10);
+        this.ctx.fill();
+
+        this.ctx.fillStyle = '#e2e8f0';
+        this.ctx.font = 'bold 14px "Segoe UI", Arial';
+        this.ctx.fillText('CONTROLS', this.centerX, this.height * 0.60);
+        this.ctx.fillStyle = '#94a3b8';
+        this.ctx.font = '13px "Segoe UI", Arial';
+        this.ctx.fillText('← → Move  •  SPACE Jump  •  ↓ Slide  •  SHIFT Dash', this.centerX, this.height * 0.65);
+        this.ctx.fillText('🛡️ Shield  •  🧲 Magnet  •  ⚡ Speed  •  ❤️ Life', this.centerX, this.height * 0.70);
+
+        // Start prompt with pulse
         const pulse = 0.6 + Math.sin(this.globalTime * 0.005) * 0.4;
-        this.ctx.globalAlpha = pulse; this.ctx.fillStyle = '#06b6d4'; this.ctx.font = 'bold 32px Arial';
-        this.ctx.fillText('[ TAP OR PRESS SPACE ]', this.centerX, this.height * 0.84); this.ctx.globalAlpha = 1;
+        this.ctx.globalAlpha = pulse;
+        this.ctx.fillStyle = '#22c55e';
+        this.ctx.font = 'bold 28px "Segoe UI", Arial';
+        this.ctx.fillText('▶ TAP OR PRESS SPACE', this.centerX, this.height * 0.82);
+        this.ctx.globalAlpha = 1;
 
         // Shop hint
-        this.ctx.fillStyle = '#ec4899'; this.ctx.font = 'bold 20px Arial';
-        this.ctx.fillText('[O] OUTFIT SHOP 👗', this.centerX, this.height * 0.93);
+        this.ctx.fillStyle = '#ec4899';
+        this.ctx.font = '16px "Segoe UI", Arial';
+        this.ctx.fillText('[O] Outfit Shop', this.centerX, this.height * 0.92);
     }
 
     drawShop() {
@@ -1751,7 +1810,7 @@ class AnatomyRush {
     stop() { this.running = false; if (this._kh) document.removeEventListener('keydown', this._kh); }
 }
 
-let anatomyRunner = null;
-function initGame() { const c = document.getElementById('gameCanvas'); if (!c) return; if (anatomyRunner) anatomyRunner.stop(); anatomyRunner = new AnatomyRush(c); anatomyRunner.start(); }
-function stopGame() { if (anatomyRunner) { anatomyRunner.stop(); anatomyRunner = null; } }
-window.addEventListener('resize', () => { if (anatomyRunner) anatomyRunner.resize(); });
+let mskRunner = null;
+function initGame() { const c = document.getElementById('gameCanvas'); if (!c) return; if (mskRunner) mskRunner.stop(); mskRunner = new MSKReviewRunner(c); mskRunner.start(); }
+function stopGame() { if (mskRunner) { mskRunner.stop(); mskRunner = null; } }
+window.addEventListener('resize', () => { if (mskRunner) mskRunner.resize(); });
