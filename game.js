@@ -1055,110 +1055,84 @@ class MSKReviewRunner {
     drawBackground() {
         const horizonY = this.height * 0.4;
 
-        // Full-screen sky gradient that extends below horizon
-        const skyGrad = this.ctx.createLinearGradient(0, 0, 0, this.height * 0.7);
-        skyGrad.addColorStop(0, '#050810');     // Deep space
-        skyGrad.addColorStop(0.2, '#0a0f1a');   // Night sky
-        skyGrad.addColorStop(0.4, '#0f172a');   // Mid sky
-        skyGrad.addColorStop(0.55, '#1a2744');  // Horizon glow
-        skyGrad.addColorStop(0.7, '#0f1419');
-        skyGrad.addColorStop(1, '#0c0c10');
+        // Clean sky gradient
+        const skyGrad = this.ctx.createLinearGradient(0, 0, 0, this.height * 0.6);
+        skyGrad.addColorStop(0, '#070a12');
+        skyGrad.addColorStop(0.4, '#0d1320');
+        skyGrad.addColorStop(0.7, '#141c2d');
+        skyGrad.addColorStop(1, '#0e1218');
         this.ctx.fillStyle = skyGrad;
         this.ctx.fillRect(0, 0, this.width, this.height);
 
-        // STARS - Twinkling in the night sky
+        // Few subtle stars (static, no twinkle)
         if (!this.stars) {
             this.stars = [];
-            for (let i = 0; i < 80; i++) {
+            for (let i = 0; i < 12; i++) {
                 this.stars.push({
                     x: Math.random() * this.width,
-                    y: Math.random() * horizonY * 0.7,
-                    size: Math.random() * 2 + 0.5,
-                    twinkle: Math.random() * Math.PI * 2,
-                    speed: Math.random() * 0.02 + 0.01
+                    y: Math.random() * horizonY * 0.5,
+                    size: Math.random() * 1.5 + 0.5,
+                    alpha: 0.3 + Math.random() * 0.3
                 });
             }
         }
         this.stars.forEach(star => {
-            star.twinkle += star.speed;
-            const alpha = 0.4 + Math.sin(star.twinkle) * 0.4;
-            this.ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+            this.ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
             this.ctx.beginPath();
             this.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
             this.ctx.fill();
         });
 
-        // MOON - Glowing crescent
-        const moonX = this.width * 0.85;
-        const moonY = this.height * 0.12;
-        const moonGrad = this.ctx.createRadialGradient(moonX - 5, moonY - 5, 2, moonX, moonY, 35);
-        moonGrad.addColorStop(0, '#ffffff');
-        moonGrad.addColorStop(0.3, '#f0f0e8');
-        moonGrad.addColorStop(0.7, '#d4d4c8');
-        moonGrad.addColorStop(1, 'rgba(180, 180, 170, 0)');
-        this.ctx.fillStyle = moonGrad;
-        this.ctx.beginPath(); this.ctx.arc(moonX, moonY, 30, 0, Math.PI * 2); this.ctx.fill();
-        // Moon glow
-        this.ctx.shadowColor = '#8899aa'; this.ctx.shadowBlur = 40;
-        this.ctx.beginPath(); this.ctx.arc(moonX, moonY, 22, 0, Math.PI * 2); this.ctx.fill();
-        this.ctx.shadowBlur = 0;
+        // Pre-compute building windows once (no flickering)
+        if (!this.buildingWindows) {
+            this.buildingWindows = [];
+            this.buildings.forEach(b => {
+                const bHeight = b.height * 0.6;
+                const by = horizonY - bHeight;
+                const wins = [];
+                const rows = Math.floor(bHeight / 14);
+                const cols = Math.floor(b.width / 10);
+                for (let row = 1; row < rows; row++) {
+                    for (let col = 1; col < cols; col++) {
+                        if (Math.random() < 0.25) {
+                            wins.push({
+                                x: b.x + col * 10 + 2,
+                                y: by + row * 14 + 2,
+                                bright: 0.15 + Math.random() * 0.25
+                            });
+                        }
+                    }
+                }
+                this.buildingWindows.push({ building: b, windows: wins, by, bHeight });
+            });
+        }
 
-        // City distant glow (ambient light pollution)
-        const cityGlow = this.ctx.createRadialGradient(this.centerX, horizonY, 50, this.centerX, horizonY, this.width * 0.6);
-        cityGlow.addColorStop(0, 'rgba(60, 80, 120, 0.15)');
-        cityGlow.addColorStop(0.5, 'rgba(40, 50, 80, 0.08)');
-        cityGlow.addColorStop(1, 'transparent');
-        this.ctx.fillStyle = cityGlow;
-        this.ctx.fillRect(0, 0, this.width, horizonY + 50);
-
-        // City silhouettes with atmospheric fade
-        for (let i = 0; i < this.buildings.length; i++) {
-            const b = this.buildings[i];
-            const bHeight = b.height * 0.6;
-            const by = horizonY - bHeight;
-
-            // Building gradient - fades into atmosphere at top
+        // Draw buildings with pre-computed windows
+        this.buildingWindows.forEach(({ building: b, windows, by, bHeight }) => {
+            // Building silhouette
             const buildGrad = this.ctx.createLinearGradient(0, by, 0, horizonY);
-            buildGrad.addColorStop(0, 'rgba(15, 20, 30, 0.2)');
-            buildGrad.addColorStop(0.4, 'rgba(20, 25, 38, 0.5)');
-            buildGrad.addColorStop(1, 'rgba(25, 32, 48, 0.85)');
+            buildGrad.addColorStop(0, 'rgba(18, 22, 32, 0.3)');
+            buildGrad.addColorStop(0.5, 'rgba(22, 28, 40, 0.5)');
+            buildGrad.addColorStop(1, 'rgba(28, 35, 50, 0.7)');
             this.ctx.fillStyle = buildGrad;
             this.ctx.fillRect(b.x, by, b.width, bHeight);
 
-            // Window grid (more realistic)
-            const windowRows = Math.floor(bHeight / 12);
-            const windowCols = Math.floor(b.width / 8);
-            for (let row = 1; row < windowRows; row++) {
-                for (let col = 1; col < windowCols; col++) {
-                    if (Math.random() < 0.3) { // 30% of windows lit
-                        const wx = b.x + col * 8 + 2;
-                        const wy = by + row * 12 + 2;
-                        const warmth = Math.random();
-                        const r = 255 - warmth * 50;
-                        const g = 220 - warmth * 80;
-                        const bright = 0.3 + Math.random() * 0.4;
-                        this.ctx.fillStyle = `rgba(${r}, ${g}, 120, ${bright})`;
-                        this.ctx.fillRect(wx, wy, 4, 5);
-                    }
-                }
-            }
-        }
+            // Static windows
+            this.ctx.fillStyle = 'rgba(255, 230, 150, 0.2)';
+            windows.forEach(w => {
+                this.ctx.globalAlpha = w.bright;
+                this.ctx.fillRect(w.x, w.y, 4, 5);
+            });
+            this.ctx.globalAlpha = 1;
+        });
 
-        // Atmospheric haze layers (multiple for depth)
-        const haze1 = this.ctx.createLinearGradient(0, horizonY - 80, 0, horizonY + 40);
-        haze1.addColorStop(0, 'transparent');
-        haze1.addColorStop(0.4, 'rgba(20, 28, 45, 0.4)');
-        haze1.addColorStop(0.7, 'rgba(15, 22, 35, 0.6)');
-        haze1.addColorStop(1, 'rgba(12, 16, 24, 0.8)');
-        this.ctx.fillStyle = haze1;
-        this.ctx.fillRect(0, horizonY - 80, this.width, 120);
-
-        // Ground haze (very close to camera)
-        const groundHaze = this.ctx.createLinearGradient(0, this.height * 0.85, 0, this.height);
-        groundHaze.addColorStop(0, 'transparent');
-        groundHaze.addColorStop(1, 'rgba(10, 12, 18, 0.3)');
-        this.ctx.fillStyle = groundHaze;
-        this.ctx.fillRect(0, this.height * 0.85, this.width, this.height * 0.15);
+        // Soft horizon haze
+        const hazeGrad = this.ctx.createLinearGradient(0, horizonY - 40, 0, horizonY + 30);
+        hazeGrad.addColorStop(0, 'transparent');
+        hazeGrad.addColorStop(0.5, 'rgba(15, 20, 30, 0.5)');
+        hazeGrad.addColorStop(1, 'rgba(12, 15, 22, 0.7)');
+        this.ctx.fillStyle = hazeGrad;
+        this.ctx.fillRect(0, horizonY - 40, this.width, 70);
     }
 
     drawRoad() {
@@ -1557,32 +1531,36 @@ class MSKReviewRunner {
             this.ctx.strokeStyle = '#9f1239'; this.ctx.lineWidth = 1.5;
             this.ctx.beginPath(); this.ctx.arc(0, -96 + bounce, 6, 0.3, Math.PI - 0.3); this.ctx.stroke();
 
-            // STETHOSCOPE EAR TIPS (drawn LAST so they're visible on top)
-            // Tubing going UP from neck to ears
+            // STETHOSCOPE - Properly draped (ear tips hang DOWN in front)
             this.ctx.strokeStyle = '#b8c5d4'; this.ctx.lineWidth = 3; this.ctx.lineCap = 'round';
-            // Left ear tube
+
+            // The tubes hang DOWN from neck, meeting at Y-junction near chest
+            // Left tube hanging down
             this.ctx.beginPath();
             this.ctx.moveTo(-15, -86 + bounce);
-            this.ctx.quadraticCurveTo(-22, -95 + bounce, -20, -108 + bounce);
-            this.ctx.quadraticCurveTo(-18, -118 + bounce, -22, -118 + bounce);
-            this.ctx.stroke();
-            // Right ear tube
-            this.ctx.beginPath();
-            this.ctx.moveTo(15, -86 + bounce);
-            this.ctx.quadraticCurveTo(22, -95 + bounce, 20, -108 + bounce);
-            this.ctx.quadraticCurveTo(18, -118 + bounce, 22, -118 + bounce);
+            this.ctx.quadraticCurveTo(-18, -75 + bounce, -12, -60 + bounce);
+            this.ctx.lineTo(-6, -48 + bounce);
             this.ctx.stroke();
 
-            // Ear tips (metallic olive shapes) - clearly visible
-            const tipGrad = this.ctx.createLinearGradient(0, -122 + bounce, 0, -114 + bounce);
+            // Right tube hanging down  
+            this.ctx.beginPath();
+            this.ctx.moveTo(15, -86 + bounce);
+            this.ctx.quadraticCurveTo(18, -75 + bounce, 12, -60 + bounce);
+            this.ctx.lineTo(6, -48 + bounce);
+            this.ctx.stroke();
+
+            // Y-junction connector
+            this.ctx.fillStyle = '#94a3b8';
+            this.ctx.beginPath(); this.ctx.arc(0, -45 + bounce, 5, 0, Math.PI * 2); this.ctx.fill();
+
+            // Ear tips (metallic, hanging at natural angle)
+            const tipGrad = this.ctx.createLinearGradient(0, -65 + bounce, 0, -55 + bounce);
             tipGrad.addColorStop(0, '#e2e8f0'); tipGrad.addColorStop(0.5, '#94a3b8'); tipGrad.addColorStop(1, '#64748b');
             this.ctx.fillStyle = tipGrad;
-            this.ctx.shadowColor = 'rgba(255,255,255,0.5)'; this.ctx.shadowBlur = 4;
-            // Left ear tip (angled toward ear)
-            this.ctx.beginPath(); this.ctx.ellipse(-24, -117 + bounce, 4, 7, -Math.PI / 6, 0, Math.PI * 2); this.ctx.fill();
-            // Right ear tip
-            this.ctx.beginPath(); this.ctx.ellipse(24, -117 + bounce, 4, 7, Math.PI / 6, 0, Math.PI * 2); this.ctx.fill();
-            this.ctx.shadowBlur = 0;
+            // Left ear tip (angled outward)
+            this.ctx.beginPath(); this.ctx.ellipse(-14, -58 + bounce, 3, 6, -Math.PI / 5, 0, Math.PI * 2); this.ctx.fill();
+            // Right ear tip (angled outward)
+            this.ctx.beginPath(); this.ctx.ellipse(14, -58 + bounce, 3, 6, Math.PI / 5, 0, Math.PI * 2); this.ctx.fill();
             // Shield effect
             if (this.player.shield > 0) {
                 this.ctx.strokeStyle = '#06b6d4'; this.ctx.lineWidth = 4;
