@@ -795,7 +795,11 @@ class MSKReviewRunner {
             this.perfectRun = false;
             if (this.lives <= 0) { setTimeout(() => this.gameOver(), 900); return; }
         }
-        setTimeout(() => { this.state = 'playing'; this.currentQuestion = null; }, 1100);
+        setTimeout(() => {
+            this.state = 'playing';
+            this.currentQuestion = null;
+            this.player.invincible = 120; // 2s grace period
+        }, 1100);
     }
 
     handleQuestionClick(e) {
@@ -1358,7 +1362,7 @@ class MSKReviewRunner {
 
     drawMenu() {
         // Semi-transparent dark overlay to show game world
-        this.ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        this.ctx.fillStyle = 'rgba(15, 23, 42, 0.3)';
         this.ctx.fillRect(0, 0, this.width, this.height);
 
         // Subtle grid overlay for depth
@@ -1544,7 +1548,7 @@ class MSKReviewRunner {
     }
 
     drawQuestion() {
-        if (this.questionResult === null) { this.questionTimer--; if (this.questionTimer <= 0) { this.questionResult = 'timeout'; this.lives--; this.streak = 0; this.multiplier = 1; this.shake = 15; this.flash = { color: '#ef4444', timer: 18 }; if (this.lives <= 0) setTimeout(() => this.gameOver(), 900); else setTimeout(() => { this.state = 'playing'; this.currentQuestion = null; }, 1100); } }
+        if (this.questionResult === null) { this.questionTimer--; if (this.questionTimer <= 0) { this.questionResult = 'timeout'; this.lives--; this.streak = 0; this.multiplier = 1; this.shake = 15; this.flash = { color: '#ef4444', timer: 18 }; if (this.lives <= 0) setTimeout(() => this.gameOver(), 900); else setTimeout(() => { this.state = 'playing'; this.currentQuestion = null; this.player.invincible = 120; }, 1100); } }
         this.ctx.fillStyle = 'rgba(5,5,20,0.98)'; this.ctx.fillRect(0, 0, this.width, this.height);
         if (!this.currentQuestion) return;
         const pct = this.questionTimer / (this.questionTimeLimit * 60), tc = pct > 0.5 ? '#22c55e' : pct > 0.25 ? '#f59e0b' : '#ef4444';
