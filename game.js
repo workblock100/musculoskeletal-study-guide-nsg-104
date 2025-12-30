@@ -1052,102 +1052,266 @@ class MSKReviewRunner {
         this.newAchievement = { id, name, timer: 180 };
     }
 
-    // Enhanced background with visual depth
+    // AWARD-WINNING BACKGROUND - Cyberpunk Night City Aesthetic
     drawBackground() {
         const horizonY = this.height * 0.4;
+        const t = this.globalTime * 0.001; // Slow time for subtle animations
 
-        // Rich twilight gradient with warm horizon
-        const skyGrad = this.ctx.createLinearGradient(0, 0, 0, horizonY + 50);
-        skyGrad.addColorStop(0, '#030508');      // Near black
-        skyGrad.addColorStop(0.25, '#0c1929');   // Deep navy
-        skyGrad.addColorStop(0.5, '#1a2d4a');    // Navy blue
-        skyGrad.addColorStop(0.75, '#2d3a52');   // Slate
-        skyGrad.addColorStop(0.9, '#4a3f5c');    // Purple hint
-        skyGrad.addColorStop(1, '#3d2942');      // Warm purple at horizon
+        // ═══════════════════════════════════════════════════════════════
+        // 1. DEEP SPACE GRADIENT - Rich purples and teals
+        // ═══════════════════════════════════════════════════════════════
+        const skyGrad = this.ctx.createLinearGradient(0, 0, 0, horizonY + 60);
+        skyGrad.addColorStop(0, '#020206');       // Near void
+        skyGrad.addColorStop(0.15, '#0a0a1a');    // Deep space
+        skyGrad.addColorStop(0.35, '#0d1a2d');    // Midnight blue
+        skyGrad.addColorStop(0.55, '#1a2a40');    // Deep ocean
+        skyGrad.addColorStop(0.75, '#2d2045');    // Purple dusk
+        skyGrad.addColorStop(0.9, '#4a2850');     // Vibrant purple
+        skyGrad.addColorStop(1, '#3a1a35');       // Dark magenta
         this.ctx.fillStyle = skyGrad;
         this.ctx.fillRect(0, 0, this.width, this.height);
 
-        // Static stars (pre-computed once)
+        // ═══════════════════════════════════════════════════════════════
+        // 2. AURORA BOREALIS - Flowing color bands
+        // ═══════════════════════════════════════════════════════════════
+        if (!this.auroraWaves) {
+            this.auroraWaves = [];
+            for (let i = 0; i < 3; i++) {
+                this.auroraWaves.push({
+                    y: 30 + i * 40,
+                    amplitude: 15 + Math.random() * 10,
+                    frequency: 0.003 + Math.random() * 0.002,
+                    phase: Math.random() * Math.PI * 2,
+                    color: i === 0 ? 'rgba(0, 255, 180, 0.08)' :
+                        i === 1 ? 'rgba(100, 200, 255, 0.06)' :
+                            'rgba(180, 100, 255, 0.05)',
+                    width: 25 + i * 15
+                });
+            }
+        }
+        this.auroraWaves.forEach(wave => {
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, wave.y);
+            for (let x = 0; x <= this.width; x += 20) {
+                const y = wave.y + Math.sin(x * wave.frequency + t + wave.phase) * wave.amplitude;
+                this.ctx.lineTo(x, y);
+            }
+            this.ctx.lineTo(this.width, wave.y + wave.width);
+            this.ctx.lineTo(0, wave.y + wave.width);
+            this.ctx.closePath();
+            const auroraGrad = this.ctx.createLinearGradient(0, wave.y, 0, wave.y + wave.width);
+            auroraGrad.addColorStop(0, 'transparent');
+            auroraGrad.addColorStop(0.5, wave.color);
+            auroraGrad.addColorStop(1, 'transparent');
+            this.ctx.fillStyle = auroraGrad;
+            this.ctx.fill();
+        });
+
+        // ═══════════════════════════════════════════════════════════════
+        // 3. CRESCENT MOON with atmospheric halo
+        // ═══════════════════════════════════════════════════════════════
+        const moonX = this.width * 0.8;
+        const moonY = 70;
+        const moonR = 25;
+
+        // Outer glow layers
+        for (let i = 4; i > 0; i--) {
+            const glowR = moonR + i * 15;
+            const glowGrad = this.ctx.createRadialGradient(moonX, moonY, moonR, moonX, moonY, glowR);
+            glowGrad.addColorStop(0, `rgba(255, 240, 220, ${0.03 / i})`);
+            glowGrad.addColorStop(1, 'transparent');
+            this.ctx.fillStyle = glowGrad;
+            this.ctx.beginPath();
+            this.ctx.arc(moonX, moonY, glowR, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+        // Moon body
+        const moonGrad = this.ctx.createRadialGradient(moonX - 5, moonY - 5, 2, moonX, moonY, moonR);
+        moonGrad.addColorStop(0, '#fffef8');
+        moonGrad.addColorStop(0.6, '#e8e4d8');
+        moonGrad.addColorStop(1, '#c8c4b0');
+        this.ctx.fillStyle = moonGrad;
+        this.ctx.beginPath();
+        this.ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
+        this.ctx.fill();
+        // Crescent shadow
+        this.ctx.fillStyle = '#0d1a2d';
+        this.ctx.beginPath();
+        this.ctx.arc(moonX + 12, moonY - 4, moonR * 0.9, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // ═══════════════════════════════════════════════════════════════
+        // 4. STARS with varied sizes and twinkle
+        // ═══════════════════════════════════════════════════════════════
         if (!this.staticStars) {
             this.staticStars = [];
-            for (let i = 0; i < 25; i++) {
+            for (let i = 0; i < 60; i++) {
                 this.staticStars.push({
                     x: Math.random() * this.width,
-                    y: Math.random() * horizonY * 0.6,
-                    size: Math.random() * 1.2 + 0.3,
-                    brightness: 0.3 + Math.random() * 0.4
+                    y: Math.random() * horizonY * 0.7,
+                    size: Math.random() < 0.9 ? Math.random() * 1 + 0.3 : Math.random() * 2 + 1.5,
+                    twinkleSpeed: 0.5 + Math.random() * 2,
+                    twinklePhase: Math.random() * Math.PI * 2,
+                    color: Math.random() < 0.8 ? '#ffffff' : Math.random() < 0.5 ? '#a0d0ff' : '#ffd0a0'
                 });
             }
         }
         this.staticStars.forEach(s => {
-            this.ctx.fillStyle = `rgba(255, 255, 255, ${s.brightness})`;
+            const twinkle = 0.4 + Math.sin(t * s.twinkleSpeed + s.twinklePhase) * 0.3;
+            this.ctx.fillStyle = s.color.replace('ff', Math.floor(twinkle * 255).toString(16).padStart(2, '0'));
+            this.ctx.globalAlpha = twinkle;
             this.ctx.beginPath();
             this.ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
             this.ctx.fill();
         });
+        this.ctx.globalAlpha = 1;
 
-        // City ambient glow (before buildings)
-        const cityGlow = this.ctx.createRadialGradient(this.centerX, horizonY, 20, this.centerX, horizonY, this.width * 0.5);
-        cityGlow.addColorStop(0, 'rgba(100, 80, 120, 0.15)');
-        cityGlow.addColorStop(0.5, 'rgba(60, 50, 80, 0.08)');
+        // ═══════════════════════════════════════════════════════════════
+        // 5. SHOOTING STARS (occasional)
+        // ═══════════════════════════════════════════════════════════════
+        if (!this.shootingStars) {
+            this.shootingStars = [];
+            for (let i = 0; i < 3; i++) {
+                this.shootingStars.push({
+                    x: Math.random() * this.width,
+                    y: Math.random() * horizonY * 0.4,
+                    length: 40 + Math.random() * 60,
+                    angle: 0.5 + Math.random() * 0.3
+                });
+            }
+        }
+        const shootFrame = Math.floor(t * 0.5) % 300;
+        if (shootFrame < 3) {
+            const star = this.shootingStars[shootFrame % 3];
+            const progress = (t * 0.5) % 1;
+            this.ctx.strokeStyle = `rgba(255, 255, 255, ${1 - progress})`;
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            const sx = star.x + progress * 200;
+            const sy = star.y + progress * 100;
+            this.ctx.moveTo(sx, sy);
+            this.ctx.lineTo(sx - star.length * Math.cos(star.angle), sy - star.length * Math.sin(star.angle));
+            this.ctx.stroke();
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 6. DISTANT CITY GLOW - Cyberpunk light pollution
+        // ═══════════════════════════════════════════════════════════════
+        const cityGlow = this.ctx.createRadialGradient(this.centerX, horizonY + 20, 0, this.centerX, horizonY, this.width * 0.7);
+        cityGlow.addColorStop(0, 'rgba(255, 100, 150, 0.15)');
+        cityGlow.addColorStop(0.3, 'rgba(150, 80, 200, 0.1)');
+        cityGlow.addColorStop(0.6, 'rgba(80, 60, 150, 0.05)');
         cityGlow.addColorStop(1, 'transparent');
         this.ctx.fillStyle = cityGlow;
-        this.ctx.fillRect(0, horizonY - 80, this.width, 100);
+        this.ctx.fillRect(0, horizonY - 100, this.width, 150);
 
-        // Pre-compute windows ONCE
+        // ═══════════════════════════════════════════════════════════════
+        // 7. CITY BUILDINGS - Layered silhouettes with neon accents
+        // ═══════════════════════════════════════════════════════════════
         if (!this.staticWindows) {
             this.staticWindows = [];
-            this.buildings.forEach(b => {
-                const bHeight = b.height * 0.6;
+            this.neonAccents = [];
+            this.buildings.forEach((b, idx) => {
+                const bHeight = b.height * 0.65;
                 const by = horizonY - bHeight;
-                const rows = Math.floor(bHeight / 12);
-                const cols = Math.floor(b.width / 8);
+                const rows = Math.floor(bHeight / 10);
+                const cols = Math.floor(b.width / 7);
                 for (let row = 1; row < rows; row++) {
                     for (let col = 1; col < cols; col++) {
-                        if (Math.random() < 0.3) {
-                            const warm = Math.random() < 0.75;
+                        if (Math.random() < 0.35) {
+                            const isNeon = Math.random() < 0.15;
                             this.staticWindows.push({
-                                x: b.x + col * 8 + 1,
-                                y: by + row * 12 + 1,
-                                color: warm
-                                    ? `rgba(255, ${200 + Math.random() * 50}, ${150 + Math.random() * 50}, ${0.2 + Math.random() * 0.25})`
-                                    : `rgba(${180 + Math.random() * 40}, ${200 + Math.random() * 50}, 255, ${0.15 + Math.random() * 0.2})`
+                                x: b.x + col * 7 + 1,
+                                y: by + row * 10 + 1,
+                                w: isNeon ? 5 : 3,
+                                h: isNeon ? 3 : 4,
+                                color: isNeon
+                                    ? `rgba(${Math.random() < 0.5 ? '255, 50, 150' : '50, 200, 255'}, 0.8)`
+                                    : `rgba(255, ${210 + Math.random() * 40}, ${160 + Math.random() * 40}, ${0.15 + Math.random() * 0.2})`
                             });
                         }
                     }
                 }
+                // Neon signs on some buildings
+                if (Math.random() < 0.3 && b.width > 40) {
+                    this.neonAccents.push({
+                        x: b.x + b.width * 0.3,
+                        y: by + 15,
+                        w: b.width * 0.4,
+                        h: 8,
+                        color: Math.random() < 0.5 ? '#ff1493' : '#00ffff'
+                    });
+                }
             });
         }
 
-        // Draw buildings with depth
+        // Draw buildings
         this.buildings.forEach(b => {
-            const bHeight = b.height * 0.6;
+            const bHeight = b.height * 0.65;
             const by = horizonY - bHeight;
-
-            // Building gradient (darker at top, lighter at base)
-            const bGrad = this.ctx.createLinearGradient(0, by, 0, horizonY);
-            bGrad.addColorStop(0, 'rgba(25, 32, 45, 0.5)');
-            bGrad.addColorStop(0.5, 'rgba(35, 45, 60, 0.7)');
-            bGrad.addColorStop(1, 'rgba(45, 55, 70, 0.85)');
+            const bGrad = this.ctx.createLinearGradient(b.x, by, b.x, horizonY);
+            bGrad.addColorStop(0, 'rgba(15, 20, 35, 0.6)');
+            bGrad.addColorStop(0.4, 'rgba(25, 30, 50, 0.75)');
+            bGrad.addColorStop(0.8, 'rgba(35, 40, 60, 0.85)');
+            bGrad.addColorStop(1, 'rgba(45, 50, 70, 0.9)');
             this.ctx.fillStyle = bGrad;
             this.ctx.fillRect(b.x, by, b.width, bHeight);
+            // Building edge highlight
+            this.ctx.strokeStyle = 'rgba(100, 80, 150, 0.2)';
+            this.ctx.lineWidth = 1;
+            this.ctx.strokeRect(b.x, by, b.width, bHeight);
         });
 
-        // Draw static windows
+        // Draw windows
         this.staticWindows.forEach(w => {
             this.ctx.fillStyle = w.color;
-            this.ctx.fillRect(w.x, w.y, 3, 4);
+            this.ctx.fillRect(w.x, w.y, w.w, w.h);
         });
 
-        // Horizon atmosphere (deep fog that extends into road zone for seamless blend)
-        const fogGrad = this.ctx.createLinearGradient(0, horizonY - 80, 0, horizonY + 80);
+        // Draw neon signs with glow
+        this.neonAccents.forEach(n => {
+            this.ctx.shadowColor = n.color;
+            this.ctx.shadowBlur = 10;
+            this.ctx.fillStyle = n.color;
+            this.ctx.fillRect(n.x, n.y, n.w, n.h);
+            this.ctx.shadowBlur = 0;
+        });
+
+        // ═══════════════════════════════════════════════════════════════
+        // 8. FLOATING PARTICLES - Atmospheric dust/light motes
+        // ═══════════════════════════════════════════════════════════════
+        if (!this.dustParticles) {
+            this.dustParticles = [];
+            for (let i = 0; i < 30; i++) {
+                this.dustParticles.push({
+                    x: Math.random() * this.width,
+                    y: Math.random() * horizonY,
+                    size: Math.random() * 2 + 0.5,
+                    speedY: -0.1 - Math.random() * 0.3,
+                    drift: Math.random() * Math.PI * 2
+                });
+            }
+        }
+        this.dustParticles.forEach(p => {
+            const px = p.x + Math.sin(t + p.drift) * 20;
+            const py = (p.y + t * 10 * p.speedY) % horizonY;
+            this.ctx.fillStyle = `rgba(255, 255, 255, ${0.1 + Math.random() * 0.1})`;
+            this.ctx.beginPath();
+            this.ctx.arc(px, py < 0 ? py + horizonY : py, p.size, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+
+        // ═══════════════════════════════════════════════════════════════
+        // 9. HORIZON FOG - Seamless blend into road
+        // ═══════════════════════════════════════════════════════════════
+        const fogGrad = this.ctx.createLinearGradient(0, horizonY - 100, 0, horizonY + 100);
         fogGrad.addColorStop(0, 'transparent');
-        fogGrad.addColorStop(0.3, 'rgba(35, 30, 50, 0.3)');
-        fogGrad.addColorStop(0.5, 'rgba(25, 25, 40, 0.6)');
-        fogGrad.addColorStop(0.7, 'rgba(18, 20, 32, 0.85)');
-        fogGrad.addColorStop(1, 'rgba(15, 18, 28, 0.95)');
+        fogGrad.addColorStop(0.35, 'rgba(30, 25, 45, 0.4)');
+        fogGrad.addColorStop(0.5, 'rgba(22, 20, 38, 0.7)');
+        fogGrad.addColorStop(0.7, 'rgba(15, 15, 28, 0.9)');
+        fogGrad.addColorStop(1, 'rgba(12, 12, 22, 0.98)');
         this.ctx.fillStyle = fogGrad;
-        this.ctx.fillRect(0, horizonY - 80, this.width, 160);
+        this.ctx.fillRect(0, horizonY - 100, this.width, 200);
     }
 
     drawRoad() {
