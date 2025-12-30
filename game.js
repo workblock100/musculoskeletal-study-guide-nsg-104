@@ -61,6 +61,29 @@ class AnatomyRush {
         this.particles = [];
         this.floatingTexts = [];
         this.buildings = [];
+        this.stars = [];
+
+        // Special events
+        this.feverMode = false;
+        this.feverTimer = 0;
+        this.coinRush = false;
+        this.coinRushTimer = 0;
+        this.perfectRun = true;
+        this.totalJumps = 0;
+        this.totalDashes = 0;
+        this.coinsThisRun = 0;
+        this.questionsCorrect = 0;
+
+        // Generate stars for parallax
+        for (let i = 0; i < 200; i++) {
+            this.stars.push({
+                x: Math.random() * 2000,
+                y: Math.random() * 400,
+                size: 0.5 + Math.random() * 2,
+                speed: 0.1 + Math.random() * 0.3,
+                twinkle: Math.random() * 6.28
+            });
+        }
 
         this.questionDistance = 7000;
         this.nextQuestionAt = this.questionDistance;
@@ -235,15 +258,39 @@ class AnatomyRush {
         this.particles = this.particles.filter(p => { p.x += p.vx; p.y += p.vy; p.vy += 0.3; p.life--; p.size *= 0.94; return p.life > 0; });
         this.floatingTexts = this.floatingTexts.filter(t => { t.y += t.vy; t.life--; return t.life > 0; });
 
+        // Update stars
+        this.stars.forEach(s => { s.x -= s.speed * this.speed; s.twinkle += 0.05; if (s.x < 0) s.x = this.width + 100; });
+
+        // Fever mode & coin rush
+        if (this.feverTimer > 0) { this.feverTimer--; if (this.feverTimer <= 0) { this.feverMode = false; this.addFloatingText(this.centerX, 200, 'FEVER ENDED', '#f472b6'); } }
+        if (this.coinRushTimer > 0) { this.coinRushTimer--; if (this.coinRushTimer <= 0) { this.coinRush = false; } }
+
         const bSpeed = this.speed * (this.player.speedBoost > 0 ? 1.5 : 1);
         this.buildings.forEach(b => { b.x -= bSpeed * 0.35; if (b.x < -b.width - 50) { b.x = this.width + Math.random() * 100; b.height = 60 + Math.random() * 280; b.lit = Math.random() > 0.25; } });
 
         if (this.state !== 'playing') return;
 
         const speedMod = this.player.speedBoost > 0 ? 1.5 : 1;
+        const feverMod = this.feverMode ? 1.3 : 1;
         if (this.speed < this.maxSpeed) this.speed += 0.00015;
         this.distance += this.speed * speedMod * 8;
-        this.score = Math.floor(this.distance / 10) * this.multiplier;
+        this.score = Math.floor(this.distance / 10) * this.multiplier * (this.feverMode ? 2 : 1);
+
+        // Trigger fever mode on high combo
+        if (this.combo >= 15 && !this.feverMode) {
+            this.feverMode = true;
+            this.feverTimer = 600; // 10 seconds
+            this.addFloatingText(this.centerX, this.height / 2 - 50, '🔥 FEVER MODE! 🔥', '#f472b6');
+            this.flash = { color: '#f472b6', timer: 25 };
+            this.unlockAchievement('fever', 'On Fire! - Activate Fever Mode');
+        }
+
+        // Random coin rush event
+        if (Math.random() < 0.0003 && !this.coinRush && this.distance > 5000) {
+            this.coinRush = true;
+            this.coinRushTimer = 300;
+            this.addFloatingText(this.centerX, 150, '💰 COIN RUSH! 💰', '#fbbf24');
+        }
 
         // Level progression
         const newLevel = Math.floor(this.distance / 10000) + 1;
@@ -275,7 +322,8 @@ class AnatomyRush {
         this.player.animFrame = (this.player.animFrame + 0.4) % 8;
 
         if (this.distance - this.lastObstacle > this.obstacleGap / this.speed) { this.spawnObstacle(); this.lastObstacle = this.distance; }
-        if (Math.random() < 0.018) this.spawnCoin();
+        const coinRate = this.coinRush ? 0.08 : (this.feverMode ? 0.04 : 0.018);
+        if (Math.random() < coinRate) this.spawnCoin();
         if (Math.random() < 0.004) this.spawnPowerup();
 
         this.updateObstacles();
@@ -540,19 +588,24 @@ class AnatomyRush {
     }
 
     drawBackground() {
+        // Sky gradient - shifts during fever mode
         const grad = this.ctx.createLinearGradient(0, 0, 0, this.height);
-        grad.addColorStop(0, '#020617'); grad.addColorStop(0.3, '#0f172a'); grad.addColorStop(0.65, '#1e1b4b'); grad.addColorStop(1, '#312e81');
+        if (this.feverMode) {
+            grad.addColorStop(0, '#1a0a2e'); grad.addColorStop(0.3, '#2d1b4e'); grad.addColorStop(0.65, '#4a1942'); grad.addColorStop(1, '#6b2d5b');
+        } else {
+            grad.addColorStop(0, '#020617'); grad.addColorStop(0.3, '#0f172a'); grad.addColorStop(0.65, '#1e1b4b'); grad.addColorStop(1, '#312e81');
+        }
         this.ctx.fillStyle = grad; this.ctx.fillRect(0, 0, this.width, this.height);
 
-        this.ctx.fillStyle = '#fff';
-        for (let i = 0; i < 140; i++) {
-            const x = (i * 117.3 + this.globalTime * 0.005) % this.width;
-            const y = (i * 41.7) % (this.height * 0.32);
-            this.ctx.globalAlpha = 0.2 + Math.sin(this.globalTime * 0.002 + i * 0.4) * 0.25;
-            this.ctx.beginPath(); this.ctx.arc(x, y, 0.7 + (i % 3) * 0.5, 0, Math.PI * 2); this.ctx.fill();
-        }
+        // Parallax stars
+        this.stars.forEach(s => {
+            this.ctx.globalAlpha = 0.4 + Math.sin(s.twinkle) * 0.4;
+            this.ctx.fillStyle = this.feverMode ? '#f472b6' : '#fff';
+            this.ctx.beginPath(); this.ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2); this.ctx.fill();
+        });
         this.ctx.globalAlpha = 1;
 
+        // City skyline
         this.buildings.forEach(b => {
             this.ctx.fillStyle = `hsl(${b.hue}, 22%, 8%)`;
             const by = this.height * 0.38 - b.height;
@@ -563,7 +616,8 @@ class AnatomyRush {
                 for (let row = 0; row < Math.floor(b.height / gy) - 1; row++) {
                     for (let col = 0; col < b.windows; col++) {
                         if (Math.sin(this.globalTime * 0.0008 + b.x * 0.08 + row + col) > -0.4) {
-                            this.ctx.fillStyle = `rgba(255, 210, 120, ${0.35 + Math.random() * 0.2})`;
+                            const wColor = this.feverMode ? 'rgba(244, 114, 182, 0.5)' : `rgba(255, 210, 120, ${0.35 + Math.random() * 0.2})`;
+                            this.ctx.fillStyle = wColor;
                             this.ctx.fillRect(b.x + 5 + col * gx, by + 10 + row * gy, ww, wh);
                         }
                     }
@@ -571,9 +625,28 @@ class AnatomyRush {
             }
         });
 
+        // Atmosphere glow
         const hg = this.ctx.createRadialGradient(this.centerX, this.height * 0.4, 0, this.centerX, this.height * 0.4, this.width * 0.6);
-        hg.addColorStop(0, 'rgba(139, 92, 246, 0.28)'); hg.addColorStop(0.6, 'rgba(168, 85, 247, 0.08)'); hg.addColorStop(1, 'transparent');
+        if (this.feverMode) {
+            hg.addColorStop(0, 'rgba(244, 114, 182, 0.35)'); hg.addColorStop(0.6, 'rgba(219, 39, 119, 0.12)'); hg.addColorStop(1, 'transparent');
+        } else {
+            hg.addColorStop(0, 'rgba(139, 92, 246, 0.28)'); hg.addColorStop(0.6, 'rgba(168, 85, 247, 0.08)'); hg.addColorStop(1, 'transparent');
+        }
         this.ctx.fillStyle = hg; this.ctx.fillRect(0, 0, this.width, this.height);
+
+        // Fever mode screen border
+        if (this.feverMode) {
+            const borderGrad = this.ctx.createLinearGradient(0, 0, this.width, 0);
+            borderGrad.addColorStop(0, 'rgba(244, 114, 182, 0.6)');
+            borderGrad.addColorStop(0.5, 'rgba(244, 114, 182, 0.1)');
+            borderGrad.addColorStop(1, 'rgba(244, 114, 182, 0.6)');
+            this.ctx.fillStyle = borderGrad;
+            this.ctx.fillRect(0, 0, this.width, 6);
+            this.ctx.fillRect(0, this.height - 6, this.width, 6);
+            this.ctx.fillStyle = 'rgba(244, 114, 182, 0.5)';
+            this.ctx.fillRect(0, 0, 6, this.height);
+            this.ctx.fillRect(this.width - 6, 0, 6, this.height);
+        }
     }
 
     drawRoad() {
@@ -855,14 +928,31 @@ class AnatomyRush {
         if (this.multiplier > 1) { this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 30px Arial'; this.ctx.fillText(`x${this.multiplier}`, 40, 98); }
         this.ctx.fillStyle = '#a855f7'; this.ctx.font = 'bold 22px Arial'; this.ctx.fillText(`LVL ${this.level}`, 40, 130);
         if (this.combo >= 5) { this.ctx.fillStyle = '#22c55e'; this.ctx.font = 'bold 22px Arial'; this.ctx.fillText(`COMBO ${this.combo}x`, 40, 158); }
+
+        // Fever mode indicator
+        if (this.feverMode) {
+            this.ctx.fillStyle = '#f472b6'; this.ctx.font = 'bold 24px Arial';
+            this.ctx.fillText(`🔥 FEVER ${Math.ceil(this.feverTimer / 60)}s`, 40, 188);
+        }
+
         this.ctx.fillStyle = '#fbbf24'; this.ctx.textAlign = 'right'; this.ctx.font = 'bold 34px Arial'; this.ctx.fillText(`💰 ${this.coins}`, this.width - 40, 62);
         let hearts = ''; for (let i = 0; i < Math.min(this.lives, 5); i++) hearts += '❤️'; for (let i = this.lives; i < 3; i++) hearts += '🖤';
         this.ctx.font = '38px Arial'; this.ctx.fillText(hearts, this.width - 40, 110);
         if (this.streak > 0) { this.ctx.textAlign = 'center'; this.ctx.fillStyle = '#22c55e'; this.ctx.font = 'bold 28px Arial'; this.ctx.fillText(`🔥 ${this.streak} Streak`, this.centerX, 62); }
+
+        // Coin rush indicator
+        if (this.coinRush) {
+            this.ctx.textAlign = 'center'; this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 26px Arial';
+            this.ctx.globalAlpha = 0.5 + Math.sin(this.globalTime * 0.02) * 0.5;
+            this.ctx.fillText('💰 COIN RUSH! 💰', this.centerX, 95);
+            this.ctx.globalAlpha = 1;
+        }
+
         let py = 150;
         if (this.player.shield > 0) { this.ctx.textAlign = 'right'; this.ctx.fillStyle = '#06b6d4'; this.ctx.font = '24px Arial'; this.ctx.fillText(`🛡️ ${Math.ceil(this.player.shield / 60)}s`, this.width - 40, py); py += 32; }
         if (this.player.magnet > 0) { this.ctx.textAlign = 'right'; this.ctx.fillStyle = '#a855f7'; this.ctx.font = '24px Arial'; this.ctx.fillText(`🧲 ${Math.ceil(this.player.magnet / 60)}s`, this.width - 40, py); py += 32; }
-        if (this.player.speedBoost > 0) { this.ctx.textAlign = 'right'; this.ctx.fillStyle = '#22c55e'; this.ctx.font = '24px Arial'; this.ctx.fillText(`⚡ ${Math.ceil(this.player.speedBoost / 60)}s`, this.width - 40, py); }
+        if (this.player.speedBoost > 0) { this.ctx.textAlign = 'right'; this.ctx.fillStyle = '#22c55e'; this.ctx.font = '24px Arial'; this.ctx.fillText(`⚡ ${Math.ceil(this.player.speedBoost / 60)}s`, this.width - 40, py); py += 32; }
+        if (this.player.dashCooldown <= 0) { this.ctx.textAlign = 'right'; this.ctx.fillStyle = '#f472b6'; this.ctx.font = '20px Arial'; this.ctx.fillText('SHIFT: Dash Ready', this.width - 40, py); }
     }
 
     drawMenu() {
