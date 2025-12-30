@@ -812,19 +812,15 @@ class MSKReviewRunner {
 
     render() {
         this.ctx.save();
-        if (this.shake > 0) this.ctx.translate((Math.random() - 0.5) * this.shake * 2.5, (Math.random() - 0.5) * this.shake * 2.5);
+        if (this.shake > 0) this.ctx.translate((Math.random() - 0.5) * this.shake * 2, (Math.random() - 0.5) * this.shake * 2);
         this.drawBackground();
-        this.drawWeather();
         this.drawRoad();
         this.drawObstacles();
         this.drawCoins();
         this.drawPowerups();
-        this.drawPlayerTrail();
         this.drawPlayer();
-        this.drawParticles();
         this.drawFloatingTexts();
-        this.drawConfetti();
-        if (this.state === 'playing') { this.drawHUD(); this.drawAchievement(); }
+        if (this.state === 'playing') this.drawHUD();
         else if (this.state === 'menu') this.drawMenu();
         else if (this.state === 'shop') this.drawShop();
         else if (this.state === 'question') this.drawQuestion();
@@ -933,251 +929,69 @@ class MSKReviewRunner {
     }
 
     drawBackground() {
-        // Sky gradient - time of day with fever mode override
-        const grad = this.ctx.createLinearGradient(0, 0, 0, this.height);
-        if (this.feverMode) {
-            grad.addColorStop(0, '#1a0a2e'); grad.addColorStop(0.3, '#2d1b4e'); grad.addColorStop(0.65, '#4a1942'); grad.addColorStop(1, '#6b2d5b');
-        } else if (this.timeOfDay === 'dawn') {
-            grad.addColorStop(0, '#0c1445'); grad.addColorStop(0.3, '#1e3a5f'); grad.addColorStop(0.6, '#f97316'); grad.addColorStop(1, '#fbbf24');
-        } else if (this.timeOfDay === 'day') {
-            grad.addColorStop(0, '#0369a1'); grad.addColorStop(0.4, '#0ea5e9'); grad.addColorStop(0.7, '#7dd3fc'); grad.addColorStop(1, '#bae6fd');
-        } else if (this.timeOfDay === 'dusk') {
-            grad.addColorStop(0, '#1e1b4b'); grad.addColorStop(0.3, '#581c87'); grad.addColorStop(0.6, '#f97316'); grad.addColorStop(1, '#fbbf24');
-        } else {
-            grad.addColorStop(0, '#020617'); grad.addColorStop(0.3, '#0f172a'); grad.addColorStop(0.65, '#1e1b4b'); grad.addColorStop(1, '#312e81');
-        }
-        this.ctx.fillStyle = grad; this.ctx.fillRect(0, 0, this.width, this.height);
+        // Simple gradient sky
+        const grad = this.ctx.createLinearGradient(0, 0, 0, this.height * 0.5);
+        grad.addColorStop(0, '#0f172a');
+        grad.addColorStop(1, '#1e293b');
+        this.ctx.fillStyle = grad;
+        this.ctx.fillRect(0, 0, this.width, this.height * 0.5);
 
-        // AURORA / NEBULA EFFECT
-        for (let i = 0; i < 3; i++) {
-            const t = this.globalTime * 0.0003 + i * 2;
-            const aurGrad = this.ctx.createRadialGradient(
-                this.centerX + Math.sin(t) * 300, this.height * 0.15 + Math.cos(t * 0.7) * 50, 0,
-                this.centerX + Math.sin(t) * 300, this.height * 0.15 + Math.cos(t * 0.7) * 50, 400
-            );
-            const hue = this.feverMode ? 330 : (280 + i * 40 + this.globalTime * 0.01) % 360;
-            aurGrad.addColorStop(0, `hsla(${hue}, 80%, 60%, 0.15)`);
-            aurGrad.addColorStop(0.5, `hsla(${hue}, 70%, 50%, 0.05)`);
-            aurGrad.addColorStop(1, 'transparent');
-            this.ctx.fillStyle = aurGrad;
-            this.ctx.fillRect(0, 0, this.width, this.height * 0.5);
+        // Ground area
+        this.ctx.fillStyle = '#0f0f14';
+        this.ctx.fillRect(0, this.height * 0.4, this.width, this.height * 0.6);
+
+        // Simple silhouette buildings (no gradients, no shadows)
+        this.ctx.fillStyle = '#1a1a24';
+        for (let i = 0; i < this.buildings.length; i++) {
+            const b = this.buildings[i];
+            const by = this.height * 0.4 - b.height * 0.6;
+            this.ctx.fillRect(b.x, by, b.width, b.height * 0.6);
         }
 
-        // Parallax stars with glow
-        this.stars.forEach(s => {
-            const twinkle = 0.3 + Math.sin(s.twinkle) * 0.7;
-            this.ctx.globalAlpha = twinkle;
-            this.ctx.shadowColor = this.feverMode ? '#f472b6' : '#fff';
-            this.ctx.shadowBlur = s.size * 3;
-            this.ctx.fillStyle = this.feverMode ? '#f472b6' : '#fff';
-            this.ctx.beginPath(); this.ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2); this.ctx.fill();
-        });
-        this.ctx.globalAlpha = 1; this.ctx.shadowBlur = 0;
-
-        // SHOOTING STARS
-        if (Math.random() < 0.003) {
-            this.particles.push({
-                x: Math.random() * this.width, y: Math.random() * 150,
-                vx: -15 - Math.random() * 10, vy: 8 + Math.random() * 5,
-                size: 2, life: 40, color: '#fff', type: 'shootingStar'
-            });
-        }
-
-        // City skyline with neon glow
-        this.buildings.forEach(b => {
-            // Building shadow
-            this.ctx.fillStyle = 'rgba(0,0,0,0.3)';
-            const by = this.height * 0.38 - b.height;
-            this.ctx.fillRect(b.x + 8, by + 8, b.width, b.height);
-
-            // Building body with gradient
-            const bGrad = this.ctx.createLinearGradient(b.x, by, b.x + b.width, by);
-            bGrad.addColorStop(0, `hsl(${b.hue}, 22%, 12%)`);
-            bGrad.addColorStop(0.5, `hsl(${b.hue}, 22%, 8%)`);
-            bGrad.addColorStop(1, `hsl(${b.hue}, 22%, 6%)`);
-            this.ctx.fillStyle = bGrad;
-            this.ctx.fillRect(b.x, by, b.width, b.height);
-
-            // Building top highlight
-            this.ctx.fillStyle = `hsl(${b.hue}, 25%, 18%)`;
-            this.ctx.fillRect(b.x + 4, by - 6, b.width - 8, 6);
-
-            // Neon antenna
-            if (b.height > 100) {
-                this.ctx.strokeStyle = this.feverMode ? '#f472b6' : '#06b6d4';
-                this.ctx.shadowColor = this.feverMode ? '#f472b6' : '#06b6d4';
-                this.ctx.shadowBlur = 15;
-                this.ctx.lineWidth = 2;
-                this.ctx.beginPath();
-                this.ctx.moveTo(b.x + b.width / 2, by - 6);
-                this.ctx.lineTo(b.x + b.width / 2, by - 25);
-                this.ctx.stroke();
-                this.ctx.beginPath();
-                this.ctx.arc(b.x + b.width / 2, by - 28, 4, 0, Math.PI * 2);
-                this.ctx.fillStyle = this.feverMode ? '#f472b6' : '#22d3ee';
-                this.ctx.fill();
-                this.ctx.shadowBlur = 0;
-            }
-
-            // Windows with glow
-            if (b.lit) {
-                const ww = 6, wh = 9, gx = 11, gy = 14;
-                for (let row = 0; row < Math.floor(b.height / gy) - 1; row++) {
-                    for (let col = 0; col < b.windows; col++) {
-                        if (Math.sin(this.globalTime * 0.0008 + b.x * 0.08 + row + col) > -0.4) {
-                            const wColor = this.feverMode ? '#f472b6' : `hsl(40, 85%, ${55 + Math.random() * 15}%)`;
-                            this.ctx.shadowColor = wColor;
-                            this.ctx.shadowBlur = 8;
-                            this.ctx.fillStyle = wColor;
-                            this.ctx.fillRect(b.x + 5 + col * gx, by + 10 + row * gy, ww, wh);
-                        }
-                    }
-                }
-                this.ctx.shadowBlur = 0;
-            }
-        });
-
-        // GOD RAYS from horizon
-        const rayCount = 8;
-        for (let i = 0; i < rayCount; i++) {
-            const angle = (i / rayCount) * Math.PI - Math.PI / 2 + Math.sin(this.globalTime * 0.0005 + i) * 0.1;
-            const rayGrad = this.ctx.createLinearGradient(
-                this.centerX, this.height * 0.4,
-                this.centerX + Math.cos(angle) * 600, this.height * 0.4 + Math.sin(angle) * 300
-            );
-            const rayColor = this.feverMode ? 'rgba(244, 114, 182,' : 'rgba(139, 92, 246,';
-            rayGrad.addColorStop(0, rayColor + '0.12)');
-            rayGrad.addColorStop(1, 'transparent');
-            this.ctx.fillStyle = rayGrad;
-            this.ctx.beginPath();
-            this.ctx.moveTo(this.centerX, this.height * 0.4);
-            this.ctx.lineTo(this.centerX + Math.cos(angle - 0.08) * 800, this.height * 0.4 + Math.sin(angle - 0.08) * 400);
-            this.ctx.lineTo(this.centerX + Math.cos(angle + 0.08) * 800, this.height * 0.4 + Math.sin(angle + 0.08) * 400);
-            this.ctx.closePath();
-            this.ctx.fill();
-        }
-
-        // Atmosphere glow / bloom
-        const hg = this.ctx.createRadialGradient(this.centerX, this.height * 0.4, 0, this.centerX, this.height * 0.4, this.width * 0.7);
-        if (this.feverMode) {
-            hg.addColorStop(0, 'rgba(244, 114, 182, 0.4)'); hg.addColorStop(0.5, 'rgba(219, 39, 119, 0.15)'); hg.addColorStop(1, 'transparent');
-        } else {
-            hg.addColorStop(0, 'rgba(139, 92, 246, 0.35)'); hg.addColorStop(0.5, 'rgba(168, 85, 247, 0.12)'); hg.addColorStop(1, 'transparent');
-        }
-        this.ctx.fillStyle = hg; this.ctx.fillRect(0, 0, this.width, this.height);
-
-        // Fever mode screen border with pulse
-        if (this.feverMode) {
-            const pulse = 0.5 + Math.sin(this.globalTime * 0.01) * 0.3;
-            this.ctx.strokeStyle = `rgba(244, 114, 182, ${pulse})`;
-            this.ctx.lineWidth = 8;
-            this.ctx.shadowColor = '#f472b6';
-            this.ctx.shadowBlur = 30;
-            this.ctx.strokeRect(4, 4, this.width - 8, this.height - 8);
-            this.ctx.shadowBlur = 0;
-        }
+        // Horizon line accent
+        this.ctx.strokeStyle = '#334155';
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, this.height * 0.4);
+        this.ctx.lineTo(this.width, this.height * 0.4);
+        this.ctx.stroke();
     }
 
     drawRoad() {
-        const horizonY = this.height * 0.4, roadW = 540, segs = 55;
+        const horizonY = this.height * 0.4;
+        const roadW = 540;
 
-        // Road surface with reflection gradient
-        for (let i = segs; i >= 0; i--) {
-            const z = i / segs, nz = (i + 1) / segs;
-            const p = 1 / (1 + z * 5), np = 1 / (1 + nz * 5);
-            const y = horizonY + (this.height - horizonY) * (1 - Math.pow(z, 0.55));
-            const ny = horizonY + (this.height - horizonY) * (1 - Math.pow(nz, 0.55));
-            const w = roadW * p, nw = roadW * np;
-
-            // Reflective road surface
-            const stripe = Math.floor((i + this.distance / 20) % 4) < 2;
-            const roadGrad = this.ctx.createLinearGradient(this.centerX - w, y, this.centerX + w, y);
-            const baseColor = stripe ? [24, 24, 27] : [15, 15, 18];
-            const reflectIntensity = 0.15 * (1 - z);
-            roadGrad.addColorStop(0, `rgba(${baseColor[0] + 30}, ${baseColor[1] + 20}, ${baseColor[2] + 50}, 1)`);
-            roadGrad.addColorStop(0.3, `rgba(${baseColor[0]}, ${baseColor[1]}, ${baseColor[2]}, 1)`);
-            roadGrad.addColorStop(0.7, `rgba(${baseColor[0]}, ${baseColor[1]}, ${baseColor[2]}, 1)`);
-            roadGrad.addColorStop(1, `rgba(${baseColor[0] + 30}, ${baseColor[1] + 20}, ${baseColor[2] + 50}, 1)`);
-            this.ctx.fillStyle = roadGrad;
-            this.ctx.beginPath();
-            this.ctx.moveTo(this.centerX - nw, ny);
-            this.ctx.lineTo(this.centerX + nw, ny);
-            this.ctx.lineTo(this.centerX + w, y);
-            this.ctx.lineTo(this.centerX - w, y);
-            this.ctx.closePath();
-            this.ctx.fill();
-
-            // Horizontal grid lines (synthwave style)
-            if (i % 3 === 0 && i > 5) {
-                const gridAlpha = 0.4 * (1 - z);
-                this.ctx.strokeStyle = this.feverMode ? `rgba(244, 114, 182, ${gridAlpha})` : `rgba(139, 92, 246, ${gridAlpha})`;
-                this.ctx.lineWidth = 1.5 * p;
-                this.ctx.beginPath();
-                this.ctx.moveTo(this.centerX - w, y);
-                this.ctx.lineTo(this.centerX + w, y);
-                this.ctx.stroke();
-            }
-
-            // Lane dividers with pulsing glow
-            if (i < segs - 1 && i % 2 === 0) {
-                const pulse = 0.5 + Math.sin(this.globalTime * 0.003 + i * 0.2) * 0.3;
-                const laneColor = this.feverMode ? `rgba(244, 114, 182, ${pulse * (1 - z)})` : `rgba(139, 92, 246, ${pulse * (1 - z)})`;
-                this.ctx.shadowColor = this.feverMode ? '#f472b6' : '#8b5cf6';
-                this.ctx.shadowBlur = 10 * p;
-                this.ctx.strokeStyle = laneColor;
-                this.ctx.lineWidth = 4 * p;
-                for (let lane = 0; lane < 2; lane++) {
-                    const lo = (lane - 0.5) * this.laneWidth;
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(this.centerX + lo * np, ny);
-                    this.ctx.lineTo(this.centerX + lo * p, y);
-                    this.ctx.stroke();
-                }
-                this.ctx.shadowBlur = 0;
-            }
-        }
-
-        // NEON EDGE LINES with strong glow
-        const edgeColor = this.feverMode ? '#f472b6' : '#d946ef';
-        this.ctx.shadowColor = edgeColor;
-        this.ctx.shadowBlur = 50;
-        this.ctx.strokeStyle = edgeColor;
-        this.ctx.lineWidth = 8;
+        // Simple road surface
+        this.ctx.fillStyle = '#18181b';
         this.ctx.beginPath();
         this.ctx.moveTo(this.centerX - 120, horizonY);
-        this.ctx.lineTo(this.centerX - roadW - 40, this.height);
+        this.ctx.lineTo(this.centerX + 120, horizonY);
+        this.ctx.lineTo(this.centerX + roadW, this.height);
+        this.ctx.lineTo(this.centerX - roadW, this.height);
+        this.ctx.closePath();
+        this.ctx.fill();
+
+        // Road edges
+        this.ctx.strokeStyle = '#6366f1';
+        this.ctx.lineWidth = 3;
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.centerX - 120, horizonY);
+        this.ctx.lineTo(this.centerX - roadW, this.height);
         this.ctx.stroke();
         this.ctx.beginPath();
         this.ctx.moveTo(this.centerX + 120, horizonY);
-        this.ctx.lineTo(this.centerX + roadW + 40, this.height);
+        this.ctx.lineTo(this.centerX + roadW, this.height);
         this.ctx.stroke();
 
-        // Inner edge glow (white core)
-        this.ctx.shadowBlur = 15;
-        this.ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        // Simple lane dividers
+        this.ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
         this.ctx.lineWidth = 2;
-        this.ctx.beginPath();
-        this.ctx.moveTo(this.centerX - 120, horizonY);
-        this.ctx.lineTo(this.centerX - roadW - 40, this.height);
-        this.ctx.stroke();
-        this.ctx.beginPath();
-        this.ctx.moveTo(this.centerX + 120, horizonY);
-        this.ctx.lineTo(this.centerX + roadW + 40, this.height);
-        this.ctx.stroke();
-        this.ctx.shadowBlur = 0;
-
-        // Speed lines when dashing
-        if (this.player.isDashing) {
-            for (let i = 0; i < 8; i++) {
-                const lineX = this.centerX + (Math.random() - 0.5) * 800;
-                const lineY = this.height * 0.4 + Math.random() * this.height * 0.5;
-                this.ctx.strokeStyle = `rgba(255, 255, 255, ${0.3 + Math.random() * 0.3})`;
-                this.ctx.lineWidth = 2;
-                this.ctx.beginPath();
-                this.ctx.moveTo(lineX, lineY);
-                this.ctx.lineTo(lineX - 100 - Math.random() * 100, lineY + 5);
-                this.ctx.stroke();
-            }
+        for (let lane = 0; lane < 2; lane++) {
+            const offset = (lane - 0.5) * this.laneWidth;
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.centerX + offset * 0.2, horizonY);
+            this.ctx.lineTo(this.centerX + offset, this.height);
+            this.ctx.stroke();
         }
     }
 
@@ -1512,17 +1326,17 @@ class MSKReviewRunner {
     drawHUD() {
         this.ctx.fillStyle = '#fff'; this.ctx.font = 'bold 48px "Space Grotesk", Arial'; this.ctx.textAlign = 'left';
         this.ctx.fillText(this.score.toLocaleString(), 40, 62);
-        if (this.multiplier > 1) { this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 30px Arial'; this.ctx.fillText(`x${this.multiplier}`, 40, 98); }
-        this.ctx.fillStyle = '#a855f7'; this.ctx.font = 'bold 22px Arial'; this.ctx.fillText(`LVL ${this.level}`, 40, 130);
-        if (this.combo >= 5) { this.ctx.fillStyle = '#22c55e'; this.ctx.font = 'bold 22px Arial'; this.ctx.fillText(`COMBO ${this.combo}x`, 40, 158); }
+        if (this.multiplier > 1) { this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 30px Arial'; this.ctx.fillText(`x${this.multiplier} `, 40, 98); }
+        this.ctx.fillStyle = '#a855f7'; this.ctx.font = 'bold 22px Arial'; this.ctx.fillText(`LVL ${this.level} `, 40, 130);
+        if (this.combo >= 5) { this.ctx.fillStyle = '#22c55e'; this.ctx.font = 'bold 22px Arial'; this.ctx.fillText(`COMBO ${this.combo} x`, 40, 158); }
 
         // Fever mode indicator
         if (this.feverMode) {
             this.ctx.fillStyle = '#f472b6'; this.ctx.font = 'bold 24px Arial';
-            this.ctx.fillText(`🔥 FEVER ${Math.ceil(this.feverTimer / 60)}s`, 40, 188);
+            this.ctx.fillText(`🔥 FEVER ${Math.ceil(this.feverTimer / 60)} s`, 40, 188);
         }
 
-        this.ctx.fillStyle = '#fbbf24'; this.ctx.textAlign = 'right'; this.ctx.font = 'bold 34px Arial'; this.ctx.fillText(`💰 ${this.coins}`, this.width - 40, 62);
+        this.ctx.fillStyle = '#fbbf24'; this.ctx.textAlign = 'right'; this.ctx.font = 'bold 34px Arial'; this.ctx.fillText(`💰 ${this.coins} `, this.width - 40, 62);
         let hearts = ''; for (let i = 0; i < Math.min(this.lives, 5); i++) hearts += '❤️'; for (let i = this.lives; i < 3; i++) hearts += '🖤';
         this.ctx.font = '38px Arial'; this.ctx.fillText(hearts, this.width - 40, 110);
         if (this.streak > 0) { this.ctx.textAlign = 'center'; this.ctx.fillStyle = '#22c55e'; this.ctx.font = 'bold 28px Arial'; this.ctx.fillText(`🔥 ${this.streak} Streak`, this.centerX, 62); }
@@ -1536,9 +1350,9 @@ class MSKReviewRunner {
         }
 
         let py = 150;
-        if (this.player.shield > 0) { this.ctx.textAlign = 'right'; this.ctx.fillStyle = '#06b6d4'; this.ctx.font = '24px Arial'; this.ctx.fillText(`🛡️ ${Math.ceil(this.player.shield / 60)}s`, this.width - 40, py); py += 32; }
-        if (this.player.magnet > 0) { this.ctx.textAlign = 'right'; this.ctx.fillStyle = '#a855f7'; this.ctx.font = '24px Arial'; this.ctx.fillText(`🧲 ${Math.ceil(this.player.magnet / 60)}s`, this.width - 40, py); py += 32; }
-        if (this.player.speedBoost > 0) { this.ctx.textAlign = 'right'; this.ctx.fillStyle = '#22c55e'; this.ctx.font = '24px Arial'; this.ctx.fillText(`⚡ ${Math.ceil(this.player.speedBoost / 60)}s`, this.width - 40, py); py += 32; }
+        if (this.player.shield > 0) { this.ctx.textAlign = 'right'; this.ctx.fillStyle = '#06b6d4'; this.ctx.font = '24px Arial'; this.ctx.fillText(`🛡️ ${Math.ceil(this.player.shield / 60)} s`, this.width - 40, py); py += 32; }
+        if (this.player.magnet > 0) { this.ctx.textAlign = 'right'; this.ctx.fillStyle = '#a855f7'; this.ctx.font = '24px Arial'; this.ctx.fillText(`🧲 ${Math.ceil(this.player.magnet / 60)} s`, this.width - 40, py); py += 32; }
+        if (this.player.speedBoost > 0) { this.ctx.textAlign = 'right'; this.ctx.fillStyle = '#22c55e'; this.ctx.font = '24px Arial'; this.ctx.fillText(`⚡ ${Math.ceil(this.player.speedBoost / 60)} s`, this.width - 40, py); py += 32; }
         if (this.player.dashCooldown <= 0) { this.ctx.textAlign = 'right'; this.ctx.fillStyle = '#f472b6'; this.ctx.font = '20px Arial'; this.ctx.fillText('SHIFT: Dash Ready', this.width - 40, py); }
     }
 
@@ -1564,7 +1378,7 @@ class MSKReviewRunner {
         // Title - clean, no emoji
         const titleSize = Math.min(44, this.width * 0.04);
         this.ctx.fillStyle = '#e2e8f0';
-        this.ctx.font = `300 ${titleSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial`;
+        this.ctx.font = `300 ${titleSize} px - apple - system, BlinkMacSystemFont, "Segoe UI", Arial`;
         this.ctx.textAlign = 'center';
         this.ctx.fillText('MSK Review Runner', this.centerX, this.height * 0.15);
 
@@ -1588,8 +1402,8 @@ class MSKReviewRunner {
         // Stats in a clean row
         this.ctx.fillStyle = '#f8fafc';
         this.ctx.font = '600 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
-        this.ctx.fillText(`${this.highScore.toLocaleString()}`, this.centerX - 80, this.height * 0.35);
-        this.ctx.fillText(`${this.totalCoins.toLocaleString()}`, this.centerX + 80, this.height * 0.35);
+        this.ctx.fillText(`${this.highScore.toLocaleString()} `, this.centerX - 80, this.height * 0.35);
+        this.ctx.fillText(`${this.totalCoins.toLocaleString()} `, this.centerX + 80, this.height * 0.35);
 
         this.ctx.fillStyle = '#64748b';
         this.ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
@@ -1661,7 +1475,7 @@ class MSKReviewRunner {
 
             // Background
             const bgAlpha = isSelected ? 0.4 : 0.15;
-            this.ctx.fillStyle = `rgba(255,255,255,${bgAlpha})`;
+            this.ctx.fillStyle = `rgba(255, 255, 255, ${bgAlpha})`;
             this.ctx.beginPath();
             this.ctx.roundRect(60, y, this.width - 120, itemHeight - 10, 12);
             this.ctx.fill();
@@ -1675,7 +1489,7 @@ class MSKReviewRunner {
 
             // Color swatch
             const swatchColor = outfit.color === 'rainbow' ?
-                `hsl(${(this.globalTime * 0.1) % 360}, 80%, 55%)` : outfit.color;
+                `hsl(${(this.globalTime * 0.1) % 360}, 80 %, 55 %)` : outfit.color;
             this.ctx.fillStyle = swatchColor;
             this.ctx.shadowColor = swatchColor;
             this.ctx.shadowBlur = isSelected ? 15 : 8;
@@ -1704,7 +1518,7 @@ class MSKReviewRunner {
                 }
             } else {
                 this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 20px Arial';
-                this.ctx.fillText(`💰 ${outfit.price}`, this.width - 80, y + 25);
+                this.ctx.fillText(`💰 ${outfit.price} `, this.width - 80, y + 25);
                 if (isSelected) {
                     const canAfford = this.totalCoins >= outfit.price;
                     this.ctx.fillStyle = canAfford ? '#22c55e' : '#ef4444';
@@ -1740,7 +1554,7 @@ class MSKReviewRunner {
         const pct = this.questionTimer / (this.questionTimeLimit * 60), tc = pct > 0.5 ? '#22c55e' : pct > 0.25 ? '#f59e0b' : '#ef4444';
         this.ctx.fillStyle = '#1f2937'; this.ctx.fillRect(70, 20, this.width - 140, 28);
         this.ctx.fillStyle = tc; this.ctx.fillRect(70, 20, (this.width - 140) * pct, 28);
-        this.ctx.fillStyle = '#fff'; this.ctx.font = 'bold 20px Arial'; this.ctx.textAlign = 'center'; this.ctx.fillText(`${Math.ceil(this.questionTimer / 60)}s`, this.centerX, 42);
+        this.ctx.fillStyle = '#fff'; this.ctx.font = 'bold 20px Arial'; this.ctx.textAlign = 'center'; this.ctx.fillText(`${Math.ceil(this.questionTimer / 60)} s`, this.centerX, 42);
         this.ctx.font = 'bold 21px Arial';
         const words = this.currentQuestion.text.split(' '); let line = '', y = this.height * 0.11, maxW = this.width * 0.86;
         words.forEach(w => { const test = line + w + ' '; if (this.ctx.measureText(test).width > maxW && line) { this.ctx.fillText(line.trim(), this.centerX, y); line = w + ' '; y += 32; } else line = test; });
@@ -1752,12 +1566,12 @@ class MSKReviewRunner {
             this.ctx.fillStyle = bg; this.ctx.beginPath(); this.ctx.roundRect(margin, oY, this.width - margin * 2, optH, 15); this.ctx.fill();
             this.ctx.strokeStyle = border; this.ctx.lineWidth = 3; this.ctx.stroke();
             this.ctx.fillStyle = '#fff'; this.ctx.font = '18px Arial'; this.ctx.textAlign = 'left';
-            let text = `${i + 1}. ${opt}`; const maxT = this.width - margin * 2 - 45; while (this.ctx.measureText(text).width > maxT && text.length > 15) text = text.slice(0, -4) + '...';
+            let text = `${i + 1}. ${opt} `; const maxT = this.width - margin * 2 - 45; while (this.ctx.measureText(text).width > maxT && text.length > 15) text = text.slice(0, -4) + '...';
             this.ctx.fillText(text, margin + 22, oY + 39);
         });
         if (this.questionResult) {
             this.ctx.textAlign = 'center'; this.ctx.font = 'bold 40px Arial';
-            if (this.questionResult === 'correct') { this.ctx.fillStyle = '#22c55e'; this.ctx.fillText(`✓ CORRECT! +${25 * this.multiplier} coins`, this.centerX, this.height - 55); }
+            if (this.questionResult === 'correct') { this.ctx.fillStyle = '#22c55e'; this.ctx.fillText(`✓ CORRECT! + ${25 * this.multiplier} coins`, this.centerX, this.height - 55); }
             else if (this.questionResult === 'timeout') { this.ctx.fillStyle = '#ef4444'; this.ctx.fillText('⏱️ TIME UP!', this.centerX, this.height - 55); }
             else { this.ctx.fillStyle = '#ef4444'; this.ctx.fillText('✗ WRONG!', this.centerX, this.height - 55); }
         }
@@ -1771,7 +1585,7 @@ class MSKReviewRunner {
 
         // Stats
         this.ctx.fillStyle = '#fff'; this.ctx.font = 'bold 40px Arial';
-        this.ctx.fillText(`Score: ${this.score.toLocaleString()}`, this.centerX, this.height * 0.2);
+        this.ctx.fillText(`Score: ${this.score.toLocaleString()} `, this.centerX, this.height * 0.2);
         this.ctx.fillStyle = '#a855f7'; this.ctx.font = '22px Arial';
         this.ctx.fillText(`Level ${this.level} • ${this.questionsCorrectRun}/${this.questionsAnswered} Questions Correct`, this.centerX, this.height * 0.27);
 
