@@ -1055,84 +1055,36 @@ class MSKReviewRunner {
     drawBackground() {
         const horizonY = this.height * 0.4;
 
-        // Clean sky gradient
-        const skyGrad = this.ctx.createLinearGradient(0, 0, 0, this.height * 0.6);
-        skyGrad.addColorStop(0, '#070a12');
-        skyGrad.addColorStop(0.4, '#0d1320');
-        skyGrad.addColorStop(0.7, '#141c2d');
-        skyGrad.addColorStop(1, '#0e1218');
+        // Elegant sky gradient
+        const skyGrad = this.ctx.createLinearGradient(0, 0, 0, this.height);
+        skyGrad.addColorStop(0, '#0a0e18');
+        skyGrad.addColorStop(0.35, '#121829');
+        skyGrad.addColorStop(0.5, '#1a2137');
+        skyGrad.addColorStop(0.6, '#151a28');
+        skyGrad.addColorStop(1, '#0d1018');
         this.ctx.fillStyle = skyGrad;
         this.ctx.fillRect(0, 0, this.width, this.height);
 
-        // Few subtle stars (static, no twinkle)
-        if (!this.stars) {
-            this.stars = [];
-            for (let i = 0; i < 12; i++) {
-                this.stars.push({
-                    x: Math.random() * this.width,
-                    y: Math.random() * horizonY * 0.5,
-                    size: Math.random() * 1.5 + 0.5,
-                    alpha: 0.3 + Math.random() * 0.3
-                });
-            }
-        }
-        this.stars.forEach(star => {
-            this.ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
-            this.ctx.beginPath();
-            this.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-            this.ctx.fill();
-        });
+        // Simple city silhouettes (no windows, just shapes)
+        this.buildings.forEach(b => {
+            const bHeight = b.height * 0.55;
+            const by = horizonY - bHeight;
 
-        // Pre-compute building windows once (no flickering)
-        if (!this.buildingWindows) {
-            this.buildingWindows = [];
-            this.buildings.forEach(b => {
-                const bHeight = b.height * 0.6;
-                const by = horizonY - bHeight;
-                const wins = [];
-                const rows = Math.floor(bHeight / 14);
-                const cols = Math.floor(b.width / 10);
-                for (let row = 1; row < rows; row++) {
-                    for (let col = 1; col < cols; col++) {
-                        if (Math.random() < 0.25) {
-                            wins.push({
-                                x: b.x + col * 10 + 2,
-                                y: by + row * 14 + 2,
-                                bright: 0.15 + Math.random() * 0.25
-                            });
-                        }
-                    }
-                }
-                this.buildingWindows.push({ building: b, windows: wins, by, bHeight });
-            });
-        }
-
-        // Draw buildings with pre-computed windows
-        this.buildingWindows.forEach(({ building: b, windows, by, bHeight }) => {
-            // Building silhouette
-            const buildGrad = this.ctx.createLinearGradient(0, by, 0, horizonY);
-            buildGrad.addColorStop(0, 'rgba(18, 22, 32, 0.3)');
-            buildGrad.addColorStop(0.5, 'rgba(22, 28, 40, 0.5)');
-            buildGrad.addColorStop(1, 'rgba(28, 35, 50, 0.7)');
-            this.ctx.fillStyle = buildGrad;
+            // Building with subtle gradient fade
+            const bGrad = this.ctx.createLinearGradient(0, by, 0, horizonY);
+            bGrad.addColorStop(0, 'rgba(20, 26, 38, 0.4)');
+            bGrad.addColorStop(1, 'rgba(26, 32, 45, 0.7)');
+            this.ctx.fillStyle = bGrad;
             this.ctx.fillRect(b.x, by, b.width, bHeight);
-
-            // Static windows
-            this.ctx.fillStyle = 'rgba(255, 230, 150, 0.2)';
-            windows.forEach(w => {
-                this.ctx.globalAlpha = w.bright;
-                this.ctx.fillRect(w.x, w.y, 4, 5);
-            });
-            this.ctx.globalAlpha = 1;
         });
 
-        // Soft horizon haze
-        const hazeGrad = this.ctx.createLinearGradient(0, horizonY - 40, 0, horizonY + 30);
-        hazeGrad.addColorStop(0, 'transparent');
-        hazeGrad.addColorStop(0.5, 'rgba(15, 20, 30, 0.5)');
-        hazeGrad.addColorStop(1, 'rgba(12, 15, 22, 0.7)');
-        this.ctx.fillStyle = hazeGrad;
-        this.ctx.fillRect(0, horizonY - 40, this.width, 70);
+        // Ambient horizon glow
+        const glowGrad = this.ctx.createLinearGradient(0, horizonY - 30, 0, horizonY + 20);
+        glowGrad.addColorStop(0, 'transparent');
+        glowGrad.addColorStop(0.5, 'rgba(30, 40, 60, 0.3)');
+        glowGrad.addColorStop(1, 'rgba(15, 20, 30, 0.5)');
+        this.ctx.fillStyle = glowGrad;
+        this.ctx.fillRect(0, horizonY - 30, this.width, 50);
     }
 
     drawRoad() {
@@ -1531,36 +1483,6 @@ class MSKReviewRunner {
             this.ctx.strokeStyle = '#9f1239'; this.ctx.lineWidth = 1.5;
             this.ctx.beginPath(); this.ctx.arc(0, -96 + bounce, 6, 0.3, Math.PI - 0.3); this.ctx.stroke();
 
-            // STETHOSCOPE - Properly draped (ear tips hang DOWN in front)
-            this.ctx.strokeStyle = '#b8c5d4'; this.ctx.lineWidth = 3; this.ctx.lineCap = 'round';
-
-            // The tubes hang DOWN from neck, meeting at Y-junction near chest
-            // Left tube hanging down
-            this.ctx.beginPath();
-            this.ctx.moveTo(-15, -86 + bounce);
-            this.ctx.quadraticCurveTo(-18, -75 + bounce, -12, -60 + bounce);
-            this.ctx.lineTo(-6, -48 + bounce);
-            this.ctx.stroke();
-
-            // Right tube hanging down  
-            this.ctx.beginPath();
-            this.ctx.moveTo(15, -86 + bounce);
-            this.ctx.quadraticCurveTo(18, -75 + bounce, 12, -60 + bounce);
-            this.ctx.lineTo(6, -48 + bounce);
-            this.ctx.stroke();
-
-            // Y-junction connector
-            this.ctx.fillStyle = '#94a3b8';
-            this.ctx.beginPath(); this.ctx.arc(0, -45 + bounce, 5, 0, Math.PI * 2); this.ctx.fill();
-
-            // Ear tips (metallic, hanging at natural angle)
-            const tipGrad = this.ctx.createLinearGradient(0, -65 + bounce, 0, -55 + bounce);
-            tipGrad.addColorStop(0, '#e2e8f0'); tipGrad.addColorStop(0.5, '#94a3b8'); tipGrad.addColorStop(1, '#64748b');
-            this.ctx.fillStyle = tipGrad;
-            // Left ear tip (angled outward)
-            this.ctx.beginPath(); this.ctx.ellipse(-14, -58 + bounce, 3, 6, -Math.PI / 5, 0, Math.PI * 2); this.ctx.fill();
-            // Right ear tip (angled outward)
-            this.ctx.beginPath(); this.ctx.ellipse(14, -58 + bounce, 3, 6, Math.PI / 5, 0, Math.PI * 2); this.ctx.fill();
             // Shield effect
             if (this.player.shield > 0) {
                 this.ctx.strokeStyle = '#06b6d4'; this.ctx.lineWidth = 4;
