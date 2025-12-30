@@ -52,8 +52,8 @@ class AnatomyRush {
         this.achievements = JSON.parse(localStorage.getItem('anatomyAchievements')) || {};
         this.newAchievement = null;
 
-        this.speed = 1;
-        this.maxSpeed = 3.5;
+        this.speed = 1.8;
+        this.maxSpeed = 4.5;
 
         this.obstacles = [];
         this.coins_arr = [];
@@ -135,6 +135,27 @@ class AnatomyRush {
             });
         }
 
+        // OUTFIT SHOP SYSTEM
+        this.outfits = {
+            teal: { name: 'Classic Teal', color: '#06b6d4', price: 0, owned: true },
+            pink: { name: 'Hot Pink', color: '#ec4899', price: 50, owned: false },
+            purple: { name: 'Royal Purple', color: '#8b5cf6', price: 100, owned: false },
+            green: { name: 'Mint Fresh', color: '#22c55e', price: 150, owned: false },
+            gold: { name: 'Golden Star', color: '#fbbf24', price: 250, owned: false },
+            rainbow: { name: 'Rainbow Pride', color: 'rainbow', price: 500, owned: false }
+        };
+        this.currentOutfit = localStorage.getItem('anatomyOutfit') || 'teal';
+        const savedOutfits = JSON.parse(localStorage.getItem('anatomyOwnedOutfits') || '{}');
+        Object.keys(savedOutfits).forEach(k => { if (this.outfits[k]) this.outfits[k].owned = savedOutfits[k]; });
+
+        // SOUND EFFECTS (Web Audio API)
+        this.audioCtx = null;
+        this.soundEnabled = localStorage.getItem('anatomySoundEnabled') !== 'false';
+
+        // ENHANCED WEATHER
+        this.lightning = { active: false, timer: 0, flash: 0 };
+        this.puddles = [];
+
         this.bindEvents();
     }
 
@@ -196,11 +217,13 @@ class AnatomyRush {
             this.player.jumpVelocity = 24;
             this.player.canDoubleJump = true;
             this.addParticles(this.getLaneX(this.currentLane), this.height - 60, 18, '#06b6d4');
+            this.playSound('jump');
         } else if (this.player.isJumping && this.player.canDoubleJump) {
             this.player.jumpVelocity = 20;
             this.player.canDoubleJump = false;
             this.addParticles(this.getLaneX(this.currentLane), this.height - 60 - this.player.jumpHeight, 25, '#22c55e');
             this.addFloatingText(this.getLaneX(this.currentLane), this.height - 150, 'DOUBLE JUMP!', '#22c55e');
+            this.playSound('jump');
         }
     }
 
@@ -251,12 +274,111 @@ class AnatomyRush {
         }
     }
 
+    // SOUND EFFECTS SYSTEM
+    playSound(type) {
+        if (!this.soundEnabled) return;
+        if (!this.audioCtx) this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const ctx = this.audioCtx;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        switch (type) {
+            case 'jump':
+                osc.frequency.setValueAtTime(400, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                osc.start(); osc.stop(ctx.currentTime + 0.15);
+                break;
+            case 'coin':
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+                osc.start(); osc.stop(ctx.currentTime + 0.1);
+                break;
+            case 'hit':
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                osc.start(); osc.stop(ctx.currentTime + 0.25);
+                break;
+            case 'powerup':
+                osc.frequency.setValueAtTime(440, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
+                osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                osc.start(); osc.stop(ctx.currentTime + 0.3);
+                break;
+            case 'levelup':
+                osc.frequency.setValueAtTime(523, ctx.currentTime);
+                osc.frequency.setValueAtTime(659, ctx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(784, ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                osc.start(); osc.stop(ctx.currentTime + 0.4);
+                break;
+        }
+    }
+
+    // OUTFIT SHOP FUNCTIONS
+    buyOutfit(outfitId) {
+        const outfit = this.outfits[outfitId];
+        if (!outfit || outfit.owned) return false;
+        if (this.totalCoins >= outfit.price) {
+            this.totalCoins -= outfit.price;
+            outfit.owned = true;
+            localStorage.setItem('anatomyRush2025Coins', this.totalCoins);
+            const ownedData = {};
+            Object.keys(this.outfits).forEach(k => { ownedData[k] = this.outfits[k].owned; });
+            localStorage.setItem('anatomyOwnedOutfits', JSON.stringify(ownedData));
+            this.playSound('powerup');
+            return true;
+        }
+        return false;
+    }
+
+    equipOutfit(outfitId) {
+        if (this.outfits[outfitId] && this.outfits[outfitId].owned) {
+            this.currentOutfit = outfitId;
+            localStorage.setItem('anatomyOutfit', outfitId);
+            return true;
+        }
+        return false;
+    }
+
+    getOutfitColor() {
+        const outfit = this.outfits[this.currentOutfit];
+        if (outfit.color === 'rainbow') {
+            const hue = (this.globalTime * 0.1) % 360;
+            return `hsl(${hue}, 80%, 55%)`;
+        }
+        return outfit.color;
+    }
+
+    getDarkerColor(color) {
+        // Create a darker version for pants
+        if (color.startsWith('hsl')) {
+            return color.replace('55%', '40%');
+        }
+        // Convert hex to darker shade
+        const r = parseInt(color.slice(1, 3), 16);
+        const g = parseInt(color.slice(3, 5), 16);
+        const b = parseInt(color.slice(5, 7), 16);
+        return `rgb(${Math.floor(r * 0.7)}, ${Math.floor(g * 0.7)}, ${Math.floor(b * 0.7)})`;
+    }
+
     getLaneX(lane) { return this.centerX + (lane - 1) * this.laneWidth; }
 
     startGame() {
         this.state = 'playing';
         this.score = 0; this.coins = 0; this.lives = 3; this.streak = 0; this.multiplier = 1;
-        this.distance = 0; this.speed = 1; this.currentLane = 1; this.targetLane = 1;
+        this.distance = 0; this.speed = 1.8; this.currentLane = 1; this.targetLane = 1;
         this.combo = 0; this.comboTimer = 0; this.level = 1;
         this.obstacles = []; this.coins_arr = []; this.powerups = []; this.particles = []; this.floatingTexts = [];
         this.player.isJumping = false; this.player.isSliding = false; this.player.jumpHeight = 0;
@@ -323,8 +445,8 @@ class AnatomyRush {
 
         const speedMod = this.player.speedBoost > 0 ? 1.5 : 1;
         const feverMod = this.feverMode ? 1.3 : 1;
-        if (this.speed < this.maxSpeed) this.speed += 0.00015;
-        this.distance += this.speed * speedMod * 8;
+        if (this.speed < this.maxSpeed) this.speed += 0.0003;
+        this.distance += this.speed * speedMod * 12;
         this.score = Math.floor(this.distance / 10) * this.multiplier * (this.feverMode ? 2 : 1);
 
         // Trigger fever mode on high combo
@@ -366,6 +488,7 @@ class AnatomyRush {
             this.addFloatingText(this.centerX, this.height / 2, `🎉 LEVEL ${this.level}! 🎉`, '#fbbf24');
             this.flash = { color: '#fbbf24', timer: 20 };
             this.spawnConfetti(60); // Celebration!
+            this.playSound('levelup');
             if (this.level > this.stats.highestLevel) this.stats.highestLevel = this.level;
             if (this.level === 2) this.unlockAchievement('level2', 'Warming Up - Reach Level 2');
             if (this.level === 3) this.unlockAchievement('level3', 'Getting Serious - Reach Level 3');
@@ -462,6 +585,7 @@ class AnatomyRush {
                     if (this.combo === 10) this.addFloatingText(this.getLaneX(Math.round(c.lane)), this.height - 200, 'COMBO x3!', '#ef4444');
                     localStorage.setItem('anatomyRush2025Coins', this.totalCoins);
                     this.addParticles(this.getLaneX(Math.round(c.lane)), this.height - 180, 15, '#fbbf24');
+                    this.playSound('coin');
                 }
             }
             return c.z > -500 && !c.collected;
@@ -504,6 +628,7 @@ class AnatomyRush {
         this.lives--; this.streak = 0; this.multiplier = 1; this.combo = 0; this.shake = 25;
         this.flash = { color: '#ef4444', timer: 20 }; this.player.invincible = 120;
         this.addParticles(this.getLaneX(Math.round(this.currentLane)), this.height - 120, 40, '#ef4444');
+        this.playSound('hit');
         if (this.lives <= 0) this.gameOver();
     }
 
@@ -1082,8 +1207,12 @@ class AnatomyRush {
         if (this.player.invincible > 0 && Math.floor(this.player.invincible / 6) % 2 === 0) this.ctx.globalAlpha = 0.5;
         this.ctx.save(); this.ctx.translate(x, y);
 
-        // Dynamic glow based on power-ups
-        let glow = '#ec4899'; // Pink for female nurse
+        // Get outfit color
+        const outfitColor = this.getOutfitColor();
+        const pantsColor = this.getDarkerColor(outfitColor);
+
+        // Dynamic glow based on power-ups or outfit
+        let glow = outfitColor;
         if (this.player.shield > 0) glow = '#06b6d4';
         if (this.player.speedBoost > 0) glow = '#22c55e';
         if (this.player.magnet > 0) glow = '#a855f7';
@@ -1097,7 +1226,7 @@ class AnatomyRush {
 
         if (this.player.isSliding) {
             // Sliding pose - compressed female form
-            this.ctx.fillStyle = '#06b6d4';
+            this.ctx.fillStyle = outfitColor;
             this.ctx.beginPath(); this.ctx.ellipse(0, -18, 55, 22, 0, 0, Math.PI * 2); this.ctx.fill();
             // Head
             this.ctx.fillStyle = '#fcd9b8'; this.ctx.beginPath(); this.ctx.arc(30, -30, 20, 0, Math.PI * 2); this.ctx.fill();
@@ -1106,20 +1235,20 @@ class AnatomyRush {
             this.ctx.beginPath(); this.ctx.ellipse(-15, -28, 30, 10, -0.3, 0, Math.PI * 2); this.ctx.fill();
         } else {
             // LEGS - slimmer feminine proportions
-            this.ctx.fillStyle = '#0891b2';
+            this.ctx.fillStyle = pantsColor;
             this.ctx.save(); this.ctx.translate(-12, -18 + bounce); this.ctx.rotate(legSwing * Math.PI / 180);
             this.ctx.fillRect(-7, 0, 14, 42);
             this.ctx.fillStyle = '#fff'; this.ctx.fillRect(-8, 38, 16, 12); // White shoes
             this.ctx.restore();
 
-            this.ctx.fillStyle = '#0891b2';
+            this.ctx.fillStyle = pantsColor;
             this.ctx.save(); this.ctx.translate(12, -18 + bounce); this.ctx.rotate(-legSwing * Math.PI / 180);
             this.ctx.fillRect(-7, 0, 14, 42);
             this.ctx.fillStyle = '#fff'; this.ctx.fillRect(-8, 38, 16, 12); // White shoes
             this.ctx.restore();
 
             // BODY - feminine scrubs with curves
-            this.ctx.fillStyle = '#06b6d4';
+            this.ctx.fillStyle = outfitColor;
             this.ctx.beginPath();
             this.ctx.moveTo(-22, -85 + bounce);
             this.ctx.quadraticCurveTo(-28, -50 + bounce, -20, -18 + bounce);
@@ -1129,7 +1258,7 @@ class AnatomyRush {
             this.ctx.fill();
 
             // V-neck detail
-            this.ctx.strokeStyle = '#0e7490'; this.ctx.lineWidth = 2;
+            this.ctx.strokeStyle = pantsColor; this.ctx.lineWidth = 2;
             this.ctx.beginPath();
             this.ctx.moveTo(-10, -85 + bounce);
             this.ctx.lineTo(0, -70 + bounce);
@@ -1138,12 +1267,12 @@ class AnatomyRush {
 
             // ARMS - slimmer with skin tone hands
             this.ctx.save(); this.ctx.translate(-26, -75 + bounce); this.ctx.rotate(-armSwing * Math.PI / 180);
-            this.ctx.fillStyle = '#06b6d4'; this.ctx.fillRect(-6, 0, 12, 30);
+            this.ctx.fillStyle = outfitColor; this.ctx.fillRect(-6, 0, 12, 30);
             this.ctx.fillStyle = '#fcd9b8'; this.ctx.beginPath(); this.ctx.arc(0, 34, 7, 0, Math.PI * 2); this.ctx.fill();
             this.ctx.restore();
 
             this.ctx.save(); this.ctx.translate(26, -75 + bounce); this.ctx.rotate(armSwing * Math.PI / 180);
-            this.ctx.fillStyle = '#06b6d4'; this.ctx.fillRect(-6, 0, 12, 30);
+            this.ctx.fillStyle = outfitColor; this.ctx.fillRect(-6, 0, 12, 30);
             this.ctx.fillStyle = '#fcd9b8'; this.ctx.beginPath(); this.ctx.arc(0, 34, 7, 0, Math.PI * 2); this.ctx.fill();
             this.ctx.restore();
 
