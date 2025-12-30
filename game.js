@@ -1,7 +1,7 @@
 // MSK REVIEW RUNNER - Study Game 2025
 // Musculoskeletal nursing review game with questions
 
-const quizQuestionsBase = [
+const gameQuizQuestions = [
     { q: "A nurse is reinforcing preoperative teaching for a client scheduled for arthroscopy of the knee. Which statements should the nurse include? (Select all that apply)", category: "diagnostics", type: "sata", options: ["Apply ice packs to the area for the first 24 hours", "Keep the leg in a dependent position after surgery", "Perform isometric exercises as prescribed", "Avoid placing a cast on the surgical site", "Monitor the incision for signs of infection"], correctAnswers: ["Apply ice packs to the area for the first 24 hours", "Perform isometric exercises as prescribed", "Monitor the incision for signs of infection"], explanation: "Post-arthroscopy care includes ice packs for 24 hours, isometric exercises, and infection monitoring." },
     { q: "A nurse is preparing a client for a bone scan. Which instruction should the nurse provide?", category: "diagnostics", options: ["You will receive the radioactive injection when scanning begins", "You must remain NPO for 24 hours before the test", "You should empty your bladder before the procedure", "Radioactive precautions are needed for 72 hours after"], correctAnswer: "You should empty your bladder before the procedure", explanation: "Empty bladder promotes visualization of pelvic bones." },
     { q: "A client asks about DEXA scan results showing a T-score of -2.8. The nurse explains this indicates:", category: "diagnostics", options: ["Normal bone density", "Osteopenia", "Osteoporosis", "Severe osteomalacia"], correctAnswer: "Osteoporosis", explanation: "T-score <= -2.5 indicates osteoporosis." },
@@ -494,7 +494,7 @@ class MSKReviewRunner {
 
     shuffleQuestionBag() {
         // Create an array of indices [0, 1, ... N-1]
-        this.questionBag = Array.from({ length: quizQuestionsBase.length }, (_, i) => i);
+        this.questionBag = Array.from({ length: gameQuizQuestions.length }, (_, i) => i);
         // Fisher-Yates shuffle
         for (let i = this.questionBag.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -792,7 +792,7 @@ class MSKReviewRunner {
         const randomIdx = this.questionBag.pop();
         this.askedQuestionIndices.push(randomIdx);
 
-        const q = quizQuestionsBase[randomIdx];
+        const q = gameQuizQuestions[randomIdx];
         const shuffledOpts = [...q.options];
         const correctText = q.correctAnswer;
         // Shuffle options
