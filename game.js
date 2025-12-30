@@ -53,8 +53,8 @@ class MSKReviewRunner {
         this.achievements = JSON.parse(localStorage.getItem('anatomyAchievements')) || {};
         this.newAchievement = null;
 
-        this.speed = 2.8;
-        this.maxSpeed = 6.5;
+        this.speed = 1.5;
+        this.maxSpeed = 4.0;
 
         this.obstacles = [];
         this.coins_arr = [];
@@ -239,7 +239,7 @@ class MSKReviewRunner {
 
     switchLane(dir) {
         const nl = this.targetLane + dir;
-        if (nl >= 0 && nl < 3) { this.targetLane = nl; this.addParticles(this.getLaneX(this.currentLane), this.height - 100, 10, '#a855f7'); }
+        if (nl >= 0 && nl < 3) { this.targetLane = nl; }
     }
 
     jump() {
@@ -247,12 +247,10 @@ class MSKReviewRunner {
             this.player.isJumping = true;
             this.player.jumpVelocity = 24;
             this.player.canDoubleJump = true;
-            this.addParticles(this.getLaneX(this.currentLane), this.height - 60, 8, '#06b6d4');
             this.playSound('jump');
         } else if (this.player.isJumping && this.player.canDoubleJump) {
             this.player.jumpVelocity = 20;
             this.player.canDoubleJump = false;
-            this.addParticles(this.getLaneX(this.currentLane), this.height - 60 - this.player.jumpHeight, 10, '#22c55e');
             this.addFloatingText(this.getLaneX(this.currentLane), this.height - 150, 'DOUBLE JUMP!', '#22c55e');
             this.playSound('jump');
         }
@@ -262,7 +260,6 @@ class MSKReviewRunner {
         if (!this.player.isJumping && !this.player.isSliding) {
             this.player.isSliding = true;
             this.player.slideTimer = 50;
-            this.addParticles(this.getLaneX(this.currentLane), this.height - 40, 12, '#f59e0b');
         }
     }
 
@@ -409,7 +406,7 @@ class MSKReviewRunner {
     startGame() {
         this.state = 'playing';
         this.score = 0; this.coins = 0; this.lives = 3; this.streak = 0; this.multiplier = 1;
-        this.distance = 0; this.speed = 2.8; this.currentLane = 1; this.targetLane = 1;
+        this.distance = 0; this.speed = 1.5; this.currentLane = 1; this.targetLane = 1;
         this.combo = 0; this.comboTimer = 0; this.level = 1;
         this.obstacles = []; this.coins_arr = []; this.powerups = []; this.particles = []; this.floatingTexts = [];
         this.player.isJumping = false; this.player.isSliding = false; this.player.jumpHeight = 0;
@@ -515,7 +512,7 @@ class MSKReviewRunner {
 
         const speedMod = this.player.speedBoost > 0 ? 1.5 : 1;
         const feverMod = this.feverMode ? 1.3 : 1;
-        if (this.speed < this.maxSpeed) this.speed += 0.0006;
+        if (this.speed < this.maxSpeed) this.speed += 0.0002;
         this.distance += this.speed * speedMod * 12;
         this.score = Math.floor(this.distance / 10) * this.multiplier * (this.feverMode ? 2 : 1);
 
@@ -1546,75 +1543,98 @@ class MSKReviewRunner {
     }
 
     drawMenu() {
-        this.ctx.fillStyle = 'rgba(10, 15, 30, 0.95)';
+        // Premium dark gradient background
+        const bgGrad = this.ctx.createLinearGradient(0, 0, 0, this.height);
+        bgGrad.addColorStop(0, '#0f172a');
+        bgGrad.addColorStop(0.5, '#1e1b4b');
+        bgGrad.addColorStop(1, '#0f172a');
+        this.ctx.fillStyle = bgGrad;
         this.ctx.fillRect(0, 0, this.width, this.height);
 
-        // Title with glow
-        this.ctx.shadowColor = '#06b6d4';
-        this.ctx.shadowBlur = 40;
-        this.ctx.fillStyle = '#06b6d4';
-        this.ctx.font = `bold ${Math.min(52, this.width * 0.045)}px "Segoe UI", "SF Pro Display", Arial`;
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('🦴 MSK Review Runner', this.centerX, this.height * 0.12);
-        this.ctx.shadowBlur = 0;
-
-        // Subtitle
-        this.ctx.fillStyle = '#94a3b8';
-        this.ctx.font = '17px "Segoe UI", Arial';
-        this.ctx.fillText('Musculoskeletal Nursing Study Game', this.centerX, this.height * 0.18);
-
-        // Stats section with card background
-        this.ctx.fillStyle = 'rgba(255,255,255,0.05)';
-        this.ctx.beginPath();
-        this.ctx.roundRect(this.centerX - 160, this.height * 0.24, 320, 100, 12);
-        this.ctx.fill();
-
-        this.ctx.fillStyle = '#fbbf24';
-        this.ctx.font = 'bold 26px "Segoe UI", Arial';
-        this.ctx.fillText(`🏆 Best: ${this.highScore.toLocaleString()}`, this.centerX, this.height * 0.30);
-        this.ctx.font = 'bold 22px "Segoe UI", Arial';
-        this.ctx.fillText(`💰 Coins: ${this.totalCoins.toLocaleString()}`, this.centerX, this.height * 0.37);
-
-        // Current outfit
-        const currentOutfitName = this.outfits[this.currentOutfit].name;
-        this.ctx.fillStyle = this.getOutfitColor();
-        this.ctx.font = '18px "Segoe UI", Arial';
-        this.ctx.fillText(`👕 ${currentOutfitName}`, this.centerX, this.height * 0.46);
-
-        // Achievements if any
-        const achCount = Object.keys(this.achievements).length;
-        if (achCount > 0) {
-            this.ctx.fillStyle = '#a855f7';
-            this.ctx.font = '16px "Segoe UI", Arial';
-            this.ctx.fillText(`🏅 ${achCount} Achievement${achCount > 1 ? 's' : ''}`, this.centerX, this.height * 0.52);
+        // Subtle grid overlay for depth
+        this.ctx.strokeStyle = 'rgba(99, 102, 241, 0.03)';
+        this.ctx.lineWidth = 1;
+        for (let i = 0; i < this.width; i += 40) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(i, 0);
+            this.ctx.lineTo(i, this.height);
+            this.ctx.stroke();
         }
 
-        // Controls - cleaner format
-        this.ctx.fillStyle = 'rgba(255,255,255,0.08)';
-        this.ctx.beginPath();
-        this.ctx.roundRect(this.centerX - 200, this.height * 0.56, 400, 80, 10);
-        this.ctx.fill();
-
+        // Title - clean, no emoji
+        const titleSize = Math.min(44, this.width * 0.04);
         this.ctx.fillStyle = '#e2e8f0';
-        this.ctx.font = 'bold 14px "Segoe UI", Arial';
-        this.ctx.fillText('CONTROLS', this.centerX, this.height * 0.60);
+        this.ctx.font = `300 ${titleSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial`;
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('MSK Review Runner', this.centerX, this.height * 0.15);
+
+        // Subtle accent line under title
+        const lineGrad = this.ctx.createLinearGradient(this.centerX - 80, 0, this.centerX + 80, 0);
+        lineGrad.addColorStop(0, 'transparent');
+        lineGrad.addColorStop(0.5, '#6366f1');
+        lineGrad.addColorStop(1, 'transparent');
+        this.ctx.strokeStyle = lineGrad;
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.centerX - 80, this.height * 0.18);
+        this.ctx.lineTo(this.centerX + 80, this.height * 0.18);
+        this.ctx.stroke();
+
+        // Subtitle
+        this.ctx.fillStyle = '#64748b';
+        this.ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+        this.ctx.fillText('Musculoskeletal Nursing Review', this.centerX, this.height * 0.23);
+
+        // Stats in a clean row
+        this.ctx.fillStyle = '#f8fafc';
+        this.ctx.font = '600 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+        this.ctx.fillText(`${this.highScore.toLocaleString()}`, this.centerX - 80, this.height * 0.35);
+        this.ctx.fillText(`${this.totalCoins.toLocaleString()}`, this.centerX + 80, this.height * 0.35);
+
+        this.ctx.fillStyle = '#64748b';
+        this.ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+        this.ctx.fillText('HIGH SCORE', this.centerX - 80, this.height * 0.39);
+        this.ctx.fillText('COINS', this.centerX + 80, this.height * 0.39);
+
+        // Divider
+        this.ctx.strokeStyle = 'rgba(100, 116, 139, 0.2)';
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.centerX - 120, this.height * 0.45);
+        this.ctx.lineTo(this.centerX + 120, this.height * 0.45);
+        this.ctx.stroke();
+
+        // Controls section - minimal
         this.ctx.fillStyle = '#94a3b8';
-        this.ctx.font = '13px "Segoe UI", Arial';
-        this.ctx.fillText('← → Move  •  SPACE Jump  •  ↓ Slide  •  SHIFT Dash', this.centerX, this.height * 0.65);
-        this.ctx.fillText('🛡️ Shield  •  🧲 Magnet  •  ⚡ Speed  •  ❤️ Life', this.centerX, this.height * 0.70);
+        this.ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+        this.ctx.fillText('ARROWS to move  •  SPACE to jump  •  DOWN to slide', this.centerX, this.height * 0.52);
 
-        // Start prompt with pulse
-        const pulse = 0.6 + Math.sin(this.globalTime * 0.005) * 0.4;
-        this.ctx.globalAlpha = pulse;
-        this.ctx.fillStyle = '#22c55e';
-        this.ctx.font = 'bold 28px "Segoe UI", Arial';
-        this.ctx.fillText('▶ TAP OR PRESS SPACE', this.centerX, this.height * 0.82);
-        this.ctx.globalAlpha = 1;
+        // Start button - premium glassmorphism style
+        const btnY = this.height * 0.68;
+        const btnW = 200;
+        const btnH = 50;
 
-        // Shop hint
-        this.ctx.fillStyle = '#ec4899';
-        this.ctx.font = '16px "Segoe UI", Arial';
-        this.ctx.fillText('[O] Outfit Shop', this.centerX, this.height * 0.92);
+        // Button glow
+        const pulse = 0.5 + Math.sin(this.globalTime * 0.004) * 0.3;
+        this.ctx.shadowColor = '#6366f1';
+        this.ctx.shadowBlur = 30 * pulse;
+
+        // Button background
+        this.ctx.fillStyle = '#6366f1';
+        this.ctx.beginPath();
+        this.ctx.roundRect(this.centerX - btnW / 2, btnY - btnH / 2, btnW, btnH, 25);
+        this.ctx.fill();
+        this.ctx.shadowBlur = 0;
+
+        // Button text
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = '600 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+        this.ctx.fillText('START GAME', this.centerX, btnY + 6);
+
+        // Footer hint
+        this.ctx.fillStyle = '#475569';
+        this.ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+        this.ctx.fillText('Press O for Outfits', this.centerX, this.height * 0.90);
     }
 
     drawShop() {
