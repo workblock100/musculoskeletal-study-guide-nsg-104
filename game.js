@@ -1052,67 +1052,92 @@ class MSKReviewRunner {
         this.newAchievement = { id, name, timer: 180 };
     }
 
+    // Draw clean, static background with pre-computed windows
     drawBackground() {
         const horizonY = this.height * 0.4;
 
-        // Elegant sky gradient
-        const skyGrad = this.ctx.createLinearGradient(0, 0, 0, this.height);
-        skyGrad.addColorStop(0, '#0a0e18');
-        skyGrad.addColorStop(0.35, '#121829');
-        skyGrad.addColorStop(0.5, '#1a2137');
-        skyGrad.addColorStop(0.6, '#151a28');
-        skyGrad.addColorStop(1, '#0d1018');
+        // Deep Space/Twilight Gradient
+        const skyGrad = this.ctx.createLinearGradient(0, 0, 0, this.height * 0.6);
+        skyGrad.addColorStop(0, '#05070a');    // Almost black top
+        skyGrad.addColorStop(0.4, '#0f172a');  // Deep blue mid
+        skyGrad.addColorStop(0.7, '#1e293b');  // Slate blue horizon
+        skyGrad.addColorStop(1, '#0f172a');    // Fade back down
         this.ctx.fillStyle = skyGrad;
         this.ctx.fillRect(0, 0, this.width, this.height);
 
-        // Simple city silhouettes (no windows, just shapes)
+        // Pre-compute window positions ONCE
+        if (!this.staticWindows) {
+            this.staticWindows = [];
+            this.buildings.forEach(b => {
+                const bHeight = b.height * 0.6;
+                const by = horizonY - bHeight;
+                const rows = Math.floor(bHeight / 14);
+                const cols = Math.floor(b.width / 10);
+                for (let row = 1; row < rows; row++) {
+                    for (let col = 1; col < cols; col++) {
+                        // 25% chance of a window, stored permanently
+                        if (Math.random() < 0.25) {
+                            this.staticWindows.push({
+                                x: b.x + col * 10 + 2,
+                                y: by + row * 14 + 2,
+                                color: Math.random() < 0.8 ? 'rgba(255, 240, 200, 0.15)' : 'rgba(200, 230, 255, 0.1)'
+                            });
+                        }
+                    }
+                }
+            });
+        }
+
+        // Draw Buildings
         this.buildings.forEach(b => {
-            const bHeight = b.height * 0.55;
+            const bHeight = b.height * 0.6;
             const by = horizonY - bHeight;
 
-            // Building with subtle gradient fade
+            // Building Gradient
             const bGrad = this.ctx.createLinearGradient(0, by, 0, horizonY);
-            bGrad.addColorStop(0, 'rgba(20, 26, 38, 0.4)');
-            bGrad.addColorStop(1, 'rgba(26, 32, 45, 0.7)');
+            bGrad.addColorStop(0, 'rgba(30, 41, 59, 0.4)');
+            bGrad.addColorStop(1, 'rgba(15, 23, 42, 0.9)');
             this.ctx.fillStyle = bGrad;
             this.ctx.fillRect(b.x, by, b.width, bHeight);
         });
 
-        // Ambient horizon glow
-        const glowGrad = this.ctx.createLinearGradient(0, horizonY - 30, 0, horizonY + 20);
-        glowGrad.addColorStop(0, 'transparent');
-        glowGrad.addColorStop(0.5, 'rgba(30, 40, 60, 0.3)');
-        glowGrad.addColorStop(1, 'rgba(15, 20, 30, 0.5)');
-        this.ctx.fillStyle = glowGrad;
-        this.ctx.fillRect(0, horizonY - 30, this.width, 50);
+        // Draw Static Windows (Batch for performance)
+        this.staticWindows.forEach(w => {
+            this.ctx.fillStyle = w.color;
+            this.ctx.fillRect(w.x, w.y, 4, 5);
+        });
+
+        // Horizon Fog / Atmosphere
+        const fogGrad = this.ctx.createLinearGradient(0, horizonY - 50, 0, horizonY + 20);
+        fogGrad.addColorStop(0, 'transparent');
+        fogGrad.addColorStop(0.6, 'rgba(15, 23, 42, 0.8)');
+        fogGrad.addColorStop(1, 'rgba(15, 23, 42, 1)');
+        this.ctx.fillStyle = fogGrad;
+        this.ctx.fillRect(0, horizonY - 50, this.width, 70);
     }
 
-    drawRoad() {
+    drawRoad() { // Fixed indentation & structure
         const horizonY = this.height * 0.4;
         const roadW = 540;
 
-        // Road surface with gradient that matches atmosphere
+        // Road surface w/ deep color
         const roadGrad = this.ctx.createLinearGradient(0, horizonY, 0, this.height);
-        roadGrad.addColorStop(0, 'rgba(12, 14, 18, 0.6)');   // Semi-transparent at horizon (blends with bg)
-        roadGrad.addColorStop(0.15, 'rgba(18, 18, 22, 0.85)');
-        roadGrad.addColorStop(0.4, '#151518');                // Solid road
-        roadGrad.addColorStop(1, '#1a1a1f');                  // Slightly lighter at bottom
-
+        roadGrad.addColorStop(0, 'rgba(15, 23, 42, 1)');
+        roadGrad.addColorStop(0.2, '#1e293b');
+        roadGrad.addColorStop(1, '#0f172a');
         this.ctx.fillStyle = roadGrad;
         this.ctx.beginPath();
         this.ctx.moveTo(this.centerX - 120, horizonY);
         this.ctx.lineTo(this.centerX + 120, horizonY);
         this.ctx.lineTo(this.centerX + roadW, this.height);
         this.ctx.lineTo(this.centerX - roadW, this.height);
-        this.ctx.closePath();
         this.ctx.fill();
 
-        // Road edges with glow that fades at horizon
+        // Neon Edges
         const edgeGrad = this.ctx.createLinearGradient(0, horizonY, 0, this.height);
-        edgeGrad.addColorStop(0, 'rgba(99, 102, 241, 0)');    // Invisible at horizon
-        edgeGrad.addColorStop(0.2, 'rgba(99, 102, 241, 0.4)'); // Fades in
-        edgeGrad.addColorStop(0.5, 'rgba(99, 102, 241, 0.8)'); // Bright
-        edgeGrad.addColorStop(1, '#6366f1');                   // Full color at bottom
+        edgeGrad.addColorStop(0, 'rgba(99, 102, 241, 0)');
+        edgeGrad.addColorStop(0.3, 'rgba(99, 102, 241, 0.5)');
+        edgeGrad.addColorStop(1, '#6366f1');
 
         this.ctx.strokeStyle = edgeGrad;
         this.ctx.lineWidth = 3;
@@ -1125,13 +1150,8 @@ class MSKReviewRunner {
         this.ctx.lineTo(this.centerX + roadW, this.height);
         this.ctx.stroke();
 
-        // Lane dividers (also fade at horizon)
-        const laneGrad = this.ctx.createLinearGradient(0, horizonY, 0, this.height);
-        laneGrad.addColorStop(0, 'rgba(148, 163, 184, 0)');
-        laneGrad.addColorStop(0.3, 'rgba(148, 163, 184, 0.2)');
-        laneGrad.addColorStop(1, 'rgba(148, 163, 184, 0.4)');
-
-        this.ctx.strokeStyle = laneGrad;
+        // Lane Dividers
+        this.ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
         this.ctx.lineWidth = 2;
         for (let lane = 0; lane < 2; lane++) {
             const offset = (lane - 0.5) * this.laneWidth;
@@ -1376,38 +1396,62 @@ class MSKReviewRunner {
             this.ctx.fillStyle = '#ffe4c4'; this.ctx.beginPath(); this.ctx.arc(0, 34, 7, 0, Math.PI * 2); this.ctx.fill(); // Hand
             this.ctx.restore();
 
-            // REALISTIC STETHOSCOPE - High Visibility
-            this.ctx.lineCap = 'round'; this.ctx.lineJoin = 'round';
-            // Tubing around neck - Lighter Silver
-            this.ctx.strokeStyle = '#cbd5e1'; this.ctx.lineWidth = 4;
+            // STETHOSCOPE - Realistic Asymmetric Drape
+            const stethColor = '#cbd5e1'; // Light silver
+            const stethShadow = 'rgba(0,0,0,0.3)';
+            this.ctx.lineCap = 'round';
+            this.ctx.lineJoin = 'round';
+
+            // 1. Neck Loop (Behind/On Shoulders)
+            this.ctx.strokeStyle = stethColor;
+            this.ctx.lineWidth = 4;
             this.ctx.beginPath();
             this.ctx.moveTo(-15, -86 + bounce);
-            this.ctx.quadraticCurveTo(0, -82 + bounce, 15, -86 + bounce); // Back of neck
+            this.ctx.quadraticCurveTo(0, -82 + bounce, 15, -86 + bounce);
             this.ctx.stroke();
 
-            // Hanging tubing - FLIPPED SIDE - Lighter
-            this.ctx.lineWidth = 3;
+            // 2. RIGHT SIDE (Screen Left) - Chest Piece Side
+            // Tube hangs down
             this.ctx.beginPath();
+            this.ctx.moveTo(-15, -86 + bounce);
+            this.ctx.quadraticCurveTo(-18, -70 + bounce, -14, -55 + bounce);
+            this.ctx.stroke();
 
-            // Right side (wearer's left) - Short drape
+            // Chest Piece (Metallic Disc + Diaphragm)
+            // Metal Casing
+            this.ctx.fillStyle = '#94a3b8';
+            this.ctx.beginPath(); this.ctx.arc(-14, -50 + bounce, 7, 0, Math.PI * 2); this.ctx.fill();
+            // White Diaphragm
+            const diaGrad = this.ctx.createRadialGradient(-14, -50 + bounce, 1, -14, -50 + bounce, 5);
+            diaGrad.addColorStop(0, '#ffffff'); diaGrad.addColorStop(1, '#e2e8f0');
+            this.ctx.fillStyle = diaGrad;
+            this.ctx.beginPath(); this.ctx.arc(-14, -50 + bounce, 5, 0, Math.PI * 2); this.ctx.fill();
+
+            // 3. LEFT SIDE (Screen Right) - Headset Side
+            // Tube hangs down to Y-Junction
+            this.ctx.beginPath();
             this.ctx.moveTo(15, -86 + bounce);
-            this.ctx.quadraticCurveTo(20, -75 + bounce, 18, -65 + bounce);
+            this.ctx.quadraticCurveTo(18, -75 + bounce, 16, -65 + bounce);
             this.ctx.stroke();
 
-            // Left side (wearer's right) - Long drape with chest piece
+            // Y-Junction (The metal V-shape)
+            this.ctx.fillStyle = '#64748b'; // Darker metal
             this.ctx.beginPath();
-            this.ctx.moveTo(-15, -86 + bounce);
-            this.ctx.quadraticCurveTo(-22, -75 + bounce, -20, -60 + bounce);
-            this.ctx.quadraticCurveTo(-15, -50 + bounce, -10, -55 + bounce); // Hook shape
-            this.ctx.stroke();
+            this.ctx.moveTo(16, -65 + bounce);
+            this.ctx.lineTo(12, -55 + bounce); // Left ear tube start
+            this.ctx.lineTo(20, -55 + bounce); // Right ear tube start
+            this.ctx.fill();
 
-            // Chest piece (Bright Silver/White) - Now on Left
-            const diaphragmGrad = this.ctx.createRadialGradient(-10, -55 + bounce, 1, -10, -55 + bounce, 8);
-            diaphragmGrad.addColorStop(0, '#ffffff'); diaphragmGrad.addColorStop(0.5, '#f1f5f9'); diaphragmGrad.addColorStop(1, '#94a3b8');
-            this.ctx.fillStyle = diaphragmGrad;
-            this.ctx.shadowColor = '#fff'; this.ctx.shadowBlur = 8;
-            this.ctx.beginPath(); this.ctx.arc(-10, -55 + bounce, 8, 0, Math.PI * 2); this.ctx.fill();
-            this.ctx.shadowBlur = 0;
+            // Ear Tubes & Tips hanging down
+            this.ctx.strokeStyle = '#94a3b8'; this.ctx.lineWidth = 2;
+            // Left Ear Tube
+            this.ctx.beginPath(); this.ctx.moveTo(12, -55 + bounce);
+            this.ctx.quadraticCurveTo(10, -50 + bounce, 11, -45 + bounce); this.ctx.stroke();
+            this.ctx.fillStyle = '#475569'; this.ctx.beginPath(); this.ctx.arc(11, -44 + bounce, 2, 0, Math.PI * 2); this.ctx.fill(); // Tip
+            // Right Ear Tube
+            this.ctx.beginPath(); this.ctx.moveTo(20, -55 + bounce);
+            this.ctx.quadraticCurveTo(22, -50 + bounce, 21, -45 + bounce); this.ctx.stroke();
+            this.ctx.fillStyle = '#475569'; this.ctx.beginPath(); this.ctx.arc(21, -44 + bounce, 2, 0, Math.PI * 2); this.ctx.fill(); // Tip
 
             // HEAD - Shaded 3D Sphere
             const headGrad = this.ctx.createRadialGradient(-5, -112 + bounce, 2, 0, -105 + bounce, 24);
