@@ -1,6 +1,6 @@
 // ============================================
-// ANATOMY RUSH - 3D Subway Surfers Style Game
-// Premium endless runner with lane mechanics
+// ANATOMY RUSH 2025 - Premium Endless Runner
+// Modern graphics, proper character, timed questions
 // ============================================
 
 class AnatomyRush {
@@ -10,128 +10,109 @@ class AnatomyRush {
         this.resize();
 
         // Game state
-        this.state = 'menu'; // menu, playing, question, gameover
+        this.state = 'menu';
         this.score = 0;
         this.coins = 0;
         this.lives = 3;
         this.streak = 0;
         this.multiplier = 1;
-        this.highScore = parseInt(localStorage.getItem('anatomyRushHighScore')) || 0;
-        this.totalCoins = parseInt(localStorage.getItem('anatomyRushCoins')) || 0;
-        this.gamesPlayed = parseInt(localStorage.getItem('anatomyRushGames')) || 0;
+        this.distance = 0;
+        this.highScore = parseInt(localStorage.getItem('anatomyRush2025HS')) || 0;
+        this.totalCoins = parseInt(localStorage.getItem('anatomyRush2025Coins')) || 0;
 
-        // 3D Perspective settings
-        this.horizon = 0.35; // Where the horizon sits (0-1)
-        this.fov = 0.84; // Field of view
-        this.cameraHeight = 1000;
-        this.cameraDepth = 1 / Math.tan((this.fov / 2) * Math.PI / 180);
+        // Lanes
+        this.lanes = 3;
+        this.currentLane = 1;
+        this.targetLane = 1;
+        this.laneWidth = 140;
 
-        // Lanes (Subway Surfers style - 3 lanes)
-        this.lanes = [-1, 0, 1]; // Left, Center, Right
-        this.laneWidth = 120;
-        this.currentLane = 0; // Start in center
-        this.targetLane = 0;
-        this.laneTransition = 0;
-        this.laneSpeed = 0.15;
-
-        // Player
+        // Player - Full character with arms
         this.player = {
-            x: 0,
             y: 0,
-            z: 0,
-            width: 60,
-            height: 100,
-            isJumping: false,
             jumpHeight: 0,
-            maxJumpHeight: 180,
             jumpVelocity: 0,
-            isRolling: false,
-            rollTimer: 0,
-            rollDuration: 25,
+            isJumping: false,
+            isSliding: false,
+            slideTimer: 0,
             animFrame: 0,
-            animTimer: 0
+            animTimer: 0,
+            invincible: 0
         };
 
-        // Speed and difficulty
+        // Speed
         this.speed = 1;
-        this.baseSpeed = 1;
-        this.maxSpeed = 2.5;
-        this.acceleration = 0.0003;
-
-        // Road segments for 3D effect
-        this.segments = [];
-        this.segmentLength = 200;
-        this.visibleSegments = 100;
-        this.roadWidth = 400;
-        this.rumbleLength = 3;
-        this.position = 0;
+        this.maxSpeed = 3;
 
         // Game objects
         this.obstacles = [];
-        this.collectibles = [];
+        this.coins_arr = [];
         this.particles = [];
+        this.trails = [];
 
-        // Timing
-        this.lastObstacle = 0;
-        this.obstacleGap = 80;
-
-        // Question system
+        // Question system - IMPROVED
+        this.questionDistance = 800; // First question after 800 distance
+        this.nextQuestionAt = this.questionDistance;
+        this.questionIncrement = 600; // Questions get further apart
         this.currentQuestion = null;
+        this.questionTimer = 0;
+        this.questionTimeLimit = 10; // 10 second timer!
         this.selectedAnswer = -1;
         this.questionResult = null;
 
-        // Visual effects
+        // Obstacle spawning
+        this.lastObstacle = 0;
+        this.obstacleGap = 300;
+
+        // Effects
         this.shake = 0;
-        this.flash = { active: false, color: '', timer: 0 };
+        this.flash = null;
 
         // Animation
         this.running = false;
         this.lastTime = 0;
+        this.globalTime = 0;
 
-        // Colors
+        // Colors - 2025 neon aesthetic
         this.colors = {
-            sky: ['#0c0c20', '#1a1a3a', '#2d2d5a'],
-            road: '#1a1a2e',
-            roadLine: '#00d4ff',
-            rumble: '#2a2a4e',
-            lane: 'rgba(0, 212, 255, 0.3)',
-            player: '#00d4ff',
-            obstacle: '#ff4757',
-            coin: '#ffd700',
-            heart: '#ff6b81',
-            question: '#a855f7'
+            bg1: '#0a0a1a',
+            bg2: '#1a1033',
+            road: '#12121f',
+            lane: '#a855f7',
+            neon: '#d946ef',
+            cyan: '#06b6d4',
+            player: '#38bdf8',
+            obstacle: '#f43f5e',
+            coin: '#fbbf24',
+            success: '#22c55e',
+            danger: '#ef4444'
         };
 
-        this.initRoad();
         this.bindEvents();
     }
 
     resize() {
         const container = this.canvas.parentElement;
-        this.canvas.width = Math.min(container.offsetWidth - 40, 900);
-        this.canvas.height = 550;
+        const maxW = Math.min(container.offsetWidth - 32, 1200);
+        const maxH = Math.min(window.innerHeight - 200, 675);
+
+        // 16:9 aspect ratio
+        if (maxW / 16 * 9 > maxH) {
+            this.canvas.height = maxH;
+            this.canvas.width = maxH / 9 * 16;
+        } else {
+            this.canvas.width = maxW;
+            this.canvas.height = maxW / 16 * 9;
+        }
+
         this.width = this.canvas.width;
         this.height = this.canvas.height;
         this.centerX = this.width / 2;
-        this.centerY = this.height / 2;
-    }
-
-    initRoad() {
-        this.segments = [];
-        for (let i = 0; i < this.visibleSegments; i++) {
-            this.segments.push({
-                index: i,
-                curve: 0,
-                y: 0
-            });
-        }
     }
 
     bindEvents() {
-        // Keyboard - BULLETPROOF event handling
-        const handleKeyDown = (e) => {
-            // Always prevent default for game keys when game panel is active
-            const gameKeys = ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'Digit1', 'Digit2', 'Digit3', 'Digit4'];
+        const handleKey = (e) => {
+            const gameKeys = ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+                'KeyW', 'KeyA', 'KeyS', 'KeyD', 'Digit1', 'Digit2', 'Digit3', 'Digit4'];
 
             if (gameKeys.includes(e.code)) {
                 e.preventDefault();
@@ -139,156 +120,115 @@ class AnatomyRush {
             }
 
             if (this.state === 'menu') {
-                if (e.code === 'Space' || e.code === 'Enter') {
-                    this.startGame();
-                }
+                if (e.code === 'Space' || e.code === 'Enter') this.startGame();
                 return;
             }
 
             if (this.state === 'gameover') {
-                if (e.code === 'Space' || e.code === 'Enter') {
-                    this.resetToMenu();
-                }
+                if (e.code === 'Space' || e.code === 'Enter') this.state = 'menu';
                 return;
             }
 
             if (this.state === 'question') {
-                if (e.code >= 'Digit1' && e.code <= 'Digit4') {
-                    this.selectAnswer(parseInt(e.code.slice(-1)) - 1);
-                }
+                const num = parseInt(e.code.replace('Digit', ''));
+                if (num >= 1 && num <= 4) this.selectAnswer(num - 1);
                 return;
             }
 
             if (this.state === 'playing') {
-                // Lane switching (Subway Surfers style)
-                if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
-                    this.switchLane(-1);
-                }
-                if (e.code === 'ArrowRight' || e.code === 'KeyD') {
-                    this.switchLane(1);
-                }
-                // Jump
-                if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
-                    this.jump();
-                }
-                // Roll/Slide
-                if (e.code === 'ArrowDown' || e.code === 'KeyS') {
-                    this.roll();
-                }
+                if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.switchLane(-1);
+                if (e.code === 'ArrowRight' || e.code === 'KeyD') this.switchLane(1);
+                if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') this.jump();
+                if (e.code === 'ArrowDown' || e.code === 'KeyS') this.slide();
             }
         };
 
-        // Remove any existing listeners and add new one
-        document.removeEventListener('keydown', this.keyHandler);
-        this.keyHandler = handleKeyDown;
-        document.addEventListener('keydown', this.keyHandler);
+        document.removeEventListener('keydown', this._keyHandler);
+        this._keyHandler = handleKey;
+        document.addEventListener('keydown', this._keyHandler);
 
-        // Touch controls for mobile
-        let touchStartX = 0;
-        let touchStartY = 0;
-
+        // Touch
+        let touchX = 0, touchY = 0;
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-
+            touchX = e.touches[0].clientX;
+            touchY = e.touches[0].clientY;
             if (this.state === 'menu') this.startGame();
-            if (this.state === 'gameover') this.resetToMenu();
+            if (this.state === 'gameover') this.state = 'menu';
         }, { passive: false });
 
         this.canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
             if (this.state !== 'playing') return;
-
-            const dx = e.touches[0].clientX - touchStartX;
-            const dy = e.touches[0].clientY - touchStartY;
-
-            if (Math.abs(dx) > 30) {
+            const dx = e.touches[0].clientX - touchX;
+            const dy = e.touches[0].clientY - touchY;
+            if (Math.abs(dx) > 40) {
                 this.switchLane(dx > 0 ? 1 : -1);
-                touchStartX = e.touches[0].clientX;
+                touchX = e.touches[0].clientX;
             }
-            if (dy < -40) {
-                this.jump();
-                touchStartY = e.touches[0].clientY;
-            }
-            if (dy > 40) {
-                this.roll();
-                touchStartY = e.touches[0].clientY;
-            }
+            if (dy < -50) { this.jump(); touchY = e.touches[0].clientY; }
+            if (dy > 50) { this.slide(); touchY = e.touches[0].clientY; }
         }, { passive: false });
 
-        // Click handling
+        // Click
         this.canvas.addEventListener('click', (e) => {
-            if (this.state === 'menu') {
-                this.startGame();
-                return;
-            }
-            if (this.state === 'gameover') {
-                this.resetToMenu();
-                return;
-            }
-            if (this.state === 'question') {
-                this.handleQuestionClick(e);
-            }
+            if (this.state === 'menu') { this.startGame(); return; }
+            if (this.state === 'gameover') { this.state = 'menu'; return; }
+            if (this.state === 'question') this.handleQuestionClick(e);
         });
 
-        // Resize handler
         window.addEventListener('resize', () => this.resize());
     }
 
-    switchLane(direction) {
-        const newLane = this.targetLane + direction;
-        if (newLane >= -1 && newLane <= 1) {
+    switchLane(dir) {
+        const newLane = this.targetLane + dir;
+        if (newLane >= 0 && newLane < this.lanes) {
             this.targetLane = newLane;
-            // Add swipe particles
-            this.addSwipeParticles(direction);
+            this.addTrailParticle();
         }
     }
 
     jump() {
-        if (!this.player.isJumping && !this.player.isRolling) {
+        if (!this.player.isJumping && !this.player.isSliding) {
             this.player.isJumping = true;
-            this.player.jumpVelocity = 22;
-            this.addJumpParticles();
+            this.player.jumpVelocity = 18;
+            this.addJumpBurst();
         }
     }
 
-    roll() {
-        if (!this.player.isJumping && !this.player.isRolling) {
-            this.player.isRolling = true;
-            this.player.rollTimer = this.player.rollDuration;
+    slide() {
+        if (!this.player.isJumping && !this.player.isSliding) {
+            this.player.isSliding = true;
+            this.player.slideTimer = 35;
         }
     }
 
-    addJumpParticles() {
-        const px = this.centerX + this.currentLane * this.laneWidth * 0.6;
-        const py = this.height - 100;
-        for (let i = 0; i < 10; i++) {
+    addJumpBurst() {
+        const x = this.getLaneX(this.currentLane);
+        for (let i = 0; i < 12; i++) {
+            const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI;
             this.particles.push({
-                x: px + (Math.random() - 0.5) * 40,
-                y: py,
-                vx: (Math.random() - 0.5) * 6,
-                vy: Math.random() * 3 + 1,
+                x, y: this.height - 100,
+                vx: Math.cos(angle) * (2 + Math.random() * 3),
+                vy: Math.sin(angle) * (2 + Math.random() * 3),
                 size: 4 + Math.random() * 4,
-                life: 25,
-                color: '#00d4ff'
+                life: 30,
+                color: this.colors.cyan
             });
         }
     }
 
-    addSwipeParticles(dir) {
-        const px = this.centerX + this.currentLane * this.laneWidth * 0.6;
-        for (let i = 0; i < 6; i++) {
-            this.particles.push({
-                x: px,
-                y: this.height - 150 + Math.random() * 100,
-                vx: -dir * (3 + Math.random() * 3),
-                vy: (Math.random() - 0.5) * 2,
-                size: 3 + Math.random() * 3,
-                life: 20,
-                color: '#a855f7'
-            });
-        }
+    addTrailParticle() {
+        this.trails.push({
+            x: this.getLaneX(this.currentLane),
+            y: this.height - 80,
+            alpha: 1,
+            lane: this.currentLane
+        });
+    }
+
+    getLaneX(lane) {
+        return this.centerX + (lane - 1) * this.laneWidth;
     }
 
     startGame() {
@@ -298,123 +238,125 @@ class AnatomyRush {
         this.lives = 3;
         this.streak = 0;
         this.multiplier = 1;
-        this.speed = this.baseSpeed;
-        this.position = 0;
-        this.currentLane = 0;
-        this.targetLane = 0;
+        this.distance = 0;
+        this.speed = 1;
+        this.currentLane = 1;
+        this.targetLane = 1;
         this.obstacles = [];
-        this.collectibles = [];
+        this.coins_arr = [];
         this.particles = [];
+        this.trails = [];
         this.player.isJumping = false;
-        this.player.isRolling = false;
+        this.player.isSliding = false;
         this.player.jumpHeight = 0;
+        this.player.invincible = 0;
         this.lastObstacle = 0;
-
-        this.gamesPlayed++;
-        localStorage.setItem('anatomyRushGames', this.gamesPlayed);
-        this.updateStatsDisplay();
-    }
-
-    resetToMenu() {
-        this.state = 'menu';
+        this.nextQuestionAt = this.questionDistance;
     }
 
     update(dt) {
-        // Update particles always
-        this.updateParticles();
+        this.globalTime += dt;
 
-        // Update effects
+        // Effects
         if (this.shake > 0) this.shake *= 0.9;
-        if (this.flash.active) {
+        if (this.flash) {
             this.flash.timer--;
-            if (this.flash.timer <= 0) this.flash.active = false;
+            if (this.flash.timer <= 0) this.flash = null;
         }
+        if (this.player.invincible > 0) this.player.invincible--;
+
+        // Update particles
+        this.particles = this.particles.filter(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.2;
+            p.life--;
+            p.size *= 0.96;
+            return p.life > 0;
+        });
+
+        this.trails = this.trails.filter(t => {
+            t.alpha -= 0.05;
+            return t.alpha > 0;
+        });
 
         if (this.state !== 'playing') return;
 
-        // Increase speed
-        if (this.speed < this.maxSpeed) {
-            this.speed += this.acceleration;
-        }
+        // Speed up
+        if (this.speed < this.maxSpeed) this.speed += 0.0002;
 
-        // Update position (distance traveled)
-        this.position += this.speed * 10;
-        this.score = Math.floor(this.position / 50) * this.multiplier;
+        // Distance and score
+        this.distance += this.speed * 5;
+        this.score = Math.floor(this.distance / 10) * this.multiplier;
 
-        // Smooth lane transition
-        const laneDiff = this.targetLane - this.currentLane;
-        this.currentLane += laneDiff * this.laneSpeed;
+        // Lane transition
+        const diff = this.targetLane - this.currentLane;
+        this.currentLane += diff * 0.12;
 
-        // Update player jump
+        // Player physics
         if (this.player.isJumping) {
             this.player.jumpHeight += this.player.jumpVelocity;
-            this.player.jumpVelocity -= 1.2;
-
+            this.player.jumpVelocity -= 0.9;
             if (this.player.jumpHeight <= 0) {
                 this.player.jumpHeight = 0;
                 this.player.isJumping = false;
-                this.player.jumpVelocity = 0;
             }
         }
 
-        // Update roll
-        if (this.player.isRolling) {
-            this.player.rollTimer--;
-            if (this.player.rollTimer <= 0) {
-                this.player.isRolling = false;
-            }
+        if (this.player.isSliding) {
+            this.player.slideTimer--;
+            if (this.player.slideTimer <= 0) this.player.isSliding = false;
         }
 
-        // Update player animation
+        // Animation
         this.player.animTimer++;
-        if (this.player.animTimer >= 5) {
-            this.player.animFrame = (this.player.animFrame + 1) % 4;
+        if (this.player.animTimer >= 4) {
+            this.player.animFrame = (this.player.animFrame + 1) % 8;
             this.player.animTimer = 0;
         }
 
         // Spawn obstacles
-        if (this.position - this.lastObstacle > this.obstacleGap * this.segmentLength / this.speed) {
+        if (this.distance - this.lastObstacle > this.obstacleGap / this.speed) {
             this.spawnObstacle();
-            this.lastObstacle = this.position;
+            this.lastObstacle = this.distance;
         }
 
-        // Spawn collectibles
-        if (Math.random() < 0.02) {
-            this.spawnCollectible();
-        }
+        // Spawn coins
+        if (Math.random() < 0.015) this.spawnCoin();
 
         // Update obstacles
         this.updateObstacles();
 
-        // Update collectibles
-        this.updateCollectibles();
+        // Update coins
+        this.updateCoins();
+
+        // Check for question trigger (distance-based, not random)
+        if (this.distance >= this.nextQuestionAt) {
+            this.triggerQuestion();
+            this.nextQuestionAt += this.questionIncrement;
+        }
     }
 
     spawnObstacle() {
-        const lane = Math.floor(Math.random() * 3) - 1;
-        const types = ['barrier', 'barrier', 'barrier', 'high', 'question'];
-        const type = types[Math.floor(Math.random() * types.length)];
+        const lane = Math.floor(Math.random() * 3);
+        const isHigh = Math.random() > 0.6; // 40% are high obstacles
 
         this.obstacles.push({
-            lane: lane,
-            z: this.position + this.segmentLength * 60,
-            type: type,
-            width: 80,
-            height: type === 'high' ? 60 : (type === 'question' ? 70 : 90),
-            active: true
+            lane,
+            z: 1500,
+            type: isHigh ? 'high' : 'low',
+            height: isHigh ? 60 : 100,
+            hit: false
         });
     }
 
-    spawnCollectible() {
-        const lane = Math.floor(Math.random() * 3) - 1;
-        const type = Math.random() > 0.92 ? 'heart' : 'coin';
-        const jumpHeight = Math.random() > 0.5 ? 80 : 0;
-
-        this.collectibles.push({
-            lane: lane,
-            z: this.position + this.segmentLength * 50,
-            type: type,
-            jumpHeight: jumpHeight,
+    spawnCoin() {
+        const lane = Math.floor(Math.random() * 3);
+        const elevated = Math.random() > 0.5;
+        this.coins_arr.push({
+            lane,
+            z: 1500,
+            y: elevated ? 80 : 0,
             collected: false,
             bobPhase: Math.random() * Math.PI * 2
         });
@@ -422,97 +364,65 @@ class AnatomyRush {
 
     updateObstacles() {
         this.obstacles = this.obstacles.filter(obs => {
-            // Move toward player
-            const relativeZ = obs.z - this.position;
+            obs.z -= this.speed * 15;
 
-            // Check collision when obstacle is near player
-            if (relativeZ < 200 && relativeZ > -50 && obs.active) {
-                // Lane collision check
+            // Collision check
+            if (obs.z < 80 && obs.z > -30 && !obs.hit && this.player.invincible <= 0) {
                 const playerLane = Math.round(this.currentLane);
                 if (obs.lane === playerLane) {
-                    // Type-specific collision
-                    if (obs.type === 'question') {
-                        this.triggerQuestion();
-                        obs.active = false;
-                    } else if (obs.type === 'high') {
-                        // High obstacle - need to roll under
-                        if (!this.player.isRolling) {
+                    if (obs.type === 'high') {
+                        if (!this.player.isSliding) {
                             this.hitObstacle();
-                            obs.active = false;
+                            obs.hit = true;
                         }
                     } else {
-                        // Low obstacle - need to jump over
-                        if (this.player.jumpHeight < 60) {
+                        if (this.player.jumpHeight < 50) {
                             this.hitObstacle();
-                            obs.active = false;
+                            obs.hit = true;
                         }
                     }
                 }
             }
 
-            // Remove if too far behind
-            return relativeZ > -500;
+            return obs.z > -200;
         });
     }
 
-    updateCollectibles() {
-        this.collectibles = this.collectibles.filter(col => {
-            const relativeZ = col.z - this.position;
-            col.bobPhase += 0.1;
+    updateCoins() {
+        this.coins_arr = this.coins_arr.filter(coin => {
+            coin.z -= this.speed * 15;
+            coin.bobPhase += 0.1;
 
-            // Check collection
-            if (relativeZ < 150 && relativeZ > -50 && !col.collected) {
+            if (coin.z < 80 && coin.z > -30 && !coin.collected) {
                 const playerLane = Math.round(this.currentLane);
-                if (col.lane === playerLane) {
-                    // Check if player is at correct height for elevated coins
-                    if (col.jumpHeight === 0 || this.player.jumpHeight > 40) {
-                        col.collected = true;
-                        if (col.type === 'coin') {
-                            this.coins++;
-                            this.totalCoins++;
-                            localStorage.setItem('anatomyRushCoins', this.totalCoins);
-                            this.addCollectParticles(col, '#ffd700');
-                        } else {
-                            if (this.lives < 3) {
-                                this.lives++;
-                                this.addCollectParticles(col, '#ff6b81');
-                            }
-                        }
-                        this.updateStatsDisplay();
+                if (coin.lane === playerLane) {
+                    if (coin.y === 0 || this.player.jumpHeight > 30) {
+                        coin.collected = true;
+                        this.coins++;
+                        this.totalCoins++;
+                        localStorage.setItem('anatomyRush2025Coins', this.totalCoins);
+                        this.addCoinBurst(coin);
                     }
                 }
             }
 
-            return relativeZ > -500 && !col.collected;
+            return coin.z > -200 && !coin.collected;
         });
     }
 
-    addCollectParticles(col, color) {
-        const x = this.centerX + col.lane * this.laneWidth * 0.5;
-        const y = this.height - 200;
-        for (let i = 0; i < 15; i++) {
-            const angle = (Math.PI * 2 / 15) * i;
+    addCoinBurst(coin) {
+        const x = this.getLaneX(coin.lane);
+        for (let i = 0; i < 10; i++) {
+            const angle = (Math.PI * 2 / 10) * i;
             this.particles.push({
-                x: x,
-                y: y,
-                vx: Math.cos(angle) * 5,
-                vy: Math.sin(angle) * 5,
+                x, y: this.height - 150,
+                vx: Math.cos(angle) * 4,
+                vy: Math.sin(angle) * 4,
                 size: 5,
-                life: 30,
-                color: color
+                life: 25,
+                color: this.colors.coin
             });
         }
-    }
-
-    updateParticles() {
-        this.particles = this.particles.filter(p => {
-            p.x += p.vx;
-            p.y += p.vy;
-            p.vy += 0.15;
-            p.life--;
-            p.size *= 0.95;
-            return p.life > 0 && p.size > 0.5;
-        });
     }
 
     hitObstacle() {
@@ -520,79 +430,65 @@ class AnatomyRush {
         this.streak = 0;
         this.multiplier = 1;
         this.shake = 15;
-        this.flash = { active: true, color: '#ff4757', timer: 10 };
+        this.flash = { color: this.colors.danger, timer: 12 };
+        this.player.invincible = 60; // 1 second invincibility
 
-        // Explosion particles
-        const px = this.centerX + this.currentLane * this.laneWidth * 0.5;
+        // Explosion
+        const x = this.getLaneX(Math.round(this.currentLane));
         for (let i = 0; i < 20; i++) {
             this.particles.push({
-                x: px,
-                y: this.height - 150,
-                vx: (Math.random() - 0.5) * 15,
-                vy: (Math.random() - 0.5) * 15,
-                size: 5 + Math.random() * 5,
+                x, y: this.height - 120,
+                vx: (Math.random() - 0.5) * 12,
+                vy: (Math.random() - 0.5) * 12,
+                size: 6 + Math.random() * 6,
                 life: 35,
-                color: '#ff4757'
+                color: this.colors.danger
             });
         }
 
-        if (this.lives <= 0) {
-            this.gameOver();
-        }
+        if (this.lives <= 0) this.gameOver();
     }
 
     gameOver() {
         this.state = 'gameover';
         if (this.score > this.highScore) {
             this.highScore = this.score;
-            localStorage.setItem('anatomyRushHighScore', this.highScore);
+            localStorage.setItem('anatomyRush2025HS', this.highScore);
         }
-
-        // Award XP
         if (typeof awardXP === 'function') {
             awardXP(Math.floor(this.score / 10), 'game');
         }
-
-        this.updateStatsDisplay();
     }
 
     triggerQuestion() {
         this.state = 'question';
+        this.questionTimer = this.questionTimeLimit * 60; // 60fps
+        this.selectedAnswer = -1;
+        this.questionResult = null;
 
-        // Get question from quiz bank
+        // Get question
         if (typeof quizQuestionsBase !== 'undefined') {
-            const nonSataQuestions = quizQuestionsBase.filter(q => q.type !== 'sata');
-            if (nonSataQuestions.length > 0) {
-                const q = nonSataQuestions[Math.floor(Math.random() * nonSataQuestions.length)];
+            const valid = quizQuestionsBase.filter(q => q.type !== 'sata');
+            if (valid.length > 0) {
+                const q = valid[Math.floor(Math.random() * valid.length)];
                 this.currentQuestion = {
                     text: q.q,
-                    options: this.shuffleArray([...q.options]).slice(0, 4),
-                    correct: q.correctAnswer,
-                    explanation: q.explanation
+                    options: this.shuffle([...q.options]).slice(0, 4),
+                    correct: q.correctAnswer
                 };
+                return;
             }
         }
 
-        if (!this.currentQuestion) {
-            // Fallback
-            this.currentQuestion = {
-                text: "What is the priority nursing action for compartment syndrome?",
-                options: [
-                    "Notify surgeon immediately",
-                    "Elevate the extremity high",
-                    "Apply warm compresses",
-                    "Administer pain medication"
-                ],
-                correct: "Notify surgeon immediately",
-                explanation: "Compartment syndrome is a surgical emergency requiring fasciotomy."
-            };
-        }
-
-        this.selectedAnswer = -1;
-        this.questionResult = null;
+        // Fallback
+        this.currentQuestion = {
+            text: "What is the priority nursing action for compartment syndrome?",
+            options: ["Notify surgeon immediately", "Elevate extremity high", "Apply warm compresses", "Give pain medication"],
+            correct: "Notify surgeon immediately"
+        };
     }
 
-    shuffleArray(arr) {
+    shuffle(arr) {
         for (let i = arr.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -600,30 +496,30 @@ class AnatomyRush {
         return arr;
     }
 
-    selectAnswer(index) {
-        if (this.questionResult !== null || index >= this.currentQuestion.options.length) return;
+    selectAnswer(idx) {
+        if (this.questionResult !== null || idx >= this.currentQuestion.options.length) return;
 
-        this.selectedAnswer = index;
-        const selected = this.currentQuestion.options[index];
+        this.selectedAnswer = idx;
+        const correct = this.currentQuestion.options[idx] === this.currentQuestion.correct;
 
-        if (selected === this.currentQuestion.correct) {
+        if (correct) {
             this.questionResult = 'correct';
             this.streak++;
             this.multiplier = Math.min(5, 1 + Math.floor(this.streak / 2));
-            this.coins += 5 * this.multiplier;
-            this.totalCoins += 5 * this.multiplier;
-            localStorage.setItem('anatomyRushCoins', this.totalCoins);
-            this.flash = { active: true, color: '#10b981', timer: 15 };
+            this.coins += 10 * this.multiplier;
+            this.totalCoins += 10 * this.multiplier;
+            localStorage.setItem('anatomyRush2025Coins', this.totalCoins);
+            this.flash = { color: this.colors.success, timer: 15 };
         } else {
             this.questionResult = 'wrong';
             this.lives--;
             this.streak = 0;
             this.multiplier = 1;
             this.shake = 10;
-            this.flash = { active: true, color: '#ff4757', timer: 10 };
+            this.flash = { color: this.colors.danger, timer: 12 };
 
             if (this.lives <= 0) {
-                setTimeout(() => this.gameOver(), 1200);
+                setTimeout(() => this.gameOver(), 1000);
                 return;
             }
         }
@@ -631,38 +527,30 @@ class AnatomyRush {
         setTimeout(() => {
             this.state = 'playing';
             this.currentQuestion = null;
-            this.updateStatsDisplay();
-        }, 1200);
+        }, 1000);
     }
 
     handleQuestionClick(e) {
         if (!this.currentQuestion || this.questionResult !== null) return;
 
         const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const scaleX = this.width / rect.width;
+        const scaleY = this.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
 
-        const startY = 180;
-        const optHeight = 55;
+        const startY = this.height * 0.35;
+        const optH = 50;
         const gap = 12;
-        const margin = 60;
+        const margin = this.width * 0.1;
 
         for (let i = 0; i < this.currentQuestion.options.length; i++) {
-            const optY = startY + i * (optHeight + gap);
-            if (x >= margin && x <= this.width - margin && y >= optY && y <= optY + optHeight) {
+            const optY = startY + i * (optH + gap);
+            if (x >= margin && x <= this.width - margin && y >= optY && y <= optY + optH) {
                 this.selectAnswer(i);
                 break;
             }
         }
-    }
-
-    updateStatsDisplay() {
-        const hs = document.getElementById('gameHighScore');
-        const tc = document.getElementById('gameTotalCoins');
-        const gp = document.getElementById('gamesPlayed');
-        if (hs) hs.textContent = this.highScore;
-        if (tc) tc.textContent = this.totalCoins;
-        if (gp) gp.textContent = this.gamesPlayed;
     }
 
     // =========== RENDERING ===========
@@ -670,7 +558,6 @@ class AnatomyRush {
     render() {
         this.ctx.save();
 
-        // Screen shake
         if (this.shake > 0) {
             this.ctx.translate(
                 (Math.random() - 0.5) * this.shake * 2,
@@ -678,26 +565,20 @@ class AnatomyRush {
             );
         }
 
-        // Draw based on state
-        this.drawSky();
+        this.drawBackground();
         this.draw3DRoad();
         this.drawObstacles();
-        this.drawCollectibles();
+        this.drawCoins();
         this.drawPlayer();
         this.drawParticles();
 
-        if (this.state === 'playing') {
-            this.drawHUD();
-        } else if (this.state === 'menu') {
-            this.drawMenu();
-        } else if (this.state === 'question') {
-            this.drawQuestion();
-        } else if (this.state === 'gameover') {
-            this.drawGameOver();
-        }
+        if (this.state === 'playing') this.drawHUD();
+        else if (this.state === 'menu') this.drawMenu();
+        else if (this.state === 'question') this.drawQuestion();
+        else if (this.state === 'gameover') this.drawGameOver();
 
-        // Flash effect
-        if (this.flash.active) {
+        // Flash
+        if (this.flash) {
             this.ctx.fillStyle = this.flash.color;
             this.ctx.globalAlpha = this.flash.timer / 20;
             this.ctx.fillRect(0, 0, this.width, this.height);
@@ -707,67 +588,75 @@ class AnatomyRush {
         this.ctx.restore();
     }
 
-    drawSky() {
-        // Gradient sky
+    drawBackground() {
+        // Gradient sky with animated stars
         const grad = this.ctx.createLinearGradient(0, 0, 0, this.height);
-        grad.addColorStop(0, '#0a0a1a');
-        grad.addColorStop(0.5, '#1a1a3a');
-        grad.addColorStop(1, '#2d2d5a');
+        grad.addColorStop(0, '#050510');
+        grad.addColorStop(0.5, '#0f0a1a');
+        grad.addColorStop(1, '#1a1033');
         this.ctx.fillStyle = grad;
         this.ctx.fillRect(0, 0, this.width, this.height);
 
-        // Stars
-        this.ctx.fillStyle = 'rgba(255,255,255,0.6)';
-        for (let i = 0; i < 50; i++) {
-            const sx = (i * 137.5 + this.position * 0.01) % this.width;
-            const sy = (i * 73.7) % (this.height * 0.4);
+        // Animated stars
+        this.ctx.fillStyle = '#fff';
+        for (let i = 0; i < 80; i++) {
+            const x = (i * 97.3 + this.globalTime * 0.01 * (i % 3 + 1)) % this.width;
+            const y = (i * 47.7) % (this.height * 0.5);
+            const pulse = 0.5 + Math.sin(this.globalTime * 0.003 + i) * 0.5;
+            this.ctx.globalAlpha = 0.3 + pulse * 0.4;
             this.ctx.beginPath();
-            this.ctx.arc(sx, sy, 1 + (i % 2), 0, Math.PI * 2);
+            this.ctx.arc(x, y, 1 + (i % 2), 0, Math.PI * 2);
             this.ctx.fill();
         }
+        this.ctx.globalAlpha = 1;
+
+        // Horizon glow
+        const hGrad = this.ctx.createRadialGradient(this.centerX, this.height * 0.4, 0, this.centerX, this.height * 0.4, this.width * 0.6);
+        hGrad.addColorStop(0, 'rgba(168, 85, 247, 0.15)');
+        hGrad.addColorStop(1, 'transparent');
+        this.ctx.fillStyle = hGrad;
+        this.ctx.fillRect(0, 0, this.width, this.height);
     }
 
     draw3DRoad() {
-        const horizonY = this.height * this.horizon;
-        const roadBottom = this.height;
-
-        // Draw road with 3D perspective
-        const segments = 30;
+        const segments = 40;
+        const horizonY = this.height * 0.4;
+        const roadW = 450;
 
         for (let i = segments; i >= 0; i--) {
-            const z = (i / segments);
-            const nextZ = ((i + 1) / segments);
+            const z = i / segments;
+            const nextZ = (i + 1) / segments;
 
-            // Perspective scaling
-            const scale = 1 / (1 + z * 3);
-            const nextScale = 1 / (1 + nextZ * 3);
+            const perspective = 1 / (1 + z * 4);
+            const nextPerspective = 1 / (1 + nextZ * 4);
 
-            const y = horizonY + (roadBottom - horizonY) * (1 - Math.pow(z, 0.7));
-            const nextY = horizonY + (roadBottom - horizonY) * (1 - Math.pow(nextZ, 0.7));
+            const y = horizonY + (this.height - horizonY) * (1 - Math.pow(z, 0.6));
+            const nextY = horizonY + (this.height - horizonY) * (1 - Math.pow(nextZ, 0.6));
 
-            const roadWidth = this.roadWidth * scale;
-            const nextRoadWidth = this.roadWidth * nextScale;
+            const w = roadW * perspective;
+            const nextW = roadW * nextPerspective;
 
-            // Road segment
-            const stripe = Math.floor((i + this.position / 50) % 4) < 2;
-            this.ctx.fillStyle = stripe ? '#1e1e38' : '#16162a';
+            // Road surface
+            const stripe = Math.floor((i + this.distance / 30) % 4) < 2;
+            this.ctx.fillStyle = stripe ? '#15152a' : '#101020';
 
             this.ctx.beginPath();
-            this.ctx.moveTo(this.centerX - nextRoadWidth, nextY);
-            this.ctx.lineTo(this.centerX + nextRoadWidth, nextY);
-            this.ctx.lineTo(this.centerX + roadWidth, y);
-            this.ctx.lineTo(this.centerX - roadWidth, y);
+            this.ctx.moveTo(this.centerX - nextW, nextY);
+            this.ctx.lineTo(this.centerX + nextW, nextY);
+            this.ctx.lineTo(this.centerX + w, y);
+            this.ctx.lineTo(this.centerX - w, y);
             this.ctx.closePath();
             this.ctx.fill();
 
-            // Lane dividers
-            if (i < segments - 1) {
-                this.ctx.strokeStyle = 'rgba(0, 212, 255, 0.3)';
-                this.ctx.lineWidth = 2 * scale;
+            // Lane lines with glow
+            if (i < segments - 1 && i % 2 === 0) {
+                this.ctx.strokeStyle = `rgba(168, 85, 247, ${0.5 * (1 - z)})`;
+                this.ctx.lineWidth = 2 * perspective;
 
-                for (let lane = -1; lane <= 1; lane++) {
-                    const lx = this.centerX + lane * this.laneWidth * scale * 0.8;
-                    const nlx = this.centerX + lane * this.laneWidth * nextScale * 0.8;
+                for (let lane = 0; lane < 2; lane++) {
+                    const laneOffset = (lane - 0.5) * this.laneWidth;
+                    const lx = this.centerX + laneOffset * perspective;
+                    const nlx = this.centerX + laneOffset * nextPerspective;
 
                     this.ctx.beginPath();
                     this.ctx.moveTo(nlx, nextY);
@@ -777,95 +666,78 @@ class AnatomyRush {
             }
         }
 
-        // Side rails with glow
-        this.ctx.shadowColor = '#00d4ff';
-        this.ctx.shadowBlur = 15;
-        this.ctx.strokeStyle = '#00d4ff';
+        // Neon side rails
+        this.ctx.shadowColor = this.colors.neon;
+        this.ctx.shadowBlur = 20;
+        this.ctx.strokeStyle = this.colors.neon;
         this.ctx.lineWidth = 3;
 
-        // Left rail
         this.ctx.beginPath();
-        this.ctx.moveTo(this.centerX - 30, horizonY);
-        this.ctx.lineTo(this.centerX - this.roadWidth, roadBottom);
+        this.ctx.moveTo(this.centerX - 80, horizonY);
+        this.ctx.lineTo(this.centerX - roadW, this.height);
         this.ctx.stroke();
 
-        // Right rail
         this.ctx.beginPath();
-        this.ctx.moveTo(this.centerX + 30, horizonY);
-        this.ctx.lineTo(this.centerX + this.roadWidth, roadBottom);
+        this.ctx.moveTo(this.centerX + 80, horizonY);
+        this.ctx.lineTo(this.centerX + roadW, this.height);
         this.ctx.stroke();
 
         this.ctx.shadowBlur = 0;
     }
 
     drawObstacles() {
-        // Sort by z (far to near)
         const sorted = [...this.obstacles].sort((a, b) => b.z - a.z);
+        const horizonY = this.height * 0.4;
 
         sorted.forEach(obs => {
-            if (!obs.active) return;
+            if (obs.z < 0 || obs.z > 1500) return;
 
-            const relZ = obs.z - this.position;
-            if (relZ < 0 || relZ > this.segmentLength * 50) return;
+            const zNorm = obs.z / 1500;
+            const perspective = 1 / (1 + zNorm * 4);
+            const y = horizonY + (this.height - horizonY) * (1 - Math.pow(zNorm, 0.6));
+            const laneOffset = (obs.lane - 1) * this.laneWidth;
+            const x = this.centerX + laneOffset * perspective;
 
-            const zNorm = relZ / (this.segmentLength * 50);
-            const scale = 1 / (1 + zNorm * 3);
-            const y = this.height * this.horizon + (this.height - this.height * this.horizon) * (1 - Math.pow(zNorm, 0.7));
-
-            const x = this.centerX + obs.lane * this.laneWidth * scale * 0.7;
-            const w = obs.width * scale;
-            const h = obs.height * scale;
+            const w = 60 * perspective;
+            const h = obs.height * perspective;
 
             this.ctx.save();
 
-            if (obs.type === 'question') {
-                // Question block - purple glow
-                this.ctx.shadowColor = '#a855f7';
-                this.ctx.shadowBlur = 20 * scale;
-
-                // 3D cube effect
-                this.ctx.fillStyle = '#7c3aed';
-                this.ctx.fillRect(x - w / 2 + 5 * scale, y - h + 5 * scale, w - 5 * scale, h - 5 * scale);
-
-                this.ctx.fillStyle = '#a855f7';
-                this.ctx.fillRect(x - w / 2, y - h, w - 5 * scale, h - 5 * scale);
-
-                // Question mark
-                this.ctx.fillStyle = '#fff';
-                this.ctx.font = `bold ${28 * scale}px Arial`;
-                this.ctx.textAlign = 'center';
-                this.ctx.textBaseline = 'middle';
-                this.ctx.fillText('?', x - 2 * scale, y - h / 2 - 2 * scale);
-            } else if (obs.type === 'high') {
-                // High obstacle (need to roll)
-                this.ctx.fillStyle = '#f59e0b';
+            if (obs.type === 'high') {
+                // High obstacle (need to slide) - floating bar
                 this.ctx.shadowColor = '#f59e0b';
-                this.ctx.shadowBlur = 15 * scale;
-                this.ctx.fillRect(x - w / 2, y - h - 50 * scale, w, h);
+                this.ctx.shadowBlur = 15 * perspective;
 
-                // Warning stripes
+                const hoverY = y - 80 * perspective;
+
+                // 3D effect
+                this.ctx.fillStyle = '#b45309';
+                this.ctx.fillRect(x - w / 2 + 4 * perspective, hoverY - h + 4 * perspective, w, h / 2);
+
+                this.ctx.fillStyle = '#f59e0b';
+                this.ctx.fillRect(x - w / 2, hoverY - h, w, h / 2);
+
+                // Warning pattern
                 this.ctx.fillStyle = '#000';
-                const stripeW = 10 * scale;
                 for (let s = 0; s < 3; s++) {
-                    this.ctx.fillRect(x - w / 2 + s * stripeW * 2 + 5 * scale, y - h - 50 * scale, stripeW, h);
+                    this.ctx.fillRect(x - w / 2 + s * w / 3, hoverY - h, w / 6, h / 2);
                 }
             } else {
-                // Barrier (need to jump)
-                this.ctx.shadowColor = '#ff4757';
-                this.ctx.shadowBlur = 15 * scale;
+                // Low obstacle (need to jump) - barrier
+                this.ctx.shadowColor = this.colors.obstacle;
+                this.ctx.shadowBlur = 15 * perspective;
 
                 // 3D barrier
-                this.ctx.fillStyle = '#dc2626';
-                this.ctx.fillRect(x - w / 2 + 5 * scale, y - h + 5 * scale, w - 5 * scale, h - 10 * scale);
+                this.ctx.fillStyle = '#991b1b';
+                this.ctx.fillRect(x - w / 2 + 4 * perspective, y - h + 4 * perspective, w - 4 * perspective, h - 8 * perspective);
 
-                this.ctx.fillStyle = '#ff4757';
-                this.ctx.fillRect(x - w / 2, y - h, w - 5 * scale, h - 10 * scale);
+                this.ctx.fillStyle = this.colors.obstacle;
+                this.ctx.fillRect(x - w / 2, y - h, w - 4 * perspective, h - 8 * perspective);
 
-                // Hazard stripes
-                this.ctx.fillStyle = '#000';
-                const stripeW = 8 * scale;
+                // Stripes
+                this.ctx.fillStyle = '#450a0a';
                 for (let s = 0; s < 4; s++) {
-                    this.ctx.fillRect(x - w / 2 + s * stripeW * 2, y - h, stripeW, h - 10 * scale);
+                    this.ctx.fillRect(x - w / 2 + s * w / 4, y - h, w / 8, h - 8 * perspective);
                 }
             }
 
@@ -873,121 +745,214 @@ class AnatomyRush {
         });
     }
 
-    drawCollectibles() {
-        this.collectibles.forEach(col => {
-            if (col.collected) return;
+    drawCoins() {
+        const horizonY = this.height * 0.4;
 
-            const relZ = col.z - this.position;
-            if (relZ < 0 || relZ > this.segmentLength * 50) return;
+        this.coins_arr.forEach(coin => {
+            if (coin.collected || coin.z < 0 || coin.z > 1500) return;
 
-            const zNorm = relZ / (this.segmentLength * 50);
-            const scale = 1 / (1 + zNorm * 3);
-            const baseY = this.height * this.horizon + (this.height - this.height * this.horizon) * (1 - Math.pow(zNorm, 0.7));
-
-            const bob = Math.sin(col.bobPhase) * 5 * scale;
-            const x = this.centerX + col.lane * this.laneWidth * scale * 0.7;
-            const y = baseY - 50 * scale - col.jumpHeight * scale + bob;
+            const zNorm = coin.z / 1500;
+            const perspective = 1 / (1 + zNorm * 4);
+            const baseY = horizonY + (this.height - horizonY) * (1 - Math.pow(zNorm, 0.6));
+            const laneOffset = (coin.lane - 1) * this.laneWidth;
+            const x = this.centerX + laneOffset * perspective;
+            const bob = Math.sin(coin.bobPhase) * 5 * perspective;
+            const y = baseY - (40 + coin.y) * perspective + bob;
 
             this.ctx.save();
+            this.ctx.shadowColor = this.colors.coin;
+            this.ctx.shadowBlur = 15 * perspective;
 
-            if (col.type === 'coin') {
-                this.ctx.shadowColor = '#ffd700';
-                this.ctx.shadowBlur = 15 * scale;
-                this.ctx.fillStyle = '#ffd700';
-                this.ctx.beginPath();
-                this.ctx.arc(x, y, 15 * scale, 0, Math.PI * 2);
-                this.ctx.fill();
+            // Coin
+            this.ctx.fillStyle = this.colors.coin;
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, 15 * perspective, 0, Math.PI * 2);
+            this.ctx.fill();
 
-                this.ctx.fillStyle = '#fff';
-                this.ctx.font = `${12 * scale}px Arial`;
-                this.ctx.textAlign = 'center';
-                this.ctx.textBaseline = 'middle';
-                this.ctx.fillText('$', x, y);
-            } else {
-                this.ctx.shadowColor = '#ff6b81';
-                this.ctx.shadowBlur = 15 * scale;
-                this.ctx.font = `${24 * scale}px Arial`;
-                this.ctx.textAlign = 'center';
-                this.ctx.textBaseline = 'middle';
-                this.ctx.fillText('❤️', x, y);
-            }
+            // $ symbol
+            this.ctx.fillStyle = '#92400e';
+            this.ctx.font = `bold ${12 * perspective}px Arial`;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText('$', x, y);
 
             this.ctx.restore();
         });
     }
 
     drawPlayer() {
-        const px = this.centerX + this.currentLane * this.laneWidth * 0.6;
-        const groundY = this.height - 80;
-        const py = groundY - this.player.jumpHeight;
+        const x = this.getLaneX(this.currentLane);
+        const groundY = this.height - 60;
+        const y = groundY - this.player.jumpHeight;
+        const scale = 1;
+
+        // Invincibility flash
+        if (this.player.invincible > 0 && Math.floor(this.player.invincible / 5) % 2 === 0) {
+            this.ctx.globalAlpha = 0.5;
+        }
 
         this.ctx.save();
-        this.ctx.translate(px, py);
+        this.ctx.translate(x, y);
 
-        // Player glow
-        this.ctx.shadowColor = '#00d4ff';
+        // Glow
+        this.ctx.shadowColor = this.colors.player;
         this.ctx.shadowBlur = 25;
 
-        if (this.player.isRolling) {
-            // Rolling - circular shape
-            this.ctx.fillStyle = '#00d4ff';
+        if (this.player.isSliding) {
+            // SLIDING POSE - Compressed ball
+            this.ctx.fillStyle = this.colors.player;
             this.ctx.beginPath();
-            this.ctx.ellipse(0, -20, 40, 25, 0, 0, Math.PI * 2);
+            this.ctx.ellipse(0, -15, 45, 20, 0, 0, Math.PI * 2);
             this.ctx.fill();
 
-            // Rolling effect
-            const rot = this.player.animFrame * 0.5;
-            this.ctx.strokeStyle = '#fff';
-            this.ctx.lineWidth = 3;
+            // Head peeking out
             this.ctx.beginPath();
-            this.ctx.arc(0, -20, 15, rot, rot + Math.PI);
-            this.ctx.stroke();
-        } else {
-            // Standing/Running character
-            const bounce = this.player.isJumping ? 0 : Math.sin(this.player.animFrame * 0.8) * 3;
-
-            // Body
-            this.ctx.fillStyle = '#00d4ff';
-            this.ctx.beginPath();
-            this.ctx.roundRect(-22, -70 + bounce, 44, 55, 10);
-            this.ctx.fill();
-
-            // Head
-            this.ctx.beginPath();
-            this.ctx.arc(0, -90 + bounce, 22, 0, Math.PI * 2);
+            this.ctx.arc(25, -25, 18, 0, Math.PI * 2);
             this.ctx.fill();
 
             // Nurse cap
             this.ctx.fillStyle = '#fff';
-            this.ctx.fillRect(-18, -115 + bounce, 36, 12);
-            this.ctx.fillStyle = '#ff4757';
-            this.ctx.fillRect(-4, -112 + bounce, 8, 8);
+            this.ctx.fillRect(12, -45, 26, 8);
+            this.ctx.fillStyle = '#f43f5e';
+            this.ctx.fillRect(22, -43, 6, 5);
+        } else {
+            // RUNNING POSE - Full character with arms!
+            const bounce = this.player.isJumping ? 0 : Math.sin(this.player.animFrame * 0.6) * 3;
+            const armSwing = Math.sin(this.player.animFrame * 0.8) * 25;
+            const legSwing = Math.sin(this.player.animFrame * 0.8) * 20;
 
-            // Legs with running animation
-            const legSwing = this.player.isJumping ? 0 : Math.sin(this.player.animFrame * 1.2) * 15;
-            this.ctx.fillStyle = '#0891b2';
-            this.ctx.fillRect(-15, -18 + bounce, 12, 25 + legSwing);
-            this.ctx.fillRect(3, -18 + bounce, 12, 25 - legSwing);
+            // LEGS
+            this.ctx.fillStyle = '#0284c7';
+            // Left leg
+            this.ctx.save();
+            this.ctx.translate(-12, -15 + bounce);
+            this.ctx.rotate((legSwing * Math.PI) / 180);
+            this.ctx.fillRect(-6, 0, 12, 35);
+            // Foot
+            this.ctx.fillStyle = '#1e3a5f';
+            this.ctx.fillRect(-8, 32, 16, 8);
+            this.ctx.restore();
 
-            // Eyes
-            this.ctx.fillStyle = '#fff';
+            // Right leg
+            this.ctx.fillStyle = '#0284c7';
+            this.ctx.save();
+            this.ctx.translate(12, -15 + bounce);
+            this.ctx.rotate((-legSwing * Math.PI) / 180);
+            this.ctx.fillRect(-6, 0, 12, 35);
+            // Foot
+            this.ctx.fillStyle = '#1e3a5f';
+            this.ctx.fillRect(-8, 32, 16, 8);
+            this.ctx.restore();
+
+            // BODY (scrubs)
+            this.ctx.fillStyle = this.colors.player;
             this.ctx.beginPath();
-            this.ctx.arc(-7, -92 + bounce, 5, 0, Math.PI * 2);
-            this.ctx.arc(7, -92 + bounce, 5, 0, Math.PI * 2);
+            this.ctx.roundRect(-22, -75 + bounce, 44, 60, 8);
             this.ctx.fill();
 
-            // Pupils
-            this.ctx.fillStyle = '#000';
+            // Scrubs V-neck detail
+            this.ctx.strokeStyle = '#0c4a6e';
+            this.ctx.lineWidth = 2;
             this.ctx.beginPath();
-            this.ctx.arc(-5, -92 + bounce, 2, 0, Math.PI * 2);
-            this.ctx.arc(9, -92 + bounce, 2, 0, Math.PI * 2);
+            this.ctx.moveTo(-10, -75 + bounce);
+            this.ctx.lineTo(0, -60 + bounce);
+            this.ctx.lineTo(10, -75 + bounce);
+            this.ctx.stroke();
+
+            // LEFT ARM
+            this.ctx.fillStyle = '#fcd34d'; // Skin tone
+            this.ctx.save();
+            this.ctx.translate(-28, -65 + bounce);
+            this.ctx.rotate((-armSwing * Math.PI) / 180);
+            // Upper arm
+            this.ctx.fillStyle = this.colors.player;
+            this.ctx.fillRect(-5, 0, 10, 25);
+            // Lower arm/hand
+            this.ctx.fillStyle = '#fcd34d';
+            this.ctx.fillRect(-4, 22, 8, 20);
+            this.ctx.restore();
+
+            // RIGHT ARM
+            this.ctx.save();
+            this.ctx.translate(28, -65 + bounce);
+            this.ctx.rotate((armSwing * Math.PI) / 180);
+            // Upper arm
+            this.ctx.fillStyle = this.colors.player;
+            this.ctx.fillRect(-5, 0, 10, 25);
+            // Lower arm/hand
+            this.ctx.fillStyle = '#fcd34d';
+            this.ctx.fillRect(-4, 22, 8, 20);
+            this.ctx.restore();
+
+            // HEAD
+            this.ctx.fillStyle = '#fcd34d';
+            this.ctx.beginPath();
+            this.ctx.arc(0, -95 + bounce, 22, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Hair
+            this.ctx.fillStyle = '#4a3728';
+            this.ctx.beginPath();
+            this.ctx.arc(0, -100 + bounce, 22, Math.PI, 0);
+            this.ctx.fill();
+
+            // NURSE CAP
+            this.ctx.fillStyle = '#fff';
+            this.ctx.fillRect(-18, -125 + bounce, 36, 12);
+            // Red cross
+            this.ctx.fillStyle = '#f43f5e';
+            this.ctx.fillRect(-4, -122 + bounce, 8, 8);
+            this.ctx.fillRect(-8, -120 + bounce, 16, 4);
+
+            // EYES
+            this.ctx.fillStyle = '#fff';
+            this.ctx.beginPath();
+            this.ctx.ellipse(-8, -97 + bounce, 6, 7, 0, 0, Math.PI * 2);
+            this.ctx.ellipse(8, -97 + bounce, 6, 7, 0, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Pupils (looking forward)
+            this.ctx.fillStyle = '#1e293b';
+            this.ctx.beginPath();
+            this.ctx.arc(-6, -96 + bounce, 3, 0, Math.PI * 2);
+            this.ctx.arc(10, -96 + bounce, 3, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Smile
+            this.ctx.strokeStyle = '#92400e';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.arc(0, -90 + bounce, 8, 0.2, Math.PI - 0.2);
+            this.ctx.stroke();
+
+            // Stethoscope
+            this.ctx.strokeStyle = '#475569';
+            this.ctx.lineWidth = 3;
+            this.ctx.beginPath();
+            this.ctx.moveTo(-5, -75 + bounce);
+            this.ctx.quadraticCurveTo(-15, -50 + bounce, 0, -45 + bounce);
+            this.ctx.stroke();
+            this.ctx.fillStyle = '#64748b';
+            this.ctx.beginPath();
+            this.ctx.arc(0, -42 + bounce, 6, 0, Math.PI * 2);
             this.ctx.fill();
         }
 
         this.ctx.restore();
+        this.ctx.globalAlpha = 1;
     }
 
     drawParticles() {
+        // Trails
+        this.trails.forEach(t => {
+            this.ctx.globalAlpha = t.alpha * 0.5;
+            this.ctx.fillStyle = this.colors.neon;
+            this.ctx.beginPath();
+            this.ctx.arc(t.x, t.y, 20, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+
+        // Particles
         this.particles.forEach(p => {
             this.ctx.globalAlpha = p.life / 35;
             this.ctx.fillStyle = p.color;
@@ -995,150 +960,184 @@ class AnatomyRush {
             this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
             this.ctx.fill();
         });
+
         this.ctx.globalAlpha = 1;
     }
 
     drawHUD() {
-        // Score
+        // Score (larger, more visible)
         this.ctx.fillStyle = '#fff';
-        this.ctx.font = 'bold 28px "Space Grotesk", Arial';
+        this.ctx.font = 'bold 36px "Space Grotesk", Arial';
         this.ctx.textAlign = 'left';
-        this.ctx.fillText(`${this.score}`, 25, 45);
+        this.ctx.fillText(this.score.toLocaleString(), 30, 50);
 
         // Multiplier
         if (this.multiplier > 1) {
-            this.ctx.fillStyle = '#ffd700';
-            this.ctx.font = 'bold 20px Arial';
-            this.ctx.fillText(`x${this.multiplier}`, 25, 72);
+            this.ctx.fillStyle = this.colors.coin;
+            this.ctx.font = 'bold 24px Arial';
+            this.ctx.fillText(`x${this.multiplier}`, 30, 80);
         }
 
         // Coins
-        this.ctx.fillStyle = '#ffd700';
+        this.ctx.fillStyle = this.colors.coin;
         this.ctx.textAlign = 'right';
-        this.ctx.font = 'bold 24px Arial';
-        this.ctx.fillText(`💰 ${this.coins}`, this.width - 25, 45);
+        this.ctx.font = 'bold 28px Arial';
+        this.ctx.fillText(`💰 ${this.coins}`, this.width - 30, 50);
 
         // Lives
         let hearts = '';
-        for (let i = 0; i < 3; i++) {
-            hearts += i < this.lives ? '❤️' : '🖤';
-        }
-        this.ctx.font = '26px Arial';
-        this.ctx.fillText(hearts, this.width - 25, 80);
+        for (let i = 0; i < 3; i++) hearts += i < this.lives ? '❤️' : '🖤';
+        this.ctx.font = '30px Arial';
+        this.ctx.fillText(hearts, this.width - 30, 90);
 
         // Streak
         if (this.streak > 0) {
             this.ctx.textAlign = 'center';
-            this.ctx.fillStyle = '#10b981';
-            this.ctx.font = 'bold 20px Arial';
-            this.ctx.fillText(`🔥 ${this.streak} Streak!`, this.centerX, 45);
+            this.ctx.fillStyle = this.colors.success;
+            this.ctx.font = 'bold 22px Arial';
+            this.ctx.fillText(`🔥 ${this.streak} Streak`, this.centerX, 50);
         }
-
-        // Speed indicator
-        this.ctx.textAlign = 'left';
-        this.ctx.fillStyle = '#888';
-        this.ctx.font = '14px Arial';
-        this.ctx.fillText(`Speed: ${this.speed.toFixed(1)}x`, 25, this.height - 20);
     }
 
     drawMenu() {
-        // Dark overlay
-        this.ctx.fillStyle = 'rgba(0,0,0,0.75)';
+        // Overlay
+        this.ctx.fillStyle = 'rgba(0,0,0,0.8)';
         this.ctx.fillRect(0, 0, this.width, this.height);
 
-        // Title with glow
-        this.ctx.shadowColor = '#a855f7';
-        this.ctx.shadowBlur = 40;
-        this.ctx.fillStyle = '#a855f7';
-        this.ctx.font = 'bold 52px "Space Grotesk", Arial';
+        // Title
+        this.ctx.shadowColor = this.colors.neon;
+        this.ctx.shadowBlur = 50;
+        this.ctx.fillStyle = this.colors.neon;
+        this.ctx.font = `bold ${Math.min(56, this.width * 0.06)}px "Space Grotesk", Arial`;
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('🏃 ANATOMY RUSH', this.centerX, 130);
+        this.ctx.fillText('🏃 ANATOMY RUSH', this.centerX, this.height * 0.2);
         this.ctx.shadowBlur = 0;
 
         // Subtitle
         this.ctx.fillStyle = '#94a3b8';
         this.ctx.font = '18px Arial';
-        this.ctx.fillText('3D Endless Runner • Learn While You Play', this.centerX, 170);
+        this.ctx.fillText('Master nursing concepts through gameplay', this.centerX, this.height * 0.28);
 
-        // High score
-        this.ctx.fillStyle = '#ffd700';
+        // Stats
+        this.ctx.fillStyle = this.colors.coin;
         this.ctx.font = 'bold 26px Arial';
-        this.ctx.fillText(`🏆 High Score: ${this.highScore}`, this.centerX, 230);
-        this.ctx.fillText(`💰 Total Coins: ${this.totalCoins}`, this.centerX, 270);
+        this.ctx.fillText(`🏆 Best: ${this.highScore.toLocaleString()}`, this.centerX, this.height * 0.4);
+        this.ctx.fillText(`💰 Coins: ${this.totalCoins.toLocaleString()}`, this.centerX, this.height * 0.48);
 
         // Controls
         this.ctx.fillStyle = '#fff';
         this.ctx.font = '16px Arial';
-        this.ctx.fillText('← → or A/D : Switch Lanes', this.centerX, 330);
-        this.ctx.fillText('SPACE or W : Jump', this.centerX, 360);
-        this.ctx.fillText('↓ or S : Roll/Slide', this.centerX, 390);
-        this.ctx.fillText('❓ Hit question blocks for bonus points!', this.centerX, 430);
+        this.ctx.fillText('← → Switch Lanes  |  SPACE Jump  |  ↓ Slide', this.centerX, this.height * 0.62);
+        this.ctx.fillText('Answer questions quickly to keep your streak!', this.centerX, this.height * 0.68);
 
-        // Start prompt
-        const pulse = 0.7 + Math.sin(Date.now() / 300) * 0.3;
+        // Start
+        const pulse = 0.7 + Math.sin(this.globalTime * 0.005) * 0.3;
         this.ctx.globalAlpha = pulse;
-        this.ctx.fillStyle = '#00d4ff';
+        this.ctx.fillStyle = this.colors.cyan;
         this.ctx.font = 'bold 28px Arial';
-        this.ctx.fillText('[ TAP OR PRESS SPACE ]', this.centerX, 500);
+        this.ctx.fillText('[ TAP OR PRESS SPACE ]', this.centerX, this.height * 0.85);
         this.ctx.globalAlpha = 1;
     }
 
     drawQuestion() {
+        // Update timer
+        if (this.questionResult === null) {
+            this.questionTimer--;
+            if (this.questionTimer <= 0) {
+                // Time's up - treat as wrong
+                this.questionResult = 'timeout';
+                this.lives--;
+                this.streak = 0;
+                this.multiplier = 1;
+                this.shake = 10;
+                this.flash = { color: this.colors.danger, timer: 12 };
+
+                if (this.lives <= 0) {
+                    setTimeout(() => this.gameOver(), 1000);
+                } else {
+                    setTimeout(() => {
+                        this.state = 'playing';
+                        this.currentQuestion = null;
+                    }, 1000);
+                }
+            }
+        }
+
         // Overlay
-        this.ctx.fillStyle = 'rgba(0,0,0,0.9)';
+        this.ctx.fillStyle = 'rgba(5,5,15,0.95)';
         this.ctx.fillRect(0, 0, this.width, this.height);
 
         if (!this.currentQuestion) return;
 
-        // Question text
+        // Timer bar at top
+        const timerPercent = this.questionTimer / (this.questionTimeLimit * 60);
+        const timerColor = timerPercent > 0.5 ? this.colors.success : timerPercent > 0.25 ? '#f59e0b' : this.colors.danger;
+
+        this.ctx.fillStyle = '#1f2937';
+        this.ctx.fillRect(50, 20, this.width - 100, 20);
+        this.ctx.fillStyle = timerColor;
+        this.ctx.fillRect(50, 20, (this.width - 100) * timerPercent, 20);
+
+        // Timer number
         this.ctx.fillStyle = '#fff';
         this.ctx.font = 'bold 18px Arial';
         this.ctx.textAlign = 'center';
+        this.ctx.fillText(`${Math.ceil(this.questionTimer / 60)}s`, this.centerX, 35);
+
+        // Question
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = 'bold 18px Arial';
 
         // Word wrap
         const words = this.currentQuestion.text.split(' ');
         let line = '';
-        let y = 80;
-        const maxW = this.width - 100;
+        let y = this.height * 0.15;
+        const maxW = this.width * 0.8;
 
         words.forEach(word => {
             const test = line + word + ' ';
             if (this.ctx.measureText(test).width > maxW && line) {
-                this.ctx.fillText(line, this.centerX, y);
+                this.ctx.fillText(line.trim(), this.centerX, y);
                 line = word + ' ';
                 y += 26;
             } else {
                 line = test;
             }
         });
-        this.ctx.fillText(line, this.centerX, y);
+        this.ctx.fillText(line.trim(), this.centerX, y);
 
         // Options
-        const startY = 180;
-        const optH = 55;
+        const startY = this.height * 0.35;
+        const optH = 50;
         const gap = 12;
-        const margin = 60;
+        const margin = this.width * 0.1;
 
         this.currentQuestion.options.forEach((opt, i) => {
             const optY = startY + i * (optH + gap);
 
-            let bg = '#2a2a4e';
-            if (this.questionResult && i === this.selectedAnswer) {
-                bg = this.questionResult === 'correct' ? '#10b981' : '#ef4444';
-            }
-            if (this.questionResult === 'wrong' && opt === this.currentQuestion.correct) {
-                bg = '#10b981';
+            let bg = '#1e1e38';
+            let border = 'rgba(168, 85, 247, 0.3)';
+
+            if (this.questionResult !== null) {
+                if (i === this.selectedAnswer) {
+                    bg = this.questionResult === 'correct' ? this.colors.success : this.colors.danger;
+                    border = bg;
+                }
+                if (opt === this.currentQuestion.correct && this.questionResult !== 'correct') {
+                    bg = this.colors.success;
+                    border = this.colors.success;
+                }
             }
 
-            // Option background
+            // Background
             this.ctx.fillStyle = bg;
             this.ctx.beginPath();
-            this.ctx.roundRect(margin, optY, this.width - margin * 2, optH, 12);
+            this.ctx.roundRect(margin, optY, this.width - margin * 2, optH, 10);
             this.ctx.fill();
 
             // Border
-            this.ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-            this.ctx.lineWidth = 1;
+            this.ctx.strokeStyle = border;
+            this.ctx.lineWidth = 2;
             this.ctx.stroke();
 
             // Text
@@ -1151,78 +1150,74 @@ class AnatomyRush {
             while (this.ctx.measureText(text).width > maxText && text.length > 10) {
                 text = text.slice(0, -4) + '...';
             }
-            this.ctx.fillText(text, margin + 18, optY + 35);
+            this.ctx.fillText(text, margin + 15, optY + 32);
         });
 
-        // Result feedback
+        // Result
         if (this.questionResult) {
             this.ctx.textAlign = 'center';
             this.ctx.font = 'bold 32px Arial';
 
             if (this.questionResult === 'correct') {
-                this.ctx.fillStyle = '#10b981';
-                this.ctx.fillText(`✓ CORRECT! +${5 * this.multiplier} coins`, this.centerX, this.height - 60);
+                this.ctx.fillStyle = this.colors.success;
+                this.ctx.fillText(`✓ CORRECT! +${10 * this.multiplier} coins`, this.centerX, this.height - 60);
+            } else if (this.questionResult === 'timeout') {
+                this.ctx.fillStyle = this.colors.danger;
+                this.ctx.fillText('⏱️ TIME UP!', this.centerX, this.height - 60);
             } else {
-                this.ctx.fillStyle = '#ef4444';
+                this.ctx.fillStyle = this.colors.danger;
                 this.ctx.fillText('✗ WRONG!', this.centerX, this.height - 60);
             }
-        } else {
-            this.ctx.textAlign = 'center';
-            this.ctx.fillStyle = '#64748b';
-            this.ctx.font = '14px Arial';
-            this.ctx.fillText('Click an answer or press 1-4', this.centerX, this.height - 30);
         }
     }
 
     drawGameOver() {
-        // Overlay
-        this.ctx.fillStyle = 'rgba(0,0,0,0.85)';
+        this.ctx.fillStyle = 'rgba(0,0,0,0.9)';
         this.ctx.fillRect(0, 0, this.width, this.height);
 
         // Game Over
-        this.ctx.shadowColor = '#ef4444';
-        this.ctx.shadowBlur = 40;
-        this.ctx.fillStyle = '#ef4444';
-        this.ctx.font = 'bold 56px "Space Grotesk", Arial';
+        this.ctx.shadowColor = this.colors.danger;
+        this.ctx.shadowBlur = 50;
+        this.ctx.fillStyle = this.colors.danger;
+        this.ctx.font = `bold ${Math.min(60, this.width * 0.07)}px "Space Grotesk", Arial`;
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('GAME OVER', this.centerX, 160);
+        this.ctx.fillText('GAME OVER', this.centerX, this.height * 0.25);
         this.ctx.shadowBlur = 0;
 
         // Score
         this.ctx.fillStyle = '#fff';
-        this.ctx.font = 'bold 32px Arial';
-        this.ctx.fillText(`Score: ${this.score}`, this.centerX, 240);
+        this.ctx.font = 'bold 36px Arial';
+        this.ctx.fillText(`Score: ${this.score.toLocaleString()}`, this.centerX, this.height * 0.4);
 
         // High score
         if (this.score >= this.highScore) {
-            this.ctx.fillStyle = '#ffd700';
-            this.ctx.fillText('🏆 NEW HIGH SCORE! 🏆', this.centerX, 300);
+            this.ctx.fillStyle = this.colors.coin;
+            this.ctx.fillText('🏆 NEW BEST! 🏆', this.centerX, this.height * 0.5);
         } else {
             this.ctx.fillStyle = '#888';
             this.ctx.font = '24px Arial';
-            this.ctx.fillText(`High Score: ${this.highScore}`, this.centerX, 300);
+            this.ctx.fillText(`Best: ${this.highScore.toLocaleString()}`, this.centerX, this.height * 0.5);
         }
 
-        // Coins earned
-        this.ctx.fillStyle = '#ffd700';
-        this.ctx.font = 'bold 26px Arial';
-        this.ctx.fillText(`💰 Coins: ${this.coins}`, this.centerX, 360);
+        // Coins
+        this.ctx.fillStyle = this.colors.coin;
+        this.ctx.font = 'bold 28px Arial';
+        this.ctx.fillText(`💰 ${this.coins} coins earned`, this.centerX, this.height * 0.6);
 
         // XP
-        this.ctx.fillStyle = '#10b981';
-        this.ctx.font = '20px Arial';
-        this.ctx.fillText(`+${Math.floor(this.score / 10)} XP earned!`, this.centerX, 400);
+        this.ctx.fillStyle = this.colors.success;
+        this.ctx.font = '22px Arial';
+        this.ctx.fillText(`+${Math.floor(this.score / 10)} XP`, this.centerX, this.height * 0.68);
 
-        // Retry prompt
-        const pulse = 0.7 + Math.sin(Date.now() / 300) * 0.3;
+        // Retry
+        const pulse = 0.7 + Math.sin(this.globalTime * 0.005) * 0.3;
         this.ctx.globalAlpha = pulse;
-        this.ctx.fillStyle = '#00d4ff';
+        this.ctx.fillStyle = this.colors.cyan;
         this.ctx.font = 'bold 26px Arial';
-        this.ctx.fillText('[ TAP OR PRESS SPACE TO RETRY ]', this.centerX, 480);
+        this.ctx.fillText('[ PRESS SPACE TO RETRY ]', this.centerX, this.height * 0.85);
         this.ctx.globalAlpha = 1;
     }
 
-    // Game loop
     loop(timestamp) {
         const dt = Math.min(timestamp - this.lastTime, 50);
         this.lastTime = timestamp;
@@ -1239,32 +1234,27 @@ class AnatomyRush {
         if (!this.running) {
             this.running = true;
             this.lastTime = performance.now();
-            this.updateStatsDisplay();
             requestAnimationFrame((t) => this.loop(t));
         }
     }
 
     stop() {
         this.running = false;
-        if (this.keyHandler) {
-            document.removeEventListener('keydown', this.keyHandler);
+        if (this._keyHandler) {
+            document.removeEventListener('keydown', this._keyHandler);
         }
     }
 }
 
-// Global game instance
+// Global
 let anatomyRunner = null;
 
 function initGame() {
     const canvas = document.getElementById('gameCanvas');
     if (!canvas) return;
 
-    // Stop existing game if any
-    if (anatomyRunner) {
-        anatomyRunner.stop();
-    }
+    if (anatomyRunner) anatomyRunner.stop();
 
-    // Create new game
     anatomyRunner = new AnatomyRush(canvas);
     anatomyRunner.start();
 }
@@ -1276,9 +1266,6 @@ function stopGame() {
     }
 }
 
-// Handle resize
 window.addEventListener('resize', () => {
-    if (anatomyRunner) {
-        anatomyRunner.resize();
-    }
+    if (anatomyRunner) anatomyRunner.resize();
 });

@@ -4154,156 +4154,52 @@ body.light-theme .main-tab.active {
 /* Game Tab Special Styling */
 .game-tab {
   position: relative;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(236, 72, 153, 0.2)) !important;
-  border: 1px solid rgba(236, 72, 153, 0.4) !important;
-  animation: gameTabPulse 2s ease-in-out infinite;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(236, 72, 153, 0.3)) !important;
+  border: 1px solid rgba(168, 85, 247, 0.5) !important;
 }
 
 .game-tab:hover {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(236, 72, 153, 0.3)) !important;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.4), rgba(236, 72, 153, 0.4)) !important;
+  transform: scale(1.05);
 }
 
 .new-badge {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  top: -6px;
+  right: -6px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
   color: white;
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 20px;
+  padding: 2px 5px;
+  border-radius: 8px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 10px rgba(238, 90, 36, 0.5);
-  animation: badgeBounce 1s ease-in-out infinite;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5);
 }
 
-@keyframes gameTabPulse {
-
-  0%,
-  100% {
-    box-shadow: 0 0 10px rgba(236, 72, 153, 0.3);
-  }
-
-  50% {
-    box-shadow: 0 0 25px rgba(236, 72, 153, 0.5);
-  }
-}
-
-@keyframes badgeBounce {
-
-  0%,
-  100% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.1);
-  }
-}
-
-/* Game Section */
-.game-section {
-  padding-bottom: 4rem;
-}
-
-/* Game Container */
-.game-container {
-  max-width: 900px;
-  margin: 0 auto;
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
-  border-radius: var(--radius-lg);
-  padding: var(--space-lg);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.4),
-    0 0 40px rgba(99, 102, 241, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-/* Game Stats Bar */
-.game-stats-bar {
+/* Fullscreen Game Container */
+.game-fullscreen-container {
+  width: 100%;
+  min-height: calc(100vh - 140px);
   display: flex;
-  justify-content: center;
-  gap: 2rem;
-  padding: 1rem 1.5rem;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(6, 182, 212, 0.1));
-  border-radius: var(--radius-md);
-  margin-bottom: 1.5rem;
-  border: 1px solid rgba(99, 102, 241, 0.2);
-}
-
-.game-stat {
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
-}
-
-.game-stat-icon {
-  font-size: 1.5rem;
-}
-
-.game-stat-label {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.game-stat-value {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 1.5rem;
-  font-weight: 700;
-  background: var(--gradient-accent);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Game Canvas Wrapper */
-.game-canvas-wrapper {
-  background: linear-gradient(180deg, #0a0a1a, #1a1a2e);
-  border-radius: var(--radius-md);
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a15 100%);
   padding: 1rem;
-  border: 2px solid rgba(0, 212, 255, 0.3);
-  box-shadow:
-    inset 0 0 60px rgba(0, 0, 0, 0.5),
-    0 0 30px rgba(0, 212, 255, 0.2);
-  overflow: hidden;
-  position: relative;
-}
-
-.game-canvas-wrapper::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #00d4ff, transparent);
-  animation: scanline 3s linear infinite;
-}
-
-@keyframes scanline {
-  0% {
-    opacity: 0.5;
-  }
-
-  50% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0.5;
-  }
 }
 
 #gameCanvas {
   display: block;
   width: 100%;
-  border-radius: 8px;
+  max-width: 1200px;
+  height: auto;
+  aspect-ratio: 16/9;
+  border-radius: 16px;
+  box-shadow:
+    0 0 80px rgba(168, 85, 247, 0.3),
+    0 0 40px rgba(0, 0, 0, 0.8),
+    inset 0 0 0 2px rgba(168, 85, 247, 0.3);
   cursor: pointer;
 }
 
