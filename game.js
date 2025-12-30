@@ -1241,35 +1241,28 @@ class MSKReviewRunner {
             this.ctx.quadraticCurveTo(0, -82 + bounce, 15, -86 + bounce); // Back of neck
             this.ctx.stroke();
 
-            // Hanging tubing
+            // Hanging tubing - FLIPPED SIDE
             this.ctx.lineWidth = 3;
             this.ctx.beginPath();
-            this.ctx.moveTo(-15, -86 + bounce);
-            this.ctx.quadraticCurveTo(-22, -80 + bounce, -18, -65 + bounce); // Left drape
-            this.ctx.shadowBlur = 0;
 
+            // Right side (wearer's left) - Short drape
             this.ctx.moveTo(15, -86 + bounce);
-            this.ctx.quadraticCurveTo(22, -80 + bounce, 18, -65 + bounce); // Right drape
+            this.ctx.quadraticCurveTo(20, -75 + bounce, 18, -65 + bounce);
             this.ctx.stroke();
 
-            // Y-Junction and Chest Piece
+            // Left side (wearer's right) - Long drape with chest piece
             this.ctx.beginPath();
-            this.ctx.moveTo(-18, -65 + bounce);
-            this.ctx.quadraticCurveTo(0, -55 + bounce, 18, -65 + bounce); // Y connector
+            this.ctx.moveTo(-15, -86 + bounce);
+            this.ctx.quadraticCurveTo(-22, -75 + bounce, -20, -60 + bounce);
+            this.ctx.quadraticCurveTo(-15, -50 + bounce, -10, -55 + bounce); // Hook shape
             this.ctx.stroke();
 
-            // Single tube down
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, -59 + bounce); // Middle of Y
-            this.ctx.quadraticCurveTo(5 + armSwing * 0.1, -45 + bounce, 0, -35 + bounce);
-            this.ctx.stroke();
-
-            // Chest piece (Metallic)
-            const diaphragmGrad = this.ctx.createRadialGradient(0, -35 + bounce, 1, 0, -35 + bounce, 8);
+            // Chest piece (Metallic) - Now on Left
+            const diaphragmGrad = this.ctx.createRadialGradient(-10, -55 + bounce, 1, -10, -55 + bounce, 8);
             diaphragmGrad.addColorStop(0, '#e5e7eb'); diaphragmGrad.addColorStop(0.5, '#9ca3af'); diaphragmGrad.addColorStop(1, '#4b5563');
             this.ctx.fillStyle = diaphragmGrad;
             this.ctx.shadowColor = '#000'; this.ctx.shadowBlur = 5;
-            this.ctx.beginPath(); this.ctx.arc(0, -35 + bounce, 8, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.beginPath(); this.ctx.arc(-10, -55 + bounce, 8, 0, Math.PI * 2); this.ctx.fill();
             this.ctx.shadowBlur = 0;
 
             // HEAD - Shaded 3D Sphere
@@ -1382,29 +1375,57 @@ class MSKReviewRunner {
     }
 
     drawHUD() {
-        this.ctx.fillStyle = '#fff'; this.ctx.font = 'bold 48px "Space Grotesk", Arial'; this.ctx.textAlign = 'left';
-        this.ctx.fillText(this.score.toLocaleString(), 40, 62);
-        if (this.multiplier > 1) { this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 30px Arial'; this.ctx.fillText(`x${this.multiplier} `, 40, 98); }
-        this.ctx.fillStyle = '#a855f7'; this.ctx.font = 'bold 22px Arial'; this.ctx.fillText(`LVL ${this.level} `, 40, 130);
-        if (this.combo >= 5) { this.ctx.fillStyle = '#22c55e'; this.ctx.font = 'bold 22px Arial'; this.ctx.fillText(`COMBO ${this.combo} x`, 40, 158); }
+        const hudFont = '600 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial';
+        const numFont = '700 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial';
 
-        // Fever mode indicator
-        if (this.feverMode) {
-            this.ctx.fillStyle = '#f472b6'; this.ctx.font = 'bold 24px Arial';
-            this.ctx.fillText(`🔥 FEVER ${Math.ceil(this.feverTimer / 60)} s`, 40, 188);
+        // Score Pill (Top Left)
+        this.ctx.fillStyle = 'rgba(15, 23, 42, 0.6)'; this.ctx.strokeStyle = 'rgba(255,255,255,0.1)'; this.ctx.lineWidth = 1;
+        this.ctx.beginPath(); this.ctx.roundRect(20, 20, 180, 80, 12); this.ctx.fill(); this.ctx.stroke();
+
+        this.ctx.fillStyle = '#94a3b8'; this.ctx.font = '13px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial'; this.ctx.textAlign = 'left';
+        this.ctx.fillText('SCORE', 36, 44);
+        this.ctx.fillStyle = '#fff'; this.ctx.font = numFont;
+        this.ctx.fillText(this.score.toLocaleString(), 36, 74);
+
+        if (this.multiplier > 1) {
+            this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 18px Arial';
+            this.ctx.fillText(`x${this.multiplier}`, 160, 74);
         }
 
-        this.ctx.fillStyle = '#fbbf24'; this.ctx.textAlign = 'right'; this.ctx.font = 'bold 34px Arial'; this.ctx.fillText(`💰 ${this.coins} `, this.width - 40, 62);
-        let hearts = ''; for (let i = 0; i < Math.min(this.lives, 5); i++) hearts += '❤️'; for (let i = this.lives; i < 3; i++) hearts += '🖤';
-        this.ctx.font = '38px Arial'; this.ctx.fillText(hearts, this.width - 40, 110);
-        if (this.streak > 0) { this.ctx.textAlign = 'center'; this.ctx.fillStyle = '#22c55e'; this.ctx.font = 'bold 28px Arial'; this.ctx.fillText(`🔥 ${this.streak} Streak`, this.centerX, 62); }
+        // Stats Pill (Top Right)
+        this.ctx.fillStyle = 'rgba(15, 23, 42, 0.6)';
+        this.ctx.beginPath(); this.ctx.roundRect(this.width - 220, 20, 200, 80, 12); this.ctx.fill(); this.ctx.stroke();
 
-        // Coin rush indicator
-        if (this.coinRush) {
-            this.ctx.textAlign = 'center'; this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 26px Arial';
-            this.ctx.globalAlpha = 0.5 + Math.sin(this.globalTime * 0.02) * 0.5;
-            this.ctx.fillText('💰 COIN RUSH! 💰', this.centerX, 95);
-            this.ctx.globalAlpha = 1;
+        // Coins
+        this.ctx.textAlign = 'right';
+        this.ctx.fillStyle = '#fbbf24'; this.ctx.font = '20px Arial';
+        this.ctx.fillText(`💰 ${this.coins}`, this.width - 36, 50);
+
+        // Lives
+        let hearts = ''; for (let i = 0; i < Math.min(this.lives, 5); i++) hearts += '❤️'; for (let i = this.lives; i < 3; i++) hearts += '🖤';
+        this.ctx.font = '20px Arial';
+        this.ctx.fillText(hearts, this.width - 36, 82);
+
+        // Center Status (Streak/Combo)
+        if (this.streak > 5 || this.combo > 0) {
+            this.ctx.textAlign = 'center';
+            this.ctx.fillStyle = 'rgba(15, 23, 42, 0.6)';
+            this.ctx.beginPath(); this.ctx.roundRect(this.centerX - 100, 20, 200, 45, 22.5); this.ctx.fill();
+
+            this.ctx.fillStyle = '#22c55e'; this.ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+            let txt = '';
+            if (this.streak > 5) txt = `🔥 ${this.streak} STREAK`;
+            if (this.combo > 0) txt += (txt ? '  •  ' : '') + `${this.combo}x COMBO`;
+            this.ctx.fillText(txt, this.centerX, 48);
+        }
+
+        // Fever / Special Text
+        if (this.feverMode) {
+            this.ctx.textAlign = 'center';
+            this.ctx.fillStyle = '#f472b6'; this.ctx.font = 'bold 24px Arial';
+            this.ctx.shadowColor = '#f472b6'; this.ctx.shadowBlur = 10;
+            this.ctx.fillText(`🔥 FEVER MODE ${Math.ceil(this.feverTimer / 60)}s`, this.centerX, 100);
+            this.ctx.shadowBlur = 0;
         }
 
         let py = 150;
