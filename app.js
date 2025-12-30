@@ -1176,8 +1176,39 @@ function switchMainTab(tabName) {
     panel.classList.toggle('active', panel.id === `panel-${tabName}`);
   });
 
+  // Initialize or stop game based on tab
+  if (tabName === 'game') {
+    // Initialize game after a short delay to ensure canvas is visible
+    setTimeout(() => {
+      if (typeof initGame === 'function') {
+        initGame();
+        updateGameStats();
+      }
+    }, 100);
+  } else {
+    // Stop game when leaving game tab
+    if (typeof stopGame === 'function') {
+      stopGame();
+    }
+  }
+
   // Scroll to top of content
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Update game stats display
+function updateGameStats() {
+  const highScore = localStorage.getItem('anatomyRunnerHighScore') || '0';
+  const totalCoins = localStorage.getItem('anatomyRunnerCoins') || '0';
+  const gamesPlayed = localStorage.getItem('anatomyRunnerGames') || '0';
+
+  const highScoreEl = document.getElementById('gameHighScore');
+  const totalCoinsEl = document.getElementById('gameTotalCoins');
+  const gamesPlayedEl = document.getElementById('gamesPlayed');
+
+  if (highScoreEl) highScoreEl.textContent = highScore;
+  if (totalCoinsEl) totalCoinsEl.textContent = totalCoins;
+  if (gamesPlayedEl) gamesPlayedEl.textContent = gamesPlayed;
 }
 
 // Initialize Main Tabs
@@ -2477,15 +2508,15 @@ function addXP(amount, reason = '') {
   gameData.xp += amount;
   const newLevel = getCurrentLevel(gameData.xp);
   saveGameData(gameData);
-  
+
   // Show XP popup
   showXPPopup(amount, reason);
-  
+
   // Level up notification
   if (newLevel.name !== oldLevel.name) {
     showLevelUpNotification(newLevel);
   }
-  
+
   updateXPDisplay();
 }
 
@@ -2513,7 +2544,7 @@ function showXPPopup(amount, reason) {
   popup.className = 'xp-popup';
   popup.innerHTML = `+${amount} XP${reason ? ` <span class="xp-reason">${reason}</span>` : ''}`;
   document.body.appendChild(popup);
-  
+
   setTimeout(() => popup.classList.add('show'), 10);
   setTimeout(() => {
     popup.classList.remove('show');
@@ -2532,9 +2563,9 @@ function showLevelUpNotification(level) {
     </div>
   `;
   document.body.appendChild(notification);
-  
+
   triggerConfetti();
-  
+
   setTimeout(() => notification.classList.add('show'), 10);
   setTimeout(() => {
     notification.classList.remove('show');
@@ -2546,24 +2577,24 @@ function updateXPDisplay() {
   const gameData = loadGameData();
   const currentLevel = getCurrentLevel(gameData.xp);
   const nextLevel = getNextLevel(gameData.xp);
-  
+
   const xpBarFill = document.getElementById('xpBarFill');
   const xpText = document.getElementById('xpText');
   const levelBadge = document.getElementById('levelBadge');
   const levelName = document.getElementById('levelName');
-  
+
   if (xpBarFill && xpText) {
-    const progress = nextLevel.minXP > currentLevel.minXP 
+    const progress = nextLevel.minXP > currentLevel.minXP
       ? ((gameData.xp - currentLevel.minXP) / (nextLevel.minXP - currentLevel.minXP)) * 100
       : 100;
     xpBarFill.style.width = `${progress}%`;
     xpText.textContent = `${gameData.xp.toLocaleString()} / ${nextLevel.minXP.toLocaleString()} XP`;
   }
-  
+
   if (levelBadge) {
     levelBadge.textContent = currentLevel.icon;
   }
-  
+
   if (levelName) {
     levelName.textContent = currentLevel.name;
   }
@@ -2573,7 +2604,7 @@ function updateXPDisplay() {
 function checkAchievements() {
   const gameData = loadGameData();
   const progress = loadProgress();
-  
+
   const checks = [
     { id: 'first_quiz', condition: gameData.totalQuizzes >= 1 },
     { id: 'perfect_score', condition: progress.bestQuizScore >= 100 },
@@ -2586,7 +2617,7 @@ function checkAchievements() {
     { id: 'night_owl', condition: new Date().getHours() >= 0 && new Date().getHours() < 5 },
     { id: 'early_bird', condition: new Date().getHours() >= 5 && new Date().getHours() < 7 }
   ];
-  
+
   checks.forEach(check => {
     if (check.condition && !gameData.achievements.includes(check.id)) {
       unlockAchievement(check.id);
@@ -2597,19 +2628,19 @@ function checkAchievements() {
 function unlockAchievement(id) {
   const achievement = ACHIEVEMENTS.find(a => a.id === id);
   if (!achievement) return;
-  
+
   const gameData = loadGameData();
   if (gameData.achievements.includes(id)) return;
-  
+
   gameData.achievements.push(id);
   saveGameData(gameData);
-  
+
   // Show achievement notification
   showAchievementNotification(achievement);
-  
+
   // Award XP
   addXP(achievement.xp, achievement.name);
-  
+
   // Update achievements display
   updateAchievementsDisplay();
 }
@@ -2626,7 +2657,7 @@ function showAchievementNotification(achievement) {
     </div>
   `;
   document.body.appendChild(notification);
-  
+
   setTimeout(() => notification.classList.add('show'), 10);
   setTimeout(() => {
     notification.classList.remove('show');
@@ -2637,9 +2668,9 @@ function showAchievementNotification(achievement) {
 function updateAchievementsDisplay() {
   const container = document.getElementById('achievementsList');
   if (!container) return;
-  
+
   const gameData = loadGameData();
-  
+
   container.innerHTML = ACHIEVEMENTS.map(a => {
     const unlocked = gameData.achievements.includes(a.id);
     return `
@@ -2659,7 +2690,7 @@ function updateAchievementsDisplay() {
 function triggerConfetti() {
   const colors = ['#6366f1', '#06b6d4', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'];
   const confettiCount = 150;
-  
+
   for (let i = 0; i < confettiCount; i++) {
     const confetti = document.createElement('div');
     confetti.className = 'confetti';
@@ -2678,7 +2709,7 @@ function triggerConfetti() {
 function animateCorrectAnswer(element) {
   element.classList.add('answer-correct');
   element.innerHTML += ' <span class="answer-feedback">✓ Correct!</span>';
-  
+
   // Pulse effect
   const pulse = document.createElement('div');
   pulse.className = 'pulse-ring';
@@ -2699,11 +2730,11 @@ function initKeyboardShortcuts() {
     // Only active when flashcards panel is visible
     const flashcardsPanel = document.getElementById('panel-flashcards');
     if (!flashcardsPanel || !flashcardsPanel.classList.contains('active')) return;
-    
+
     const flashcard = document.getElementById('flashcard');
     if (!flashcard) return;
-    
-    switch(e.key) {
+
+    switch (e.key) {
       case 'f':
       case 'F':
       case ' ':
@@ -2750,18 +2781,18 @@ function initKeyboardShortcuts() {
 function initThemeToggle() {
   const toggle = document.getElementById('themeToggle');
   if (!toggle) return;
-  
+
   const gameData = loadGameData();
   if (gameData.theme === 'light') {
     document.body.classList.add('light-theme');
     toggle.textContent = '🌙';
   }
-  
+
   toggle.addEventListener('click', () => {
     document.body.classList.toggle('light-theme');
     const isLight = document.body.classList.contains('light-theme');
     toggle.textContent = isLight ? '🌙' : '☀️';
-    
+
     const data = loadGameData();
     data.theme = isLight ? 'light' : 'dark';
     saveGameData(data);
@@ -2772,7 +2803,7 @@ function initThemeToggle() {
 function initDailyChallenge() {
   const gameData = loadGameData();
   const today = new Date().toDateString();
-  
+
   if (gameData.lastDailyReset !== today) {
     // Generate new daily challenge
     const challenges = [
@@ -2781,25 +2812,25 @@ function initDailyChallenge() {
       { type: 'perfect', target: 1, desc: 'Get a perfect quiz score', xp: 300 },
       { type: 'streak', target: 1, desc: 'Maintain your study streak', xp: 100 }
     ];
-    
+
     gameData.dailyChallenge = challenges[Math.floor(Math.random() * challenges.length)];
     gameData.dailyChallengeCompleted = false;
     gameData.lastDailyReset = today;
     saveGameData(gameData);
   }
-  
+
   updateDailyChallengeDisplay();
 }
 
 function updateDailyChallengeDisplay() {
   const container = document.getElementById('dailyChallenge');
   if (!container) return;
-  
+
   const gameData = loadGameData();
   const challenge = gameData.dailyChallenge;
-  
+
   if (!challenge) return;
-  
+
   container.innerHTML = `
     <div class="daily-challenge-header">
       <span class="daily-icon">🎯</span>
@@ -2812,7 +2843,7 @@ function updateDailyChallengeDisplay() {
       <span class="reward-xp">+${challenge.xp} XP</span>
     </div>
   `;
-  
+
   if (gameData.dailyChallengeCompleted) {
     container.classList.add('completed');
   }
@@ -2823,7 +2854,7 @@ function enhanceQuizWithGamification() {
   // Hook into existing quiz completion
   const originalRestartBtn = document.getElementById('restartQuiz');
   if (!originalRestartBtn) return;
-  
+
   // Observe quiz results for gamification
   const resultsObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
@@ -2832,7 +2863,7 @@ function enhanceQuizWithGamification() {
       }
     });
   });
-  
+
   const quizResults = document.getElementById('quizResults');
   if (quizResults) {
     resultsObserver.observe(quizResults, { attributes: true, attributeFilter: ['style'] });
@@ -2842,24 +2873,24 @@ function enhanceQuizWithGamification() {
 function handleQuizCompletion() {
   const scoreEl = document.querySelector('#quizResults .score-value');
   if (!scoreEl) return;
-  
+
   const score = parseInt(scoreEl.textContent);
   const gameData = loadGameData();
-  
+
   // Increment quiz count
   gameData.totalQuizzes++;
   saveGameData(gameData);
-  
+
   // Award XP based on score
   const xpEarned = Math.round(score * 2);
   addXP(xpEarned, 'Quiz Complete');
-  
+
   // Perfect score bonus
   if (score === 100) {
     addXP(XP_CONFIG.perfectQuiz, 'Perfect Score!');
     triggerConfetti();
   }
-  
+
   // Check achievements
   checkAchievements();
 }
@@ -2868,38 +2899,38 @@ function handleQuizCompletion() {
 function initSwipeGestures() {
   const flashcard = document.getElementById('flashcard');
   if (!flashcard) return;
-  
+
   let startX = 0;
   let startY = 0;
   let isDragging = false;
-  
+
   flashcard.addEventListener('touchstart', (e) => {
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
     isDragging = true;
   }, { passive: true });
-  
+
   flashcard.addEventListener('touchmove', (e) => {
     if (!isDragging) return;
-    
+
     const deltaX = e.touches[0].clientX - startX;
     const deltaY = e.touches[0].clientY - startY;
-    
+
     // Only handle horizontal swipes
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 30) {
       flashcard.style.transform = `translateX(${deltaX * 0.5}px) rotate(${deltaX * 0.02}deg)`;
     }
   }, { passive: true });
-  
+
   flashcard.addEventListener('touchend', (e) => {
     if (!isDragging) return;
     isDragging = false;
-    
+
     const endX = e.changedTouches[0].clientX;
     const deltaX = endX - startX;
-    
+
     flashcard.style.transform = '';
-    
+
     if (deltaX > 100) {
       // Swipe right - Got it (confidence 3)
       document.querySelector('.confidence-btn[data-confidence="3"]')?.click();
@@ -2920,7 +2951,7 @@ function initGamification() {
   enhanceQuizWithGamification();
   initSwipeGestures();
   checkAchievements();
-  
+
   // Daily login XP
   const gameData = loadGameData();
   const today = new Date().toDateString();

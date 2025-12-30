@@ -56,6 +56,11 @@
       <span class="main-tab-icon">📊</span>
       <span class="main-tab-text">Progress</span>
     </button>
+    <button class="main-tab game-tab" data-maintab="game">
+      <span class="main-tab-icon">🎮</span>
+      <span class="main-tab-text">Play Game</span>
+      <span class="new-badge">NEW!</span>
+    </button>
   </div>
 
   <!-- LEARN TAB PANEL -->
@@ -1372,10 +1377,70 @@
     </div>
   </div>
 
+  <!-- GAME TAB PANEL -->
+  <div class="main-tab-panel" id="panel-game">
+    <section class="section game-section">
+      <div class="section-header">
+        <h2>🎮 Anatomy Runner</h2>
+        <p>Learn nursing concepts while playing an endless runner game!</p>
+      </div>
+
+      <div class="game-container">
+        <div class="game-stats-bar">
+          <div class="game-stat">
+            <span class="game-stat-icon">🏆</span>
+            <span class="game-stat-label">High Score</span>
+            <span class="game-stat-value" id="gameHighScore">0</span>
+          </div>
+          <div class="game-stat">
+            <span class="game-stat-icon">💰</span>
+            <span class="game-stat-label">Total Coins</span>
+            <span class="game-stat-value" id="gameTotalCoins">0</span>
+          </div>
+          <div class="game-stat">
+            <span class="game-stat-icon">🎯</span>
+            <span class="game-stat-label">Games Played</span>
+            <span class="game-stat-value" id="gamesPlayed">0</span>
+          </div>
+        </div>
+
+        <div class="game-canvas-wrapper">
+          <canvas id="gameCanvas"></canvas>
+        </div>
+
+        <div class="game-controls-info">
+          <div class="control-item">
+            <kbd>SPACE</kbd> or <kbd>↑</kbd>
+            <span>Jump over obstacles</span>
+          </div>
+          <div class="control-item">
+            <kbd>↓</kbd>
+            <span>Slide under obstacles</span>
+          </div>
+          <div class="control-item">
+            <kbd>1-4</kbd>
+            <span>Answer questions</span>
+          </div>
+        </div>
+
+        <div class="game-tips">
+          <h4>💡 Pro Tips</h4>
+          <ul>
+            <li>Hit <span class="highlight">question blocks (?)</span> to earn bonus coins!</li>
+            <li>Build a <span class="highlight">streak</span> by answering correctly for multipliers up to 5x</li>
+            <li>Collect <span class="highlight">hearts ❤️</span> to restore lives</li>
+            <li>Your score converts to <span class="highlight">XP</span> when the game ends</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+
   <!-- Theme Toggle Button -->
   <button class="theme-toggle" id="themeToggle" title="Toggle light/dark theme">☀️</button>
 
   <script src="app.js"></script>
+  <script src="game.js"></script>
 </body>
 
 </html>
