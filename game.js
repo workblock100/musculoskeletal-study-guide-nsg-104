@@ -94,6 +94,28 @@ class AnatomyRush {
         this.selectedAnswer = -1;
         this.questionResult = null;
 
+        // Question review system
+        this.questionHistory = [];
+        this.questionsAnswered = 0;
+        this.questionsCorrectRun = 0;
+
+        // Time of day (changes based on distance)
+        this.timeOfDay = 'dawn'; // dawn, day, dusk, night
+
+        // Confetti system
+        this.confetti = [];
+
+        // Lifetime stats
+        this.stats = JSON.parse(localStorage.getItem('anatomyRushStats')) || {
+            totalRuns: 0,
+            totalDistance: 0,
+            totalCoins: 0,
+            totalQuestions: 0,
+            totalCorrect: 0,
+            bestStreak: 0,
+            highestLevel: 0
+        };
+
         this.lastObstacle = 0;
         this.obstacleGap = 500;
         this.shake = 0;
@@ -212,6 +234,23 @@ class AnatomyRush {
         this.floatingTexts.push({ x, y, text, color, life: 60, vy: -2 });
     }
 
+    spawnConfetti(count) {
+        const colors = ['#ef4444', '#f59e0b', '#22c55e', '#06b6d4', '#6366f1', '#d946ef', '#f472b6'];
+        for (let i = 0; i < count; i++) {
+            this.confetti.push({
+                x: this.centerX + (Math.random() - 0.5) * 400,
+                y: this.height * 0.3,
+                vx: (Math.random() - 0.5) * 8,
+                vy: -8 - Math.random() * 6,
+                size: 6 + Math.random() * 8,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                rotation: Math.random() * 360,
+                spin: (Math.random() - 0.5) * 15,
+                life: 120 + Math.random() * 60
+            });
+        }
+    }
+
     getLaneX(lane) { return this.centerX + (lane - 1) * this.laneWidth; }
 
     startGame() {
@@ -292,12 +331,30 @@ class AnatomyRush {
             this.addFloatingText(this.centerX, 150, '💰 COIN RUSH! 💰', '#fbbf24');
         }
 
+        // Time of day progression (changes based on distance)
+        if (this.distance < 15000) this.timeOfDay = 'dawn';
+        else if (this.distance < 40000) this.timeOfDay = 'day';
+        else if (this.distance < 70000) this.timeOfDay = 'dusk';
+        else this.timeOfDay = 'night';
+
+        // Update confetti
+        this.confetti = this.confetti.filter(c => {
+            c.x += c.vx;
+            c.y += c.vy;
+            c.vy += 0.15;
+            c.rotation += c.spin;
+            c.life--;
+            return c.life > 0 && c.y < this.height + 50;
+        });
+
         // Level progression
         const newLevel = Math.floor(this.distance / 10000) + 1;
         if (newLevel > this.level) {
             this.level = newLevel;
-            this.addFloatingText(this.centerX, this.height / 2, `LEVEL ${this.level}!`, '#fbbf24');
+            this.addFloatingText(this.centerX, this.height / 2, `🎉 LEVEL ${this.level}! 🎉`, '#fbbf24');
             this.flash = { color: '#fbbf24', timer: 20 };
+            this.spawnConfetti(60); // Celebration!
+            if (this.level > this.stats.highestLevel) this.stats.highestLevel = this.level;
             if (this.level === 2) this.unlockAchievement('level2', 'Warming Up - Reach Level 2');
             if (this.level === 3) this.unlockAchievement('level3', 'Getting Serious - Reach Level 3');
             if (this.level === 5) this.unlockAchievement('level5', 'Expert Runner - Reach Level 5');
@@ -489,16 +546,31 @@ class AnatomyRush {
         if (this.questionResult !== null || idx >= this.currentQuestion.options.length) return;
         this.selectedAnswer = idx;
         const correct = this.currentQuestion.options[idx] === this.currentQuestion.correct;
+        this.questionsAnswered++;
+
+        // Track question for review
+        this.questionHistory.push({
+            question: this.currentQuestion.text,
+            userAnswer: this.currentQuestion.options[idx],
+            correctAnswer: this.currentQuestion.correct,
+            correct: correct
+        });
+
         if (correct) {
-            this.questionResult = 'correct'; this.streak++;
+            this.questionResult = 'correct'; this.streak++; this.questionsCorrectRun++;
             this.multiplier = Math.min(5, 1 + Math.floor(this.streak / 2));
             const reward = 25 * this.multiplier;
             this.coins += reward; this.totalCoins += reward;
             localStorage.setItem('anatomyRush2025Coins', this.totalCoins);
             this.flash = { color: '#22c55e', timer: 20 };
+
+            // Achievements
+            if (this.questionsCorrectRun === 3) this.unlockAchievement('scholar', 'Scholar - 3 correct in a row');
+            if (this.questionsCorrectRun === 5) this.unlockAchievement('genius', 'Genius - 5 correct in a row');
         } else {
             this.questionResult = 'wrong'; this.lives--; this.streak = 0; this.multiplier = 1;
             this.shake = 18; this.flash = { color: '#ef4444', timer: 18 };
+            this.perfectRun = false;
             if (this.lives <= 0) { setTimeout(() => this.gameOver(), 900); return; }
         }
         setTimeout(() => { this.state = 'playing'; this.currentQuestion = null; }, 1100);
@@ -529,12 +601,26 @@ class AnatomyRush {
         this.drawPlayer();
         this.drawParticles();
         this.drawFloatingTexts();
+        this.drawConfetti();
         if (this.state === 'playing') { this.drawHUD(); this.drawAchievement(); }
         else if (this.state === 'menu') this.drawMenu();
         else if (this.state === 'question') this.drawQuestion();
         else if (this.state === 'gameover') this.drawGameOver();
         if (this.flash) { this.ctx.fillStyle = this.flash.color; this.ctx.globalAlpha = this.flash.timer / 30; this.ctx.fillRect(0, 0, this.width, this.height); this.ctx.globalAlpha = 1; }
         this.ctx.restore();
+    }
+
+    drawConfetti() {
+        this.confetti.forEach(c => {
+            this.ctx.save();
+            this.ctx.translate(c.x, c.y);
+            this.ctx.rotate(c.rotation * Math.PI / 180);
+            this.ctx.globalAlpha = Math.min(1, c.life / 30);
+            this.ctx.fillStyle = c.color;
+            this.ctx.fillRect(-c.size / 2, -c.size / 4, c.size, c.size / 2);
+            this.ctx.restore();
+        });
+        this.ctx.globalAlpha = 1;
     }
 
     drawWeather() {
@@ -588,11 +674,17 @@ class AnatomyRush {
     }
 
     drawBackground() {
-        // Sky gradient - shifts during fever mode
+        // Sky gradient - time of day with fever mode override
         const grad = this.ctx.createLinearGradient(0, 0, 0, this.height);
         if (this.feverMode) {
             grad.addColorStop(0, '#1a0a2e'); grad.addColorStop(0.3, '#2d1b4e'); grad.addColorStop(0.65, '#4a1942'); grad.addColorStop(1, '#6b2d5b');
-        } else {
+        } else if (this.timeOfDay === 'dawn') {
+            grad.addColorStop(0, '#0c1445'); grad.addColorStop(0.3, '#1e3a5f'); grad.addColorStop(0.6, '#f97316'); grad.addColorStop(1, '#fbbf24');
+        } else if (this.timeOfDay === 'day') {
+            grad.addColorStop(0, '#0369a1'); grad.addColorStop(0.4, '#0ea5e9'); grad.addColorStop(0.7, '#7dd3fc'); grad.addColorStop(1, '#bae6fd');
+        } else if (this.timeOfDay === 'dusk') {
+            grad.addColorStop(0, '#1e1b4b'); grad.addColorStop(0.3, '#581c87'); grad.addColorStop(0.6, '#f97316'); grad.addColorStop(1, '#fbbf24');
+        } else { // night
             grad.addColorStop(0, '#020617'); grad.addColorStop(0.3, '#0f172a'); grad.addColorStop(0.65, '#1e1b4b'); grad.addColorStop(1, '#312e81');
         }
         this.ctx.fillStyle = grad; this.ctx.fillRect(0, 0, this.width, this.height);
@@ -1009,17 +1101,63 @@ class AnatomyRush {
     drawGameOver() {
         this.ctx.fillStyle = 'rgba(0,0,0,0.94)'; this.ctx.fillRect(0, 0, this.width, this.height);
         this.ctx.shadowColor = '#ef4444'; this.ctx.shadowBlur = 80; this.ctx.fillStyle = '#ef4444';
-        this.ctx.font = `bold ${Math.min(75, this.width * 0.065)}px "Space Grotesk", Arial`; this.ctx.textAlign = 'center';
-        this.ctx.fillText('GAME OVER', this.centerX, this.height * 0.18); this.ctx.shadowBlur = 0;
-        this.ctx.fillStyle = '#fff'; this.ctx.font = 'bold 48px Arial'; this.ctx.fillText(`Score: ${this.score.toLocaleString()}`, this.centerX, this.height * 0.34);
-        this.ctx.fillStyle = '#a855f7'; this.ctx.font = '26px Arial'; this.ctx.fillText(`Level ${this.level} Reached`, this.centerX, this.height * 0.42);
-        if (this.score >= this.highScore) { this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 42px Arial'; this.ctx.fillText('🏆 NEW BEST! 🏆', this.centerX, this.height * 0.54); }
-        else { this.ctx.fillStyle = '#888'; this.ctx.font = '28px Arial'; this.ctx.fillText(`Best: ${this.highScore.toLocaleString()}`, this.centerX, this.height * 0.54); }
-        this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 34px Arial'; this.ctx.fillText(`💰 ${this.coins} coins earned`, this.centerX, this.height * 0.66);
-        this.ctx.fillStyle = '#22c55e'; this.ctx.font = '28px Arial'; this.ctx.fillText(`+${Math.floor(this.score / 10)} XP`, this.centerX, this.height * 0.75);
+        this.ctx.font = `bold ${Math.min(65, this.width * 0.055)}px "Space Grotesk", Arial`; this.ctx.textAlign = 'center';
+        this.ctx.fillText('GAME OVER', this.centerX, this.height * 0.1); this.ctx.shadowBlur = 0;
+
+        // Stats
+        this.ctx.fillStyle = '#fff'; this.ctx.font = 'bold 40px Arial';
+        this.ctx.fillText(`Score: ${this.score.toLocaleString()}`, this.centerX, this.height * 0.2);
+        this.ctx.fillStyle = '#a855f7'; this.ctx.font = '22px Arial';
+        this.ctx.fillText(`Level ${this.level} • ${this.questionsCorrectRun}/${this.questionsAnswered} Questions Correct`, this.centerX, this.height * 0.27);
+
+        if (this.score >= this.highScore) {
+            this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 36px Arial';
+            this.ctx.fillText('🏆 NEW HIGH SCORE! 🏆', this.centerX, this.height * 0.35);
+        } else {
+            this.ctx.fillStyle = '#888'; this.ctx.font = '24px Arial';
+            this.ctx.fillText(`Best: ${this.highScore.toLocaleString()}`, this.centerX, this.height * 0.35);
+        }
+
+        // Question review
+        if (this.questionHistory.length > 0) {
+            this.ctx.fillStyle = '#06b6d4'; this.ctx.font = 'bold 20px Arial';
+            this.ctx.fillText('📝 Question Review', this.centerX, this.height * 0.44);
+
+            const startY = this.height * 0.5;
+            const maxToShow = Math.min(3, this.questionHistory.length);
+            this.ctx.font = '16px Arial'; this.ctx.textAlign = 'left';
+
+            for (let i = 0; i < maxToShow; i++) {
+                const q = this.questionHistory[this.questionHistory.length - 1 - i];
+                const y = startY + i * 50;
+                const icon = q.correct ? '✅' : '❌';
+                const color = q.correct ? '#22c55e' : '#ef4444';
+                this.ctx.fillStyle = color;
+
+                let text = q.question;
+                if (text.length > 50) text = text.slice(0, 47) + '...';
+                this.ctx.fillText(`${icon} ${text}`, 60, y);
+
+                if (!q.correct) {
+                    this.ctx.fillStyle = '#888'; this.ctx.font = '14px Arial';
+                    let ans = q.correctAnswer;
+                    if (ans.length > 40) ans = ans.slice(0, 37) + '...';
+                    this.ctx.fillText(`   → ${ans}`, 60, y + 18);
+                    this.ctx.font = '16px Arial';
+                }
+            }
+        }
+
+        // Coins and XP
+        this.ctx.textAlign = 'center';
+        this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 28px Arial';
+        this.ctx.fillText(`💰 ${this.coins} coins earned`, this.centerX, this.height * 0.82);
+        this.ctx.fillStyle = '#22c55e'; this.ctx.font = '24px Arial';
+        this.ctx.fillText(`+${Math.floor(this.score / 10)} XP`, this.centerX, this.height * 0.87);
+
         const pulse = 0.6 + Math.sin(this.globalTime * 0.005) * 0.4;
-        this.ctx.globalAlpha = pulse; this.ctx.fillStyle = '#06b6d4'; this.ctx.font = 'bold 32px Arial';
-        this.ctx.fillText('[ PRESS SPACE TO RETRY ]', this.centerX, this.height * 0.9); this.ctx.globalAlpha = 1;
+        this.ctx.globalAlpha = pulse; this.ctx.fillStyle = '#06b6d4'; this.ctx.font = 'bold 28px Arial';
+        this.ctx.fillText('[ PRESS SPACE TO RETRY ]', this.centerX, this.height * 0.95); this.ctx.globalAlpha = 1;
     }
 
     loop(ts) { const dt = Math.min(ts - this.lastTime, 50); this.lastTime = ts; this.update(dt); this.render(); if (this.running) requestAnimationFrame(t => this.loop(t)); }
