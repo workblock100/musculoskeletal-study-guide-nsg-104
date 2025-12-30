@@ -1178,19 +1178,34 @@ function switchMainTab(tabName) {
 
   // Special handling for game panel - make it fullscreen
   const gamePanel = document.getElementById('panel-game');
+  const themeToggle = document.getElementById('themeToggle');
+
   if (gamePanel) {
     if (tabName === 'game') {
-      // Force fullscreen styling
-      gamePanel.style.position = 'fixed';
-      gamePanel.style.top = '0';
-      gamePanel.style.left = '0';
-      gamePanel.style.right = '0';
-      gamePanel.style.bottom = '0';
-      gamePanel.style.zIndex = '999';
-      gamePanel.style.background = 'radial-gradient(ellipse at center, #0f0a1a 0%, #050510 100%)';
-      gamePanel.style.paddingTop = '80px';
-      gamePanel.style.overflow = 'hidden';
+      // Force absolute fullscreen styling
+      gamePanel.style.cssText = `
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 9999 !important;
+        background: radial-gradient(ellipse at center, #0f0a1a 0%, #050510 100%) !important;
+        padding-top: 80px !important;
+        overflow: hidden !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      `;
       document.body.style.overflow = 'hidden';
+      if (themeToggle) themeToggle.style.display = 'none';
+
+      // Hide all other panels completely
+      document.querySelectorAll('.main-tab-panel:not(#panel-game)').forEach(p => {
+        p.style.display = 'none';
+      });
 
       // Initialize game
       setTimeout(() => {
@@ -1200,16 +1215,14 @@ function switchMainTab(tabName) {
       }, 100);
     } else {
       // Reset game panel styles
-      gamePanel.style.position = '';
-      gamePanel.style.top = '';
-      gamePanel.style.left = '';
-      gamePanel.style.right = '';
-      gamePanel.style.bottom = '';
-      gamePanel.style.zIndex = '';
-      gamePanel.style.background = '';
-      gamePanel.style.paddingTop = '';
-      gamePanel.style.overflow = '';
+      gamePanel.style.cssText = '';
       document.body.style.overflow = '';
+      if (themeToggle) themeToggle.style.display = '';
+
+      // Restore other panels
+      document.querySelectorAll('.main-tab-panel').forEach(p => {
+        p.style.display = '';
+      });
 
       // Stop game
       if (typeof stopGame === 'function') {

@@ -1,4 +1,6 @@
 // ANATOMY RUSH - Award Winning Edition 2025
+// Complete game with power-ups, effects, and polished gameplay
+
 class AnatomyRush {
     constructor(canvas) {
         this.canvas = canvas;
@@ -20,19 +22,33 @@ class AnatomyRush {
         this.targetLane = 1;
         this.laneWidth = 150;
 
-        this.player = { y: 0, jumpHeight: 0, jumpVelocity: 0, isJumping: false, isSliding: false, slideTimer: 0, animFrame: 0, invincible: 0 };
+        this.player = {
+            jumpHeight: 0,
+            jumpVelocity: 0,
+            isJumping: false,
+            isSliding: false,
+            slideTimer: 0,
+            animFrame: 0,
+            invincible: 0,
+            shield: 0,
+            magnet: 0,
+            speedBoost: 0
+        };
+
         this.speed = 1;
         this.maxSpeed = 2.8;
+        this.baseSpeed = 1;
 
         this.obstacles = [];
         this.coins_arr = [];
+        this.powerups = [];
         this.particles = [];
         this.buildings = [];
 
-        // Questions MUCH less frequent - first at 5000, then every 3000+
-        this.questionDistance = 5000;
+        // Questions - first at 6000 distance (~18 seconds), then every 4000+
+        this.questionDistance = 6000;
         this.nextQuestionAt = this.questionDistance;
-        this.questionIncrement = 3000;
+        this.questionIncrement = 4000;
         this.currentQuestion = null;
         this.questionTimer = 0;
         this.questionTimeLimit = 15;
@@ -40,21 +56,22 @@ class AnatomyRush {
         this.questionResult = null;
 
         this.lastObstacle = 0;
-        this.obstacleGap = 400;
+        this.obstacleGap = 450;
         this.shake = 0;
         this.flash = null;
         this.running = false;
         this.lastTime = 0;
         this.globalTime = 0;
 
-        // Generate city buildings
-        for (let i = 0; i < 20; i++) {
+        // Generate city skyline
+        for (let i = 0; i < 25; i++) {
             this.buildings.push({
-                x: i * 120,
-                height: 100 + Math.random() * 200,
-                width: 60 + Math.random() * 40,
-                windows: Math.floor(Math.random() * 4) + 2,
-                hue: Math.random() * 60 + 200
+                x: i * 100 - 200,
+                height: 80 + Math.random() * 250,
+                width: 50 + Math.random() * 50,
+                windows: Math.floor(Math.random() * 5) + 2,
+                hue: Math.random() * 60 + 200,
+                lit: Math.random() > 0.3
             });
         }
 
@@ -63,25 +80,50 @@ class AnatomyRush {
 
     resize() {
         const container = this.canvas.parentElement;
-        this.canvas.width = Math.min(container.offsetWidth - 40, 1400);
-        this.canvas.height = Math.min(window.innerHeight - 140, 750);
+        const maxW = Math.min(container.offsetWidth - 20, 1600);
+        const maxH = Math.min(window.innerHeight - 100, 850);
+
+        if (maxW / 16 * 9 > maxH) {
+            this.canvas.height = maxH;
+            this.canvas.width = maxH / 9 * 16;
+        } else {
+            this.canvas.width = maxW;
+            this.canvas.height = maxW / 16 * 9;
+        }
+
         this.width = this.canvas.width;
         this.height = this.canvas.height;
         this.centerX = this.width / 2;
     }
 
     bindEvents() {
+        // Global key handler - works even when canvas not focused
         const handleKey = (e) => {
-            const keys = ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'Digit1', 'Digit2', 'Digit3', 'Digit4'];
-            if (keys.includes(e.code)) { e.preventDefault(); e.stopPropagation(); }
+            const keys = ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Enter'];
 
-            if (this.state === 'menu' && (e.code === 'Space' || e.code === 'Enter')) { this.startGame(); return; }
-            if (this.state === 'gameover' && (e.code === 'Space' || e.code === 'Enter')) { this.state = 'menu'; return; }
+            // Only prevent default if game is active
+            if (keys.includes(e.code) && this.running) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            if (this.state === 'menu') {
+                if (e.code === 'Space' || e.code === 'Enter') { this.startGame(); return; }
+            }
+
+            if (this.state === 'gameover') {
+                if (e.code === 'Space' || e.code === 'Enter') {
+                    this.state = 'menu';
+                    return;
+                }
+            }
+
             if (this.state === 'question') {
                 const n = parseInt(e.code.replace('Digit', ''));
                 if (n >= 1 && n <= 4) this.selectAnswer(n - 1);
                 return;
             }
+
             if (this.state === 'playing') {
                 if (e.code === 'ArrowLeft' || e.code === 'KeyA') this.switchLane(-1);
                 if (e.code === 'ArrowRight' || e.code === 'KeyD') this.switchLane(1);
@@ -89,20 +131,25 @@ class AnatomyRush {
                 if (e.code === 'ArrowDown' || e.code === 'KeyS') this.slide();
             }
         };
-        document.removeEventListener('keydown', this._kh);
+
+        // Remove old handler if exists
+        if (this._kh) document.removeEventListener('keydown', this._kh);
         this._kh = handleKey;
         document.addEventListener('keydown', this._kh);
 
+        // Canvas click
         this.canvas.addEventListener('click', (e) => {
             if (this.state === 'menu') { this.startGame(); return; }
             if (this.state === 'gameover') { this.state = 'menu'; return; }
             if (this.state === 'question') this.handleQuestionClick(e);
         });
 
+        // Touch controls
         let tx = 0, ty = 0;
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
-            tx = e.touches[0].clientX; ty = e.touches[0].clientY;
+            tx = e.touches[0].clientX;
+            ty = e.touches[0].clientY;
             if (this.state === 'menu') this.startGame();
             if (this.state === 'gameover') this.state = 'menu';
         }, { passive: false });
@@ -110,7 +157,8 @@ class AnatomyRush {
         this.canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
             if (this.state !== 'playing') return;
-            const dx = e.touches[0].clientX - tx, dy = e.touches[0].clientY - ty;
+            const dx = e.touches[0].clientX - tx;
+            const dy = e.touches[0].clientY - ty;
             if (Math.abs(dx) > 40) { this.switchLane(dx > 0 ? 1 : -1); tx = e.touches[0].clientX; }
             if (dy < -50) { this.jump(); ty = e.touches[0].clientY; }
             if (dy > 50) { this.slide(); ty = e.touches[0].clientY; }
@@ -121,29 +169,37 @@ class AnatomyRush {
 
     switchLane(dir) {
         const nl = this.targetLane + dir;
-        if (nl >= 0 && nl < 3) { this.targetLane = nl; this.addParticles(this.getLaneX(this.currentLane), this.height - 100, 6, '#a855f7'); }
+        if (nl >= 0 && nl < 3) {
+            this.targetLane = nl;
+            this.addParticles(this.getLaneX(this.currentLane), this.height - 100, 8, '#a855f7');
+        }
     }
 
     jump() {
         if (!this.player.isJumping && !this.player.isSliding) {
             this.player.isJumping = true;
-            this.player.jumpVelocity = 20;
-            this.addParticles(this.getLaneX(this.currentLane), this.height - 80, 12, '#06b6d4');
+            this.player.jumpVelocity = 22;
+            this.addParticles(this.getLaneX(this.currentLane), this.height - 60, 15, '#06b6d4');
         }
     }
 
     slide() {
         if (!this.player.isJumping && !this.player.isSliding) {
             this.player.isSliding = true;
-            this.player.slideTimer = 40;
+            this.player.slideTimer = 45;
+            this.addParticles(this.getLaneX(this.currentLane), this.height - 40, 8, '#f59e0b');
         }
     }
 
     addParticles(x, y, count, color) {
         for (let i = 0; i < count; i++) {
             this.particles.push({
-                x, y, vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8 - 3,
-                size: 4 + Math.random() * 4, life: 30, color
+                x, y,
+                vx: (Math.random() - 0.5) * 10,
+                vy: (Math.random() - 0.5) * 10 - 4,
+                size: 3 + Math.random() * 5,
+                life: 35,
+                color
             });
         }
     }
@@ -152,43 +208,85 @@ class AnatomyRush {
 
     startGame() {
         this.state = 'playing';
-        this.score = 0; this.coins = 0; this.lives = 3; this.streak = 0; this.multiplier = 1;
-        this.distance = 0; this.speed = 1; this.currentLane = 1; this.targetLane = 1;
-        this.obstacles = []; this.coins_arr = []; this.particles = [];
-        this.player.isJumping = false; this.player.isSliding = false; this.player.jumpHeight = 0; this.player.invincible = 0;
-        this.lastObstacle = 0; this.nextQuestionAt = this.questionDistance;
+        this.score = 0;
+        this.coins = 0;
+        this.lives = 3;
+        this.streak = 0;
+        this.multiplier = 1;
+        this.distance = 0;
+        this.speed = this.baseSpeed;
+        this.currentLane = 1;
+        this.targetLane = 1;
+        this.obstacles = [];
+        this.coins_arr = [];
+        this.powerups = [];
+        this.particles = [];
+
+        this.player.isJumping = false;
+        this.player.isSliding = false;
+        this.player.jumpHeight = 0;
+        this.player.invincible = 0;
+        this.player.shield = 0;
+        this.player.magnet = 0;
+        this.player.speedBoost = 0;
+
+        this.lastObstacle = 0;
+        this.nextQuestionAt = this.questionDistance;
     }
 
     update(dt) {
         this.globalTime += dt;
-        if (this.shake > 0) this.shake *= 0.9;
+
+        // Effects
+        if (this.shake > 0) this.shake *= 0.88;
         if (this.flash) { this.flash.timer--; if (this.flash.timer <= 0) this.flash = null; }
         if (this.player.invincible > 0) this.player.invincible--;
+        if (this.player.shield > 0) this.player.shield--;
+        if (this.player.magnet > 0) this.player.magnet--;
+        if (this.player.speedBoost > 0) this.player.speedBoost--;
 
+        // Particles
         this.particles = this.particles.filter(p => {
-            p.x += p.vx; p.y += p.vy; p.vy += 0.2; p.life--; p.size *= 0.96;
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.25;
+            p.life--;
+            p.size *= 0.95;
             return p.life > 0;
         });
 
         // Scroll buildings
+        const bSpeed = this.speed * (this.player.speedBoost > 0 ? 1.5 : 1);
         this.buildings.forEach(b => {
-            b.x -= this.speed * 0.5;
-            if (b.x < -b.width) b.x = this.width + Math.random() * 100;
+            b.x -= bSpeed * 0.4;
+            if (b.x < -b.width - 50) {
+                b.x = this.width + Math.random() * 100;
+                b.height = 80 + Math.random() * 250;
+                b.lit = Math.random() > 0.3;
+            }
         });
 
         if (this.state !== 'playing') return;
 
-        if (this.speed < this.maxSpeed) this.speed += 0.00015;
-        this.distance += this.speed * 6;
+        // Speed
+        const speedMod = this.player.speedBoost > 0 ? 1.4 : 1;
+        if (this.speed < this.maxSpeed) this.speed += 0.00012;
+
+        this.distance += this.speed * speedMod * 7;
         this.score = Math.floor(this.distance / 10) * this.multiplier;
 
+        // Lane transition
         const diff = this.targetLane - this.currentLane;
-        this.currentLane += diff * 0.15;
+        this.currentLane += diff * 0.18;
 
+        // Player physics
         if (this.player.isJumping) {
             this.player.jumpHeight += this.player.jumpVelocity;
-            this.player.jumpVelocity -= 0.95;
-            if (this.player.jumpHeight <= 0) { this.player.jumpHeight = 0; this.player.isJumping = false; }
+            this.player.jumpVelocity -= 1.0;
+            if (this.player.jumpHeight <= 0) {
+                this.player.jumpHeight = 0;
+                this.player.isJumping = false;
+            }
         }
 
         if (this.player.isSliding) {
@@ -196,73 +294,176 @@ class AnatomyRush {
             if (this.player.slideTimer <= 0) this.player.isSliding = false;
         }
 
-        this.player.animFrame = (this.player.animFrame + 0.3) % 8;
+        // Animation
+        this.player.animFrame = (this.player.animFrame + 0.35) % 8;
 
+        // Spawn obstacles
         if (this.distance - this.lastObstacle > this.obstacleGap / this.speed) {
             this.spawnObstacle();
             this.lastObstacle = this.distance;
         }
 
-        if (Math.random() < 0.012) this.spawnCoin();
+        // Spawn coins
+        if (Math.random() < 0.015) this.spawnCoin();
+
+        // Spawn powerups (rare)
+        if (Math.random() < 0.003) this.spawnPowerup();
+
         this.updateObstacles();
         this.updateCoins();
+        this.updatePowerups();
 
+        // Question trigger
         if (this.distance >= this.nextQuestionAt) {
             this.triggerQuestion();
-            this.nextQuestionAt += this.questionIncrement + Math.floor(this.distance / 1000) * 200;
+            this.nextQuestionAt += this.questionIncrement + Math.floor(this.distance / 2000) * 500;
         }
     }
 
     spawnObstacle() {
         const lane = Math.floor(Math.random() * 3);
-        const isHigh = Math.random() > 0.65;
-        this.obstacles.push({ lane, z: 1800, type: isHigh ? 'high' : 'low', hit: false });
+        const isHigh = Math.random() > 0.6;
+        this.obstacles.push({ lane, z: 2000, type: isHigh ? 'high' : 'low', hit: false });
     }
 
     spawnCoin() {
         const lane = Math.floor(Math.random() * 3);
-        this.coins_arr.push({ lane, z: 1800, elevated: Math.random() > 0.5, collected: false, bob: Math.random() * 6.28 });
+        this.coins_arr.push({
+            lane, z: 2000,
+            elevated: Math.random() > 0.5,
+            collected: false,
+            bob: Math.random() * 6.28
+        });
+    }
+
+    spawnPowerup() {
+        const lane = Math.floor(Math.random() * 3);
+        const types = ['shield', 'magnet', 'speed', 'heart'];
+        const type = types[Math.floor(Math.random() * types.length)];
+        this.powerups.push({ lane, z: 2000, type, collected: false, bob: Math.random() * 6.28 });
     }
 
     updateObstacles() {
+        const speedMod = this.player.speedBoost > 0 ? 1.4 : 1;
         this.obstacles = this.obstacles.filter(obs => {
-            obs.z -= this.speed * 18;
-            if (obs.z < 100 && obs.z > -40 && !obs.hit && this.player.invincible <= 0) {
+            obs.z -= this.speed * speedMod * 20;
+
+            if (obs.z < 120 && obs.z > -50 && !obs.hit) {
                 if (obs.lane === Math.round(this.currentLane)) {
-                    if (obs.type === 'high' && !this.player.isSliding) { this.hitObstacle(); obs.hit = true; }
-                    else if (obs.type === 'low' && this.player.jumpHeight < 60) { this.hitObstacle(); obs.hit = true; }
+                    // Check if should hit
+                    let hit = false;
+                    if (obs.type === 'high' && !this.player.isSliding) hit = true;
+                    else if (obs.type === 'low' && this.player.jumpHeight < 70) hit = true;
+
+                    if (hit && this.player.invincible <= 0 && this.player.shield <= 0) {
+                        this.hitObstacle();
+                        obs.hit = true;
+                    } else if (hit && this.player.shield > 0) {
+                        // Shield absorbs hit
+                        this.player.shield = 0;
+                        this.flash = { color: '#06b6d4', timer: 10 };
+                        this.addParticles(this.getLaneX(obs.lane), this.height - 150, 20, '#06b6d4');
+                        obs.hit = true;
+                    }
                 }
             }
-            return obs.z > -300;
+            return obs.z > -400;
         });
     }
 
     updateCoins() {
+        const speedMod = this.player.speedBoost > 0 ? 1.4 : 1;
+        const magnetRange = this.player.magnet > 0 ? 2 : 0;
+
         this.coins_arr = this.coins_arr.filter(c => {
-            c.z -= this.speed * 18;
+            c.z -= this.speed * speedMod * 20;
             c.bob += 0.12;
-            if (c.z < 100 && c.z > -40 && !c.collected && c.lane === Math.round(this.currentLane)) {
-                if (!c.elevated || this.player.jumpHeight > 40) {
-                    c.collected = true; this.coins++; this.totalCoins++;
-                    localStorage.setItem('anatomyRush2025Coins', this.totalCoins);
-                    this.addParticles(this.getLaneX(c.lane), this.height - 180, 10, '#fbbf24');
+
+            // Magnet effect
+            if (magnetRange > 0 && c.z < 500 && c.z > 0) {
+                const laneDiff = Math.abs(c.lane - Math.round(this.currentLane));
+                if (laneDiff <= magnetRange) {
+                    c.lane += (this.currentLane - c.lane) * 0.1;
                 }
             }
-            return c.z > -300 && !c.collected;
+
+            if (c.z < 120 && c.z > -50 && !c.collected) {
+                if (Math.abs(c.lane - this.currentLane) < 0.6) {
+                    if (!c.elevated || this.player.jumpHeight > 50) {
+                        c.collected = true;
+                        this.coins++;
+                        this.totalCoins++;
+                        localStorage.setItem('anatomyRush2025Coins', this.totalCoins);
+                        this.addParticles(this.getLaneX(Math.round(c.lane)), this.height - 180, 12, '#fbbf24');
+                    }
+                }
+            }
+            return c.z > -400 && !c.collected;
         });
     }
 
+    updatePowerups() {
+        const speedMod = this.player.speedBoost > 0 ? 1.4 : 1;
+
+        this.powerups = this.powerups.filter(p => {
+            p.z -= this.speed * speedMod * 20;
+            p.bob += 0.1;
+
+            if (p.z < 120 && p.z > -50 && !p.collected) {
+                if (Math.abs(p.lane - this.currentLane) < 0.6) {
+                    p.collected = true;
+                    this.collectPowerup(p.type);
+                    this.addParticles(this.getLaneX(p.lane), this.height - 200, 20, this.getPowerupColor(p.type));
+                }
+            }
+            return p.z > -400 && !p.collected;
+        });
+    }
+
+    collectPowerup(type) {
+        this.flash = { color: this.getPowerupColor(type), timer: 12 };
+
+        switch (type) {
+            case 'shield':
+                this.player.shield = 600; // 10 seconds
+                break;
+            case 'magnet':
+                this.player.magnet = 600;
+                break;
+            case 'speed':
+                this.player.speedBoost = 300; // 5 seconds
+                break;
+            case 'heart':
+                if (this.lives < 5) this.lives++;
+                break;
+        }
+    }
+
+    getPowerupColor(type) {
+        const colors = { shield: '#06b6d4', magnet: '#a855f7', speed: '#22c55e', heart: '#ef4444' };
+        return colors[type] || '#fff';
+    }
+
     hitObstacle() {
-        this.lives--; this.streak = 0; this.multiplier = 1; this.shake = 18;
-        this.flash = { color: '#ef4444', timer: 15 }; this.player.invincible = 90;
-        this.addParticles(this.getLaneX(Math.round(this.currentLane)), this.height - 120, 25, '#ef4444');
+        this.lives--;
+        this.streak = 0;
+        this.multiplier = 1;
+        this.shake = 20;
+        this.flash = { color: '#ef4444', timer: 18 };
+        this.player.invincible = 100;
+        this.addParticles(this.getLaneX(Math.round(this.currentLane)), this.height - 120, 30, '#ef4444');
         if (this.lives <= 0) this.gameOver();
     }
 
     gameOver() {
         this.state = 'gameover';
-        if (this.score > this.highScore) { this.highScore = this.score; localStorage.setItem('anatomyRush2025HS', this.highScore); }
-        if (typeof awardXP === 'function') awardXP(Math.floor(this.score / 10), 'game');
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('anatomyRush2025HS', this.highScore);
+        }
+        if (typeof awardXP === 'function') {
+            awardXP(Math.floor(this.score / 10), 'game');
+        }
     }
 
     triggerQuestion() {
@@ -275,14 +476,28 @@ class AnatomyRush {
             const valid = quizQuestionsBase.filter(q => q.type !== 'sata');
             if (valid.length) {
                 const q = valid[Math.floor(Math.random() * valid.length)];
-                this.currentQuestion = { text: q.q, options: this.shuffle([...q.options]).slice(0, 4), correct: q.correctAnswer };
+                this.currentQuestion = {
+                    text: q.q,
+                    options: this.shuffle([...q.options]).slice(0, 4),
+                    correct: q.correctAnswer
+                };
                 return;
             }
         }
-        this.currentQuestion = { text: "What is the priority intervention for compartment syndrome?", options: ["Notify surgeon immediately", "Elevate extremity high", "Apply warm compress", "Give pain medication"], correct: "Notify surgeon immediately" };
+        this.currentQuestion = {
+            text: "What is the priority nursing intervention for compartment syndrome?",
+            options: ["Notify surgeon immediately", "Elevate extremity", "Apply ice", "Give analgesics"],
+            correct: "Notify surgeon immediately"
+        };
     }
 
-    shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+    shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
 
     selectAnswer(idx) {
         if (this.questionResult !== null || idx >= this.currentQuestion.options.length) return;
@@ -290,38 +505,62 @@ class AnatomyRush {
         const correct = this.currentQuestion.options[idx] === this.currentQuestion.correct;
 
         if (correct) {
-            this.questionResult = 'correct'; this.streak++; this.multiplier = Math.min(5, 1 + Math.floor(this.streak / 2));
-            this.coins += 15 * this.multiplier; this.totalCoins += 15 * this.multiplier;
+            this.questionResult = 'correct';
+            this.streak++;
+            this.multiplier = Math.min(5, 1 + Math.floor(this.streak / 2));
+            this.coins += 20 * this.multiplier;
+            this.totalCoins += 20 * this.multiplier;
             localStorage.setItem('anatomyRush2025Coins', this.totalCoins);
-            this.flash = { color: '#22c55e', timer: 15 };
+            this.flash = { color: '#22c55e', timer: 18 };
         } else {
-            this.questionResult = 'wrong'; this.lives--; this.streak = 0; this.multiplier = 1;
-            this.shake = 12; this.flash = { color: '#ef4444', timer: 12 };
+            this.questionResult = 'wrong';
+            this.lives--;
+            this.streak = 0;
+            this.multiplier = 1;
+            this.shake = 15;
+            this.flash = { color: '#ef4444', timer: 15 };
             if (this.lives <= 0) { setTimeout(() => this.gameOver(), 800); return; }
         }
-        setTimeout(() => { this.state = 'playing'; this.currentQuestion = null; }, 900);
+        setTimeout(() => { this.state = 'playing'; this.currentQuestion = null; }, 1000);
     }
 
     handleQuestionClick(e) {
         if (!this.currentQuestion || this.questionResult !== null) return;
         const rect = this.canvas.getBoundingClientRect();
-        const sx = this.width / rect.width, sy = this.height / rect.height;
-        const x = (e.clientX - rect.left) * sx, y = (e.clientY - rect.top) * sy;
-        const startY = this.height * 0.32, optH = 55, gap = 14, margin = this.width * 0.08;
+        const sx = this.width / rect.width;
+        const sy = this.height / rect.height;
+        const x = (e.clientX - rect.left) * sx;
+        const y = (e.clientY - rect.top) * sy;
+        const startY = this.height * 0.3;
+        const optH = 58;
+        const gap = 16;
+        const margin = this.width * 0.06;
+
         for (let i = 0; i < this.currentQuestion.options.length; i++) {
             const oY = startY + i * (optH + gap);
-            if (x >= margin && x <= this.width - margin && y >= oY && y <= oY + optH) { this.selectAnswer(i); break; }
+            if (x >= margin && x <= this.width - margin && y >= oY && y <= oY + optH) {
+                this.selectAnswer(i);
+                break;
+            }
         }
     }
 
+    // ========== RENDERING ==========
+
     render() {
         this.ctx.save();
-        if (this.shake > 0) this.ctx.translate((Math.random() - 0.5) * this.shake * 2, (Math.random() - 0.5) * this.shake * 2);
+        if (this.shake > 0) {
+            this.ctx.translate(
+                (Math.random() - 0.5) * this.shake * 2,
+                (Math.random() - 0.5) * this.shake * 2
+            );
+        }
 
         this.drawBackground();
         this.drawRoad();
         this.drawObstacles();
         this.drawCoins();
+        this.drawPowerups();
         this.drawPlayer();
         this.drawParticles();
 
@@ -336,61 +575,90 @@ class AnatomyRush {
             this.ctx.fillRect(0, 0, this.width, this.height);
             this.ctx.globalAlpha = 1;
         }
+
         this.ctx.restore();
     }
 
     drawBackground() {
+        // Sky gradient
         const grad = this.ctx.createLinearGradient(0, 0, 0, this.height);
         grad.addColorStop(0, '#020617');
-        grad.addColorStop(0.4, '#0f172a');
-        grad.addColorStop(1, '#1e1b4b');
+        grad.addColorStop(0.35, '#0f172a');
+        grad.addColorStop(0.7, '#1e1b4b');
+        grad.addColorStop(1, '#312e81');
         this.ctx.fillStyle = grad;
         this.ctx.fillRect(0, 0, this.width, this.height);
 
         // Stars
         this.ctx.fillStyle = '#fff';
-        for (let i = 0; i < 100; i++) {
-            const x = (i * 137.5 + this.globalTime * 0.008) % this.width;
-            const y = (i * 47.3) % (this.height * 0.35);
-            this.ctx.globalAlpha = 0.3 + Math.sin(this.globalTime * 0.003 + i) * 0.3;
+        for (let i = 0; i < 120; i++) {
+            const x = (i * 127.3 + this.globalTime * 0.006) % this.width;
+            const y = (i * 43.7) % (this.height * 0.35);
+            this.ctx.globalAlpha = 0.25 + Math.sin(this.globalTime * 0.002 + i * 0.5) * 0.25;
             this.ctx.beginPath();
-            this.ctx.arc(x, y, 1 + (i % 2) * 0.5, 0, Math.PI * 2);
+            this.ctx.arc(x, y, 0.8 + (i % 3) * 0.4, 0, Math.PI * 2);
             this.ctx.fill();
         }
         this.ctx.globalAlpha = 1;
 
         // City skyline
         this.buildings.forEach(b => {
-            this.ctx.fillStyle = `hsl(${b.hue}, 30%, 12%)`;
-            this.ctx.fillRect(b.x, this.height * 0.35 - b.height, b.width, b.height);
+            // Building
+            const baseColor = `hsl(${b.hue}, 25%, 10%)`;
+            this.ctx.fillStyle = baseColor;
+            const by = this.height * 0.4 - b.height;
+            this.ctx.fillRect(b.x, by, b.width, b.height);
+
+            // Roof detail
+            this.ctx.fillStyle = `hsl(${b.hue}, 20%, 15%)`;
+            this.ctx.fillRect(b.x + 5, by - 8, b.width - 10, 8);
+
             // Windows
-            this.ctx.fillStyle = `rgba(255, 200, 100, ${0.3 + Math.sin(this.globalTime * 0.002 + b.x) * 0.2})`;
-            const ww = 8, wh = 10, gap = 15;
-            for (let row = 0; row < Math.floor(b.height / gap) - 1; row++) {
-                for (let col = 0; col < b.windows; col++) {
-                    if (Math.random() > 0.3) this.ctx.fillRect(b.x + 8 + col * (ww + 8), this.height * 0.35 - b.height + 15 + row * gap, ww, wh);
+            if (b.lit) {
+                const ww = 7, wh = 10, gx = 12, gy = 16;
+                for (let row = 0; row < Math.floor(b.height / gy) - 1; row++) {
+                    for (let col = 0; col < b.windows; col++) {
+                        const on = Math.sin(this.globalTime * 0.001 + b.x * 0.1 + row + col) > -0.3;
+                        if (on) {
+                            this.ctx.fillStyle = `rgba(255, 220, 140, ${0.4 + Math.random() * 0.2})`;
+                            this.ctx.fillRect(b.x + 6 + col * gx, by + 12 + row * gy, ww, wh);
+                        }
+                    }
                 }
             }
         });
 
         // Horizon glow
-        const hg = this.ctx.createRadialGradient(this.centerX, this.height * 0.4, 0, this.centerX, this.height * 0.4, this.width * 0.7);
-        hg.addColorStop(0, 'rgba(139, 92, 246, 0.2)');
+        const hg = this.ctx.createRadialGradient(
+            this.centerX, this.height * 0.42, 0,
+            this.centerX, this.height * 0.42, this.width * 0.65
+        );
+        hg.addColorStop(0, 'rgba(139, 92, 246, 0.25)');
+        hg.addColorStop(0.5, 'rgba(168, 85, 247, 0.1)');
         hg.addColorStop(1, 'transparent');
         this.ctx.fillStyle = hg;
         this.ctx.fillRect(0, 0, this.width, this.height);
     }
 
     drawRoad() {
-        const horizonY = this.height * 0.4, roadW = 500, segs = 45;
+        const horizonY = this.height * 0.42;
+        const roadW = 520;
+        const segs = 50;
+
         for (let i = segs; i >= 0; i--) {
-            const z = i / segs, nz = (i + 1) / segs;
-            const p = 1 / (1 + z * 5), np = 1 / (1 + nz * 5);
+            const z = i / segs;
+            const nz = (i + 1) / segs;
+            const p = 1 / (1 + z * 5);
+            const np = 1 / (1 + nz * 5);
+
             const y = horizonY + (this.height - horizonY) * (1 - Math.pow(z, 0.55));
             const ny = horizonY + (this.height - horizonY) * (1 - Math.pow(nz, 0.55));
-            const w = roadW * p, nw = roadW * np;
 
-            const stripe = Math.floor((i + this.distance / 25) % 4) < 2;
+            const w = roadW * p;
+            const nw = roadW * np;
+
+            // Road surface
+            const stripe = Math.floor((i + this.distance / 22) % 4) < 2;
             this.ctx.fillStyle = stripe ? '#18181b' : '#0f0f12';
             this.ctx.beginPath();
             this.ctx.moveTo(this.centerX - nw, ny);
@@ -400,9 +668,10 @@ class AnatomyRush {
             this.ctx.closePath();
             this.ctx.fill();
 
+            // Lane dividers
             if (i < segs - 1 && i % 2 === 0) {
-                this.ctx.strokeStyle = `rgba(139, 92, 246, ${0.4 * (1 - z)})`;
-                this.ctx.lineWidth = 2 * p;
+                this.ctx.strokeStyle = `rgba(139, 92, 246, ${0.45 * (1 - z)})`;
+                this.ctx.lineWidth = 2.5 * p;
                 for (let lane = 0; lane < 2; lane++) {
                     const lo = (lane - 0.5) * this.laneWidth;
                     this.ctx.beginPath();
@@ -413,130 +682,285 @@ class AnatomyRush {
             }
         }
 
-        // Neon rails
-        this.ctx.shadowColor = '#d946ef'; this.ctx.shadowBlur = 25;
-        this.ctx.strokeStyle = '#d946ef'; this.ctx.lineWidth = 4;
-        this.ctx.beginPath(); this.ctx.moveTo(this.centerX - 100, horizonY); this.ctx.lineTo(this.centerX - roadW, this.height); this.ctx.stroke();
-        this.ctx.beginPath(); this.ctx.moveTo(this.centerX + 100, horizonY); this.ctx.lineTo(this.centerX + roadW, this.height); this.ctx.stroke();
+        // Neon side rails
+        this.ctx.shadowColor = '#d946ef';
+        this.ctx.shadowBlur = 30;
+        this.ctx.strokeStyle = '#d946ef';
+        this.ctx.lineWidth = 5;
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.centerX - 110, horizonY);
+        this.ctx.lineTo(this.centerX - roadW - 30, this.height);
+        this.ctx.stroke();
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.centerX + 110, horizonY);
+        this.ctx.lineTo(this.centerX + roadW + 30, this.height);
+        this.ctx.stroke();
         this.ctx.shadowBlur = 0;
     }
 
     drawObstacles() {
-        const horizonY = this.height * 0.4;
+        const horizonY = this.height * 0.42;
         [...this.obstacles].sort((a, b) => b.z - a.z).forEach(obs => {
-            if (obs.z < 0 || obs.z > 1800) return;
-            const zn = obs.z / 1800, p = 1 / (1 + zn * 5);
+            if (obs.z < 0 || obs.z > 2000) return;
+
+            const zn = obs.z / 2000;
+            const p = 1 / (1 + zn * 5);
             const y = horizonY + (this.height - horizonY) * (1 - Math.pow(zn, 0.55));
             const x = this.centerX + (obs.lane - 1) * this.laneWidth * p;
-            const w = 70 * p, h = (obs.type === 'high' ? 55 : 100) * p;
+            const w = 75 * p;
+            const h = (obs.type === 'high' ? 50 : 100) * p;
 
             this.ctx.save();
             if (obs.type === 'high') {
-                this.ctx.shadowColor = '#f59e0b'; this.ctx.shadowBlur = 20 * p;
-                this.ctx.fillStyle = '#b45309'; this.ctx.fillRect(x - w / 2 + 5 * p, y - h - 70 * p + 5 * p, w, h);
-                this.ctx.fillStyle = '#f59e0b'; this.ctx.fillRect(x - w / 2, y - h - 70 * p, w, h);
-                for (let s = 0; s < 4; s++) this.ctx.fillRect(x - w / 2 + s * w / 4, y - h - 70 * p, w / 8, h);
+                // Floating bar (slide under)
+                this.ctx.shadowColor = '#f59e0b';
+                this.ctx.shadowBlur = 25 * p;
+                const hy = y - 85 * p;
+                this.ctx.fillStyle = '#92400e';
+                this.ctx.fillRect(x - w / 2 + 6 * p, hy - h + 6 * p, w, h);
+                this.ctx.fillStyle = '#f59e0b';
+                this.ctx.fillRect(x - w / 2, hy - h, w, h);
+                // Stripes
+                this.ctx.fillStyle = '#451a03';
+                for (let s = 0; s < 4; s++) {
+                    this.ctx.fillRect(x - w / 2 + s * w / 4, hy - h, w / 8, h);
+                }
             } else {
-                this.ctx.shadowColor = '#ef4444'; this.ctx.shadowBlur = 20 * p;
-                this.ctx.fillStyle = '#991b1b'; this.ctx.fillRect(x - w / 2 + 5 * p, y - h + 5 * p, w - 5 * p, h - 10 * p);
-                this.ctx.fillStyle = '#ef4444'; this.ctx.fillRect(x - w / 2, y - h, w - 5 * p, h - 10 * p);
+                // Ground barrier (jump over)
+                this.ctx.shadowColor = '#ef4444';
+                this.ctx.shadowBlur = 25 * p;
+                this.ctx.fillStyle = '#7f1d1d';
+                this.ctx.fillRect(x - w / 2 + 6 * p, y - h + 6 * p, w - 6 * p, h - 12 * p);
+                this.ctx.fillStyle = '#ef4444';
+                this.ctx.fillRect(x - w / 2, y - h, w - 6 * p, h - 12 * p);
+                // Stripes
                 this.ctx.fillStyle = '#450a0a';
-                for (let s = 0; s < 4; s++) this.ctx.fillRect(x - w / 2 + s * w / 4, y - h, w / 8, h - 10 * p);
+                for (let s = 0; s < 4; s++) {
+                    this.ctx.fillRect(x - w / 2 + s * w / 4, y - h, w / 8, h - 12 * p);
+                }
             }
             this.ctx.restore();
         });
     }
 
     drawCoins() {
-        const horizonY = this.height * 0.4;
+        const horizonY = this.height * 0.42;
         this.coins_arr.forEach(c => {
-            if (c.collected || c.z < 0 || c.z > 1800) return;
-            const zn = c.z / 1800, p = 1 / (1 + zn * 5);
+            if (c.collected || c.z < 0 || c.z > 2000) return;
+
+            const zn = c.z / 2000;
+            const p = 1 / (1 + zn * 5);
             const baseY = horizonY + (this.height - horizonY) * (1 - Math.pow(zn, 0.55));
             const x = this.centerX + (c.lane - 1) * this.laneWidth * p;
-            const y = baseY - (45 + (c.elevated ? 80 : 0)) * p + Math.sin(c.bob) * 5 * p;
+            const y = baseY - (50 + (c.elevated ? 90 : 0)) * p + Math.sin(c.bob) * 6 * p;
 
             this.ctx.save();
-            this.ctx.shadowColor = '#fbbf24'; this.ctx.shadowBlur = 18 * p;
+            this.ctx.shadowColor = '#fbbf24';
+            this.ctx.shadowBlur = 20 * p;
             this.ctx.fillStyle = '#fbbf24';
-            this.ctx.beginPath(); this.ctx.arc(x, y, 16 * p, 0, Math.PI * 2); this.ctx.fill();
-            this.ctx.fillStyle = '#92400e'; this.ctx.font = `bold ${14 * p}px Arial`; this.ctx.textAlign = 'center'; this.ctx.textBaseline = 'middle';
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, 18 * p, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.fillStyle = '#92400e';
+            this.ctx.font = `bold ${16 * p}px Arial`;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
             this.ctx.fillText('$', x, y);
             this.ctx.restore();
         });
     }
 
+    drawPowerups() {
+        const horizonY = this.height * 0.42;
+        const icons = { shield: '🛡️', magnet: '🧲', speed: '⚡', heart: '❤️' };
+
+        this.powerups.forEach(p => {
+            if (p.collected || p.z < 0 || p.z > 2000) return;
+
+            const zn = p.z / 2000;
+            const per = 1 / (1 + zn * 5);
+            const baseY = horizonY + (this.height - horizonY) * (1 - Math.pow(zn, 0.55));
+            const x = this.centerX + (p.lane - 1) * this.laneWidth * per;
+            const y = baseY - 80 * per + Math.sin(p.bob) * 8 * per;
+
+            this.ctx.save();
+            this.ctx.shadowColor = this.getPowerupColor(p.type);
+            this.ctx.shadowBlur = 25 * per;
+
+            // Circle background
+            this.ctx.fillStyle = this.getPowerupColor(p.type);
+            this.ctx.globalAlpha = 0.3;
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, 28 * per, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.globalAlpha = 1;
+
+            // Icon
+            this.ctx.font = `${28 * per}px Arial`;
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(icons[p.type], x, y);
+            this.ctx.restore();
+        });
+    }
+
     drawPlayer() {
-        const x = this.getLaneX(this.currentLane), groundY = this.height - 50, y = groundY - this.player.jumpHeight;
-        if (this.player.invincible > 0 && Math.floor(this.player.invincible / 6) % 2 === 0) this.ctx.globalAlpha = 0.5;
+        const x = this.getLaneX(this.currentLane);
+        const groundY = this.height - 45;
+        const y = groundY - this.player.jumpHeight;
+
+        // Invincibility flash
+        if (this.player.invincible > 0 && Math.floor(this.player.invincible / 6) % 2 === 0) {
+            this.ctx.globalAlpha = 0.5;
+        }
 
         this.ctx.save();
         this.ctx.translate(x, y);
-        this.ctx.shadowColor = '#38bdf8'; this.ctx.shadowBlur = 30;
 
-        const bounce = this.player.isJumping ? 0 : Math.sin(this.player.animFrame * 0.6) * 4;
-        const armSwing = Math.sin(this.player.animFrame * 0.8) * 28;
-        const legSwing = Math.sin(this.player.animFrame * 0.8) * 22;
+        // Glow color based on powerups
+        let glowColor = '#38bdf8';
+        if (this.player.shield > 0) glowColor = '#06b6d4';
+        if (this.player.speedBoost > 0) glowColor = '#22c55e';
+        if (this.player.magnet > 0) glowColor = '#a855f7';
+
+        this.ctx.shadowColor = glowColor;
+        this.ctx.shadowBlur = 35;
+
+        const bounce = this.player.isJumping ? 0 : Math.sin(this.player.animFrame * 0.6) * 5;
+        const armSwing = Math.sin(this.player.animFrame * 0.8) * 30;
+        const legSwing = Math.sin(this.player.animFrame * 0.8) * 25;
 
         if (this.player.isSliding) {
+            // Sliding pose
             this.ctx.fillStyle = '#38bdf8';
-            this.ctx.beginPath(); this.ctx.ellipse(0, -18, 50, 22, 0, 0, Math.PI * 2); this.ctx.fill();
-            this.ctx.beginPath(); this.ctx.arc(28, -28, 20, 0, Math.PI * 2); this.ctx.fill();
-            this.ctx.fillStyle = '#fff'; this.ctx.fillRect(14, -50, 28, 10);
-            this.ctx.fillStyle = '#ef4444'; this.ctx.fillRect(24, -48, 8, 6); this.ctx.fillRect(20, -46, 16, 3);
+            this.ctx.beginPath();
+            this.ctx.ellipse(0, -18, 55, 24, 0, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.beginPath();
+            this.ctx.arc(30, -30, 22, 0, Math.PI * 2);
+            this.ctx.fill();
+            // Cap
+            this.ctx.fillStyle = '#fff';
+            this.ctx.fillRect(16, -54, 30, 11);
+            this.ctx.fillStyle = '#ef4444';
+            this.ctx.fillRect(27, -52, 8, 7);
+            this.ctx.fillRect(23, -49, 16, 4);
         } else {
+            // Running pose with full body
+
             // Legs
             this.ctx.fillStyle = '#0284c7';
-            this.ctx.save(); this.ctx.translate(-14, -18 + bounce); this.ctx.rotate(legSwing * Math.PI / 180);
-            this.ctx.fillRect(-7, 0, 14, 38);
-            this.ctx.fillStyle = '#1e3a5f'; this.ctx.fillRect(-9, 35, 18, 10);
+            this.ctx.save();
+            this.ctx.translate(-15, -18 + bounce);
+            this.ctx.rotate(legSwing * Math.PI / 180);
+            this.ctx.fillRect(-8, 0, 16, 42);
+            this.ctx.fillStyle = '#1e3a5f';
+            this.ctx.fillRect(-10, 38, 20, 12);
             this.ctx.restore();
 
             this.ctx.fillStyle = '#0284c7';
-            this.ctx.save(); this.ctx.translate(14, -18 + bounce); this.ctx.rotate(-legSwing * Math.PI / 180);
-            this.ctx.fillRect(-7, 0, 14, 38);
-            this.ctx.fillStyle = '#1e3a5f'; this.ctx.fillRect(-9, 35, 18, 10);
+            this.ctx.save();
+            this.ctx.translate(15, -18 + bounce);
+            this.ctx.rotate(-legSwing * Math.PI / 180);
+            this.ctx.fillRect(-8, 0, 16, 42);
+            this.ctx.fillStyle = '#1e3a5f';
+            this.ctx.fillRect(-10, 38, 20, 12);
             this.ctx.restore();
 
-            // Body
+            // Body (scrubs)
             this.ctx.fillStyle = '#38bdf8';
-            this.ctx.beginPath(); this.ctx.roundRect(-26, -80 + bounce, 52, 65, 10); this.ctx.fill();
-            this.ctx.strokeStyle = '#0c4a6e'; this.ctx.lineWidth = 2;
-            this.ctx.beginPath(); this.ctx.moveTo(-12, -80 + bounce); this.ctx.lineTo(0, -62 + bounce); this.ctx.lineTo(12, -80 + bounce); this.ctx.stroke();
+            this.ctx.beginPath();
+            this.ctx.roundRect(-28, -85 + bounce, 56, 70, 12);
+            this.ctx.fill();
+
+            // V-neck
+            this.ctx.strokeStyle = '#0c4a6e';
+            this.ctx.lineWidth = 2.5;
+            this.ctx.beginPath();
+            this.ctx.moveTo(-14, -85 + bounce);
+            this.ctx.lineTo(0, -65 + bounce);
+            this.ctx.lineTo(14, -85 + bounce);
+            this.ctx.stroke();
 
             // Arms
-            this.ctx.save(); this.ctx.translate(-32, -68 + bounce); this.ctx.rotate(-armSwing * Math.PI / 180);
-            this.ctx.fillStyle = '#38bdf8'; this.ctx.fillRect(-6, 0, 12, 28);
-            this.ctx.fillStyle = '#fcd34d'; this.ctx.fillRect(-5, 25, 10, 22);
+            this.ctx.save();
+            this.ctx.translate(-34, -72 + bounce);
+            this.ctx.rotate(-armSwing * Math.PI / 180);
+            this.ctx.fillStyle = '#38bdf8';
+            this.ctx.fillRect(-7, 0, 14, 32);
+            this.ctx.fillStyle = '#fcd34d';
+            this.ctx.fillRect(-6, 28, 12, 25);
             this.ctx.restore();
 
-            this.ctx.save(); this.ctx.translate(32, -68 + bounce); this.ctx.rotate(armSwing * Math.PI / 180);
-            this.ctx.fillStyle = '#38bdf8'; this.ctx.fillRect(-6, 0, 12, 28);
-            this.ctx.fillStyle = '#fcd34d'; this.ctx.fillRect(-5, 25, 10, 22);
+            this.ctx.save();
+            this.ctx.translate(34, -72 + bounce);
+            this.ctx.rotate(armSwing * Math.PI / 180);
+            this.ctx.fillStyle = '#38bdf8';
+            this.ctx.fillRect(-7, 0, 14, 32);
+            this.ctx.fillStyle = '#fcd34d';
+            this.ctx.fillRect(-6, 28, 12, 25);
             this.ctx.restore();
 
             // Head
             this.ctx.fillStyle = '#fcd34d';
-            this.ctx.beginPath(); this.ctx.arc(0, -100 + bounce, 24, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.beginPath();
+            this.ctx.arc(0, -108 + bounce, 26, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Hair
             this.ctx.fillStyle = '#4a3728';
-            this.ctx.beginPath(); this.ctx.arc(0, -105 + bounce, 24, Math.PI, 0); this.ctx.fill();
+            this.ctx.beginPath();
+            this.ctx.arc(0, -113 + bounce, 26, Math.PI, 0);
+            this.ctx.fill();
 
             // Nurse cap
-            this.ctx.fillStyle = '#fff'; this.ctx.fillRect(-20, -132 + bounce, 40, 14);
-            this.ctx.fillStyle = '#ef4444'; this.ctx.fillRect(-5, -129 + bounce, 10, 10); this.ctx.fillRect(-10, -127 + bounce, 20, 5);
-
-            // Face
             this.ctx.fillStyle = '#fff';
-            this.ctx.beginPath(); this.ctx.ellipse(-9, -102 + bounce, 7, 8, 0, 0, Math.PI * 2); this.ctx.ellipse(9, -102 + bounce, 7, 8, 0, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.fillRect(-22, -142 + bounce, 44, 15);
+            this.ctx.fillStyle = '#ef4444';
+            this.ctx.fillRect(-6, -139 + bounce, 12, 11);
+            this.ctx.fillRect(-11, -136 + bounce, 22, 6);
+
+            // Eyes
+            this.ctx.fillStyle = '#fff';
+            this.ctx.beginPath();
+            this.ctx.ellipse(-10, -110 + bounce, 8, 9, 0, 0, Math.PI * 2);
+            this.ctx.ellipse(10, -110 + bounce, 8, 9, 0, 0, Math.PI * 2);
+            this.ctx.fill();
             this.ctx.fillStyle = '#1e293b';
-            this.ctx.beginPath(); this.ctx.arc(-7, -101 + bounce, 3, 0, Math.PI * 2); this.ctx.arc(11, -101 + bounce, 3, 0, Math.PI * 2); this.ctx.fill();
-            this.ctx.strokeStyle = '#92400e'; this.ctx.lineWidth = 2;
-            this.ctx.beginPath(); this.ctx.arc(0, -93 + bounce, 9, 0.2, Math.PI - 0.2); this.ctx.stroke();
+            this.ctx.beginPath();
+            this.ctx.arc(-8, -109 + bounce, 4, 0, Math.PI * 2);
+            this.ctx.arc(12, -109 + bounce, 4, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Smile
+            this.ctx.strokeStyle = '#92400e';
+            this.ctx.lineWidth = 2.5;
+            this.ctx.beginPath();
+            this.ctx.arc(0, -99 + bounce, 10, 0.2, Math.PI - 0.2);
+            this.ctx.stroke();
 
             // Stethoscope
-            this.ctx.strokeStyle = '#475569'; this.ctx.lineWidth = 3;
-            this.ctx.beginPath(); this.ctx.moveTo(-6, -78 + bounce); this.ctx.quadraticCurveTo(-18, -50 + bounce, 0, -44 + bounce); this.ctx.stroke();
-            this.ctx.fillStyle = '#64748b'; this.ctx.beginPath(); this.ctx.arc(0, -41 + bounce, 7, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.strokeStyle = '#475569';
+            this.ctx.lineWidth = 3.5;
+            this.ctx.beginPath();
+            this.ctx.moveTo(-7, -82 + bounce);
+            this.ctx.quadraticCurveTo(-20, -52 + bounce, 0, -45 + bounce);
+            this.ctx.stroke();
+            this.ctx.fillStyle = '#64748b';
+            this.ctx.beginPath();
+            this.ctx.arc(0, -42 + bounce, 8, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Shield effect
+            if (this.player.shield > 0) {
+                this.ctx.strokeStyle = '#06b6d4';
+                this.ctx.lineWidth = 4;
+                this.ctx.globalAlpha = 0.5 + Math.sin(this.globalTime * 0.01) * 0.3;
+                this.ctx.beginPath();
+                this.ctx.arc(0, -60 + bounce, 70, 0, Math.PI * 2);
+                this.ctx.stroke();
+                this.ctx.globalAlpha = 1;
+            }
         }
 
         this.ctx.restore();
@@ -545,110 +969,270 @@ class AnatomyRush {
 
     drawParticles() {
         this.particles.forEach(p => {
-            this.ctx.globalAlpha = p.life / 35;
+            this.ctx.globalAlpha = p.life / 40;
             this.ctx.fillStyle = p.color;
-            this.ctx.beginPath(); this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); this.ctx.fill();
+            this.ctx.beginPath();
+            this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            this.ctx.fill();
         });
         this.ctx.globalAlpha = 1;
     }
 
     drawHUD() {
-        this.ctx.fillStyle = '#fff'; this.ctx.font = 'bold 40px "Space Grotesk", Arial'; this.ctx.textAlign = 'left';
-        this.ctx.fillText(this.score.toLocaleString(), 30, 55);
-        if (this.multiplier > 1) { this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 26px Arial'; this.ctx.fillText(`x${this.multiplier}`, 30, 88); }
-        this.ctx.fillStyle = '#fbbf24'; this.ctx.textAlign = 'right'; this.ctx.font = 'bold 30px Arial';
-        this.ctx.fillText(`💰 ${this.coins}`, this.width - 30, 55);
-        let hearts = ''; for (let i = 0; i < 3; i++) hearts += i < this.lives ? '❤️' : '🖤';
-        this.ctx.font = '34px Arial'; this.ctx.fillText(hearts, this.width - 30, 100);
-        if (this.streak > 0) { this.ctx.textAlign = 'center'; this.ctx.fillStyle = '#22c55e'; this.ctx.font = 'bold 24px Arial'; this.ctx.fillText(`🔥 ${this.streak} Streak`, this.centerX, 55); }
+        // Score
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = 'bold 44px "Space Grotesk", Arial';
+        this.ctx.textAlign = 'left';
+        this.ctx.fillText(this.score.toLocaleString(), 35, 58);
+
+        // Multiplier
+        if (this.multiplier > 1) {
+            this.ctx.fillStyle = '#fbbf24';
+            this.ctx.font = 'bold 28px Arial';
+            this.ctx.fillText(`x${this.multiplier}`, 35, 92);
+        }
+
+        // Coins
+        this.ctx.fillStyle = '#fbbf24';
+        this.ctx.textAlign = 'right';
+        this.ctx.font = 'bold 32px Arial';
+        this.ctx.fillText(`💰 ${this.coins}`, this.width - 35, 58);
+
+        // Lives
+        let hearts = '';
+        for (let i = 0; i < Math.min(this.lives, 5); i++) hearts += '❤️';
+        for (let i = this.lives; i < 3; i++) hearts += '🖤';
+        this.ctx.font = '36px Arial';
+        this.ctx.fillText(hearts, this.width - 35, 105);
+
+        // Streak
+        if (this.streak > 0) {
+            this.ctx.textAlign = 'center';
+            this.ctx.fillStyle = '#22c55e';
+            this.ctx.font = 'bold 26px Arial';
+            this.ctx.fillText(`🔥 ${this.streak} Streak`, this.centerX, 58);
+        }
+
+        // Active powerups
+        let py = 140;
+        if (this.player.shield > 0) {
+            this.ctx.textAlign = 'right';
+            this.ctx.fillStyle = '#06b6d4';
+            this.ctx.font = '22px Arial';
+            this.ctx.fillText(`🛡️ ${Math.ceil(this.player.shield / 60)}s`, this.width - 35, py);
+            py += 30;
+        }
+        if (this.player.magnet > 0) {
+            this.ctx.textAlign = 'right';
+            this.ctx.fillStyle = '#a855f7';
+            this.ctx.font = '22px Arial';
+            this.ctx.fillText(`🧲 ${Math.ceil(this.player.magnet / 60)}s`, this.width - 35, py);
+            py += 30;
+        }
+        if (this.player.speedBoost > 0) {
+            this.ctx.textAlign = 'right';
+            this.ctx.fillStyle = '#22c55e';
+            this.ctx.font = '22px Arial';
+            this.ctx.fillText(`⚡ ${Math.ceil(this.player.speedBoost / 60)}s`, this.width - 35, py);
+        }
     }
 
     drawMenu() {
-        this.ctx.fillStyle = 'rgba(0,0,0,0.85)'; this.ctx.fillRect(0, 0, this.width, this.height);
-        this.ctx.shadowColor = '#d946ef'; this.ctx.shadowBlur = 60; this.ctx.fillStyle = '#d946ef';
-        this.ctx.font = `bold ${Math.min(58, this.width * 0.055)}px "Space Grotesk", Arial`; this.ctx.textAlign = 'center';
-        this.ctx.fillText('🏃 ANATOMY RUSH', this.centerX, this.height * 0.18); this.ctx.shadowBlur = 0;
-        this.ctx.fillStyle = '#94a3b8'; this.ctx.font = '20px Arial';
-        this.ctx.fillText('Master nursing concepts through gameplay', this.centerX, this.height * 0.26);
-        this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 28px Arial';
-        this.ctx.fillText(`🏆 Best: ${this.highScore.toLocaleString()}`, this.centerX, this.height * 0.4);
-        this.ctx.fillText(`💰 Coins: ${this.totalCoins.toLocaleString()}`, this.centerX, this.height * 0.49);
-        this.ctx.fillStyle = '#fff'; this.ctx.font = '17px Arial';
-        this.ctx.fillText('← → Switch Lanes  |  SPACE/↑ Jump  |  ↓ Slide', this.centerX, this.height * 0.64);
-        this.ctx.fillText('Answer questions to earn bonus coins!', this.centerX, this.height * 0.71);
+        this.ctx.fillStyle = 'rgba(0,0,0,0.88)';
+        this.ctx.fillRect(0, 0, this.width, this.height);
+
+        // Title
+        this.ctx.shadowColor = '#d946ef';
+        this.ctx.shadowBlur = 70;
+        this.ctx.fillStyle = '#d946ef';
+        this.ctx.font = `bold ${Math.min(62, this.width * 0.055)}px "Space Grotesk", Arial`;
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('🏃 ANATOMY RUSH', this.centerX, this.height * 0.16);
+        this.ctx.shadowBlur = 0;
+
+        // Subtitle
+        this.ctx.fillStyle = '#94a3b8';
+        this.ctx.font = '22px Arial';
+        this.ctx.fillText('Master nursing concepts through gameplay', this.centerX, this.height * 0.24);
+
+        // Stats
+        this.ctx.fillStyle = '#fbbf24';
+        this.ctx.font = 'bold 30px Arial';
+        this.ctx.fillText(`🏆 Best: ${this.highScore.toLocaleString()}`, this.centerX, this.height * 0.38);
+        this.ctx.fillText(`💰 Coins: ${this.totalCoins.toLocaleString()}`, this.centerX, this.height * 0.47);
+
+        // Controls
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = '18px Arial';
+        this.ctx.fillText('← → Switch Lanes  |  SPACE/↑ Jump  |  ↓ Slide', this.centerX, this.height * 0.6);
+
+        // Features
+        this.ctx.fillStyle = '#a855f7';
+        this.ctx.font = '16px Arial';
+        this.ctx.fillText('🛡️ Shield  🧲 Magnet  ⚡ Speed  ❤️ Lives  |  Collect power-ups!', this.centerX, this.height * 0.68);
+
+        // Start prompt
         const pulse = 0.6 + Math.sin(this.globalTime * 0.005) * 0.4;
-        this.ctx.globalAlpha = pulse; this.ctx.fillStyle = '#06b6d4'; this.ctx.font = 'bold 30px Arial';
-        this.ctx.fillText('[ TAP OR PRESS SPACE ]', this.centerX, this.height * 0.88); this.ctx.globalAlpha = 1;
+        this.ctx.globalAlpha = pulse;
+        this.ctx.fillStyle = '#06b6d4';
+        this.ctx.font = 'bold 32px Arial';
+        this.ctx.fillText('[ TAP OR PRESS SPACE ]', this.centerX, this.height * 0.86);
+        this.ctx.globalAlpha = 1;
     }
 
     drawQuestion() {
+        // Timer countdown
         if (this.questionResult === null) {
             this.questionTimer--;
             if (this.questionTimer <= 0) {
-                this.questionResult = 'timeout'; this.lives--; this.streak = 0; this.multiplier = 1; this.shake = 12; this.flash = { color: '#ef4444', timer: 12 };
+                this.questionResult = 'timeout';
+                this.lives--;
+                this.streak = 0;
+                this.multiplier = 1;
+                this.shake = 12;
+                this.flash = { color: '#ef4444', timer: 15 };
                 if (this.lives <= 0) setTimeout(() => this.gameOver(), 800);
-                else setTimeout(() => { this.state = 'playing'; this.currentQuestion = null; }, 900);
+                else setTimeout(() => { this.state = 'playing'; this.currentQuestion = null; }, 1000);
             }
         }
-        this.ctx.fillStyle = 'rgba(5,5,20,0.96)'; this.ctx.fillRect(0, 0, this.width, this.height);
+
+        this.ctx.fillStyle = 'rgba(5,5,20,0.97)';
+        this.ctx.fillRect(0, 0, this.width, this.height);
         if (!this.currentQuestion) return;
 
+        // Timer bar
         const pct = this.questionTimer / (this.questionTimeLimit * 60);
         const tc = pct > 0.5 ? '#22c55e' : pct > 0.25 ? '#f59e0b' : '#ef4444';
-        this.ctx.fillStyle = '#1f2937'; this.ctx.fillRect(60, 25, this.width - 120, 24);
-        this.ctx.fillStyle = tc; this.ctx.fillRect(60, 25, (this.width - 120) * pct, 24);
-        this.ctx.fillStyle = '#fff'; this.ctx.font = 'bold 18px Arial'; this.ctx.textAlign = 'center';
-        this.ctx.fillText(`${Math.ceil(this.questionTimer / 60)}s`, this.centerX, 43);
+        this.ctx.fillStyle = '#1f2937';
+        this.ctx.fillRect(60, 22, this.width - 120, 26);
+        this.ctx.fillStyle = tc;
+        this.ctx.fillRect(60, 22, (this.width - 120) * pct, 26);
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = 'bold 18px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(`${Math.ceil(this.questionTimer / 60)}s`, this.centerX, 42);
 
-        this.ctx.font = 'bold 19px Arial';
+        // Question text
+        this.ctx.font = 'bold 20px Arial';
         const words = this.currentQuestion.text.split(' ');
-        let line = '', y = this.height * 0.13, maxW = this.width * 0.82;
+        let line = '';
+        let y = this.height * 0.12;
+        const maxW = this.width * 0.85;
+
         words.forEach(w => {
             const test = line + w + ' ';
-            if (this.ctx.measureText(test).width > maxW && line) { this.ctx.fillText(line.trim(), this.centerX, y); line = w + ' '; y += 28; }
-            else line = test;
+            if (this.ctx.measureText(test).width > maxW && line) {
+                this.ctx.fillText(line.trim(), this.centerX, y);
+                line = w + ' ';
+                y += 30;
+            } else line = test;
         });
         this.ctx.fillText(line.trim(), this.centerX, y);
 
-        const startY = this.height * 0.32, optH = 55, gap = 14, margin = this.width * 0.08;
+        // Options
+        const startY = this.height * 0.3;
+        const optH = 58;
+        const gap = 16;
+        const margin = this.width * 0.06;
+
         this.currentQuestion.options.forEach((opt, i) => {
             const oY = startY + i * (optH + gap);
-            let bg = '#1e1e38', border = 'rgba(139, 92, 246, 0.3)';
+            let bg = '#1e1e3d';
+            let border = 'rgba(139, 92, 246, 0.35)';
+
             if (this.questionResult) {
-                if (i === this.selectedAnswer) { bg = this.questionResult === 'correct' ? '#22c55e' : '#ef4444'; border = bg; }
-                if (opt === this.currentQuestion.correct && this.questionResult !== 'correct') { bg = '#22c55e'; border = '#22c55e'; }
+                if (i === this.selectedAnswer) {
+                    bg = this.questionResult === 'correct' ? '#22c55e' : '#ef4444';
+                    border = bg;
+                }
+                if (opt === this.currentQuestion.correct && this.questionResult !== 'correct') {
+                    bg = '#22c55e';
+                    border = '#22c55e';
+                }
             }
-            this.ctx.fillStyle = bg; this.ctx.beginPath(); this.ctx.roundRect(margin, oY, this.width - margin * 2, optH, 12); this.ctx.fill();
-            this.ctx.strokeStyle = border; this.ctx.lineWidth = 2; this.ctx.stroke();
-            this.ctx.fillStyle = '#fff'; this.ctx.font = '16px Arial'; this.ctx.textAlign = 'left';
+
+            this.ctx.fillStyle = bg;
+            this.ctx.beginPath();
+            this.ctx.roundRect(margin, oY, this.width - margin * 2, optH, 14);
+            this.ctx.fill();
+            this.ctx.strokeStyle = border;
+            this.ctx.lineWidth = 2.5;
+            this.ctx.stroke();
+
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = '17px Arial';
+            this.ctx.textAlign = 'left';
             let text = `${i + 1}. ${opt}`;
-            const maxT = this.width - margin * 2 - 35;
-            while (this.ctx.measureText(text).width > maxT && text.length > 12) text = text.slice(0, -4) + '...';
-            this.ctx.fillText(text, margin + 18, oY + 35);
+            const maxT = this.width - margin * 2 - 40;
+            while (this.ctx.measureText(text).width > maxT && text.length > 15) {
+                text = text.slice(0, -4) + '...';
+            }
+            this.ctx.fillText(text, margin + 20, oY + 37);
         });
 
+        // Result
         if (this.questionResult) {
-            this.ctx.textAlign = 'center'; this.ctx.font = 'bold 34px Arial';
-            if (this.questionResult === 'correct') { this.ctx.fillStyle = '#22c55e'; this.ctx.fillText(`✓ CORRECT! +${15 * this.multiplier} coins`, this.centerX, this.height - 55); }
-            else if (this.questionResult === 'timeout') { this.ctx.fillStyle = '#ef4444'; this.ctx.fillText('⏱️ TIME UP!', this.centerX, this.height - 55); }
-            else { this.ctx.fillStyle = '#ef4444'; this.ctx.fillText('✗ WRONG!', this.centerX, this.height - 55); }
+            this.ctx.textAlign = 'center';
+            this.ctx.font = 'bold 38px Arial';
+            if (this.questionResult === 'correct') {
+                this.ctx.fillStyle = '#22c55e';
+                this.ctx.fillText(`✓ CORRECT! +${20 * this.multiplier} coins`, this.centerX, this.height - 50);
+            } else if (this.questionResult === 'timeout') {
+                this.ctx.fillStyle = '#ef4444';
+                this.ctx.fillText('⏱️ TIME UP!', this.centerX, this.height - 50);
+            } else {
+                this.ctx.fillStyle = '#ef4444';
+                this.ctx.fillText('✗ WRONG!', this.centerX, this.height - 50);
+            }
         }
     }
 
     drawGameOver() {
-        this.ctx.fillStyle = 'rgba(0,0,0,0.92)'; this.ctx.fillRect(0, 0, this.width, this.height);
-        this.ctx.shadowColor = '#ef4444'; this.ctx.shadowBlur = 60; this.ctx.fillStyle = '#ef4444';
-        this.ctx.font = `bold ${Math.min(65, this.width * 0.065)}px "Space Grotesk", Arial`; this.ctx.textAlign = 'center';
-        this.ctx.fillText('GAME OVER', this.centerX, this.height * 0.22); this.ctx.shadowBlur = 0;
-        this.ctx.fillStyle = '#fff'; this.ctx.font = 'bold 40px Arial';
-        this.ctx.fillText(`Score: ${this.score.toLocaleString()}`, this.centerX, this.height * 0.38);
-        if (this.score >= this.highScore) { this.ctx.fillStyle = '#fbbf24'; this.ctx.fillText('🏆 NEW BEST! 🏆', this.centerX, this.height * 0.5); }
-        else { this.ctx.fillStyle = '#888'; this.ctx.font = '26px Arial'; this.ctx.fillText(`Best: ${this.highScore.toLocaleString()}`, this.centerX, this.height * 0.5); }
-        this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 30px Arial'; this.ctx.fillText(`💰 ${this.coins} coins earned`, this.centerX, this.height * 0.62);
-        this.ctx.fillStyle = '#22c55e'; this.ctx.font = '24px Arial'; this.ctx.fillText(`+${Math.floor(this.score / 10)} XP`, this.centerX, this.height * 0.71);
+        this.ctx.fillStyle = 'rgba(0,0,0,0.93)';
+        this.ctx.fillRect(0, 0, this.width, this.height);
+
+        // Title
+        this.ctx.shadowColor = '#ef4444';
+        this.ctx.shadowBlur = 70;
+        this.ctx.fillStyle = '#ef4444';
+        this.ctx.font = `bold ${Math.min(70, this.width * 0.065)}px "Space Grotesk", Arial`;
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('GAME OVER', this.centerX, this.height * 0.2);
+        this.ctx.shadowBlur = 0;
+
+        // Score
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = 'bold 44px Arial';
+        this.ctx.fillText(`Score: ${this.score.toLocaleString()}`, this.centerX, this.height * 0.36);
+
+        // High score
+        if (this.score >= this.highScore) {
+            this.ctx.fillStyle = '#fbbf24';
+            this.ctx.font = 'bold 38px Arial';
+            this.ctx.fillText('🏆 NEW BEST! 🏆', this.centerX, this.height * 0.48);
+        } else {
+            this.ctx.fillStyle = '#888';
+            this.ctx.font = '28px Arial';
+            this.ctx.fillText(`Best: ${this.highScore.toLocaleString()}`, this.centerX, this.height * 0.48);
+        }
+
+        // Coins
+        this.ctx.fillStyle = '#fbbf24';
+        this.ctx.font = 'bold 32px Arial';
+        this.ctx.fillText(`💰 ${this.coins} coins earned`, this.centerX, this.height * 0.6);
+
+        // XP
+        this.ctx.fillStyle = '#22c55e';
+        this.ctx.font = '26px Arial';
+        this.ctx.fillText(`+${Math.floor(this.score / 10)} XP`, this.centerX, this.height * 0.7);
+
+        // Retry prompt
         const pulse = 0.6 + Math.sin(this.globalTime * 0.005) * 0.4;
-        this.ctx.globalAlpha = pulse; this.ctx.fillStyle = '#06b6d4'; this.ctx.font = 'bold 28px Arial';
-        this.ctx.fillText('[ PRESS SPACE TO RETRY ]', this.centerX, this.height * 0.88); this.ctx.globalAlpha = 1;
+        this.ctx.globalAlpha = pulse;
+        this.ctx.fillStyle = '#06b6d4';
+        this.ctx.font = 'bold 30px Arial';
+        this.ctx.fillText('[ PRESS SPACE TO RETRY ]', this.centerX, this.height * 0.87);
+        this.ctx.globalAlpha = 1;
     }
 
     loop(ts) {
@@ -659,17 +1243,40 @@ class AnatomyRush {
         if (this.running) requestAnimationFrame(t => this.loop(t));
     }
 
-    start() { if (!this.running) { this.running = true; this.lastTime = performance.now(); requestAnimationFrame(t => this.loop(t)); } }
-    stop() { this.running = false; if (this._kh) document.removeEventListener('keydown', this._kh); }
+    start() {
+        if (!this.running) {
+            this.running = true;
+            this.lastTime = performance.now();
+            requestAnimationFrame(t => this.loop(t));
+        }
+    }
+
+    stop() {
+        this.running = false;
+        if (this._kh) document.removeEventListener('keydown', this._kh);
+    }
 }
 
+// Global instance
 let anatomyRunner = null;
+
 function initGame() {
-    const c = document.getElementById('gameCanvas');
-    if (!c) return;
+    const canvas = document.getElementById('gameCanvas');
+    if (!canvas) return;
+
     if (anatomyRunner) anatomyRunner.stop();
-    anatomyRunner = new AnatomyRush(c);
+
+    anatomyRunner = new AnatomyRush(canvas);
     anatomyRunner.start();
 }
-function stopGame() { if (anatomyRunner) { anatomyRunner.stop(); anatomyRunner = null; } }
-window.addEventListener('resize', () => { if (anatomyRunner) anatomyRunner.resize(); });
+
+function stopGame() {
+    if (anatomyRunner) {
+        anatomyRunner.stop();
+        anatomyRunner = null;
+    }
+}
+
+window.addEventListener('resize', () => {
+    if (anatomyRunner) anatomyRunner.resize();
+});
