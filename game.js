@@ -1,5 +1,67 @@
 // MSK REVIEW RUNNER - Study Game 2025
 // Musculoskeletal nursing review game with questions
+
+const quizQuestionsBase = [
+    { q: "A nurse is reinforcing preoperative teaching for a client scheduled for arthroscopy of the knee. Which statements should the nurse include? (Select all that apply)", category: "diagnostics", type: "sata", options: ["Apply ice packs to the area for the first 24 hours", "Keep the leg in a dependent position after surgery", "Perform isometric exercises as prescribed", "Avoid placing a cast on the surgical site", "Monitor the incision for signs of infection"], correctAnswers: ["Apply ice packs to the area for the first 24 hours", "Perform isometric exercises as prescribed", "Monitor the incision for signs of infection"], explanation: "Post-arthroscopy care includes ice packs for 24 hours, isometric exercises, and infection monitoring." },
+    { q: "A nurse is preparing a client for a bone scan. Which instruction should the nurse provide?", category: "diagnostics", options: ["You will receive the radioactive injection when scanning begins", "You must remain NPO for 24 hours before the test", "You should empty your bladder before the procedure", "Radioactive precautions are needed for 72 hours after"], correctAnswer: "You should empty your bladder before the procedure", explanation: "Empty bladder promotes visualization of pelvic bones." },
+    { q: "A client asks about DEXA scan results showing a T-score of -2.8. The nurse explains this indicates:", category: "diagnostics", options: ["Normal bone density", "Osteopenia", "Osteoporosis", "Severe osteomalacia"], correctAnswer: "Osteoporosis", explanation: "T-score <= -2.5 indicates osteoporosis." },
+    { q: "Which client would the nurse identify as having a contraindication for electromyography (EMG)?", category: "diagnostics", options: ["A client taking metformin", "A client taking warfarin for atrial fibrillation", "A client with allergies", "A client who drinks coffee"], correctAnswer: "A client taking warfarin for atrial fibrillation", explanation: "Anticoagulants are a contraindication for EMG needles." },
+    { q: "A nurse is reinforcing teaching about DEXA scans. Which information should the nurse include? (Select all that apply)", category: "diagnostics", type: "sata", options: ["Requires contrast", "Hip and spine are usual areas", "Detects osteoarthritis", "Bone pain indicates need", "Females baseline 40-49"], correctAnswers: ["Hip and spine are usual areas", "Bone pain can indicate a need for a scan", "Females should have a baseline scan during ages 40-49 years"], explanation: "DEXA scans hip/spine for density. No contrast." },
+    { q: "A client is scheduled for EMG testing. Which pre-procedure instruction should the nurse provide?", category: "diagnostics", options: ["Fast for 12 hours", "Avoid smoking and caffeine for at least 3 hours", "Take muscle relaxant", "Expect sedation"], correctAnswer: "Avoid smoking and caffeine for at least 3 hours", explanation: "Avoid stimulants before EMG." },
+    { q: "A nurse is caring for a client post-arthroscopy. Which nursing action is appropriate?", category: "diagnostics", options: ["Warm compresses", "Monitor neurovascular status every hour", "Immediate weight bearing", "Dependent position"], correctAnswer: "Monitor neurovascular status every hour", explanation: "Neurovascular checks are priority." },
+    { q: "Following a gallium scan, which instruction should the nurse reinforce?", category: "diagnostics", options: ["Avoid pregnant women", "Increase fluid intake", "Monitor urine color", "Bed rest"], correctAnswer: "Increase fluid intake", explanation: "Fluids help excrete the radioisotope." },
+    { q: "A client scheduled for MRI reports having a pacemaker. What is the priority action?", category: "diagnostics", options: ["Explain procedure", "Notify provider as this is a contraindication for MRI", "Administer sedation", "Remove jewelry"], correctAnswer: "Notify the provider as this is a contraindication for MRI", explanation: "MRI is contraindicated with pacemakers." },
+    { q: "Which finding suggests a need for CT scan rather than X-ray for a fracture?", category: "diagnostics", options: ["Wrist fracture", "Possible hip or pelvic fracture", "Ankle sprain", "Finger fracture"], correctAnswer: "Possible hip or pelvic fracture", explanation: "CT is better for complex pelvic fractures." },
+    { q: "A nurse is collecting data from a client scheduled for knee arthroplasty. Which findings should the nurse expect? (Select all that apply)", category: "arthroplasty", type: "sata", options: ["Pain when bearing weight", "Joint crepitus", "Skin reddened", "Swelling of the affected joint", "Limited joint motion"], correctAnswers: ["Pain when bearing weight", "Joint crepitus", "Swelling of the affected joint", "Limited joint motion"], explanation: "Expect pain, crepitus, swelling, and limited motion." },
+    { q: "Which finding in a client's history is a contraindication for total joint arthroplasty?", category: "arthroplasty", options: ["Age 55 years", "History of cancer", "Previous joint replacement", "Bronchitis 2 weeks ago"], correctAnswer: "Bronchitis 2 weeks ago", explanation: "Recent infection is a contraindication due to risk of seeding." },
+    { q: "A nurse is caring for a client following a total knee replacement. Which actions should the nurse take? (Select all that apply)", category: "arthroplasty", type: "sata", options: ["Check CPM settings", "Palpate dorsal pedal pulses", "Place pillow behind knee", "Request PT referral", "Apply heat"], correctAnswers: ["Check CPM settings", "Palpate dorsal pedal pulses", "Request a referral for outpatient physical therapy"], explanation: "Check CPM, pulses, and PT. No pillow behind knee." },
+    { q: "Which position prevents hip dislocation after total hip arthroplasty?", category: "arthroplasty", options: ["Legs adducted past midline", "Legs abducted with wedge pillow between them", "Hip flexion > 90 degrees", "Legs crossed"], correctAnswer: "Legs abducted with wedge pillow between them", explanation: "Maintain abduction with wedge pillow." },
+    { q: "A nurse is providing postoperative care for a client who has a total hip arthroplasty. Which actions should the nurse take? (Select all that apply)", category: "arthroplasty", type: "sata", options: ["Provide raised toilet seat", "Low reclining chair", "Roll onto operative hip", "Use abductor pillow", "Use incentive spirometer"], correctAnswers: ["Provide a raised toilet seat for the client", "Use an abductor pillow when turning the client", "Instruct the client on the use of an incentive spirometer"], explanation: "Raised toilet seat, abductor pillow, incentive spirometer." },
+    { q: "A client 2 days post-hip replacement reports sudden severe hip pain and heard a 'pop.' The leg is shortened. What is suspected?", category: "arthroplasty", options: ["DVT", "Hip dislocation", "Fat embolism", "Infection"], correctAnswer: "Hip dislocation", explanation: "Pop, pain, shortening, rotation = dislocation." },
+    { q: "Which instruction should the nurse reinforce for discharge after total hip arthroplasty? (Select all that apply)", category: "arthroplasty", type: "sata", options: ["Calf exercises every 2 hours", "Turn toes inward", "Bend at waist", "Use raised toilet seat", "Use long-handled shoehorn"], correctAnswers: ["Perform calf and leg exercises every 2 hours", "Use a raised toilet seat", "Use a long-handled shoehorn"], explanation: "Exercises, raised seat, shoehorn. No bending >90 degrees." },
+    { q: "DVT prophylaxis after total knee replacement includes which interventions?", category: "arthroplasty", options: ["Strict bed rest", "Anticoagulants, compression devices, and early ambulation", "Aspirin only", "Dependent position"], correctAnswer: "Anticoagulants, compression devices, and early ambulation", explanation: "Combination therapy is required." },
+    { q: "A client asks why they must use Hibiclens soap before joint replacement surgery. The nurse explains:", category: "arthroplasty", options: ["Relaxation", "It reduces skin bacteria to prevent infection", "Removes dead skin", "Decreases pain"], correctAnswer: "'It reduces skin bacteria to prevent infection'", explanation: "Reduces bacterial count." },
+    { q: "Which client statement indicates understanding of discharge teaching after total knee arthroplasty?", category: "arthroplasty", options: ["I can kneel to garden", "I should avoid deep-knee bends indefinitely", "Stop anticoagulants in 1 week", "No infection worry"], correctAnswer: "'I should avoid deep-knee bends indefinitely'", explanation: "Deep knee bends put stress on the prosthesis." },
+    { q: "Which is the priority assessment immediately after total joint arthroplasty?", category: "arthroplasty", options: ["Pain level", "Neurovascular status of the operative extremity", "Mobility", "Precautions"], correctAnswer: "Neurovascular status of the operative extremity", explanation: "Circulation is priority." },
+    { q: "A nurse notes bloody drainage on hip dressing. Hgb is 8.5 (down from 11.2). What should the nurse anticipate?", category: "arthroplasty", options: ["Surgical exploration", "Antifibrinolytics", "Autologous blood transfusion", "IV fluids only"], correctAnswer: "Autologous blood transfusion", explanation: "Significant blood loss/drop in Hgb may require transfusion." },
+    { q: "At the scene of a traumatic amputation, which action should the nurse take first?", category: "amputations", options: ["Locate extremity", "Apply direct pressure to control hemorrhage", "Call EMS", "Ice the part"], correctAnswer: "Apply direct pressure to control hemorrhage", explanation: "Hemorrhage control is life-saving priority." },
+    { q: "A client with a below-knee amputation reports burning pain in the 'missing' foot. This is:", category: "amputations", options: ["Incisional pain", "Phantom limb pain that can be treated", "Infection", "Psychological disturbance"], correctAnswer: "Phantom limb pain that can be treated", explanation: "Phantom pain is real and treatable." },
+    { q: "Which intervention helps prevent hip flexion contractures after above-knee amputation?", category: "amputations", options: ["Pillows under limb", "Sitting all day", "Lie prone for 20-30 minutes several times daily", "Elevate limb indefinitely"], correctAnswer: "Have the client lie prone for 20-30 minutes several times daily", explanation: "Prone position stretches the hip flexors." },
+    { q: "Which technique is correct for residual limb wrapping?", category: "amputations", options: ["Circular from proximal", "Figure-eight to prevent restriction", "Tight bandaging", "Apply once daily"], correctAnswer: "Figure-eight wrapping to prevent blood flow restriction", explanation: "Figure-eight shapes the limb without restriction." },
+    { q: "Which nursing actions are appropriate post-amputation? (Select all that apply)", category: "amputations", type: "sata", options: ["Gabapentin for phantom pain", "Delay ROM", "Record drainage", "Avoid prone", "Compare pulses"], correctAnswers: ["Administer gabapentin for phantom limb pain", "Record amount, color, and odor of wound drainage", "Compare pulses in the affected extremity with the other extremity"], explanation: "Gabapentin, drainage monitoring, pulse checks." },
+    { q: "A client with a new amputation refuses to look at the limb. Therapeutic response?", category: "amputations", options: ["You need to look", "I understand this is difficult. Would you like to talk about your feelings?", "You'll get used to it", "Should I cover it?"], correctAnswer: "'I understand this is difficult. Would you like to talk about your feelings?'", explanation: "Acknowledge feelings." },
+    { q: "Which team member fits the prosthesis?", category: "amputations", options: ["PT", "OT", "Certified prosthetic orthotist", "Nurse"], correctAnswer: "Certified prosthetic orthotist", explanation: "Prosthetist fits the device." },
+    { q: "When caring for a severed extremity, the nurse should:", category: "amputations", options: ["Place on ice directly", "Wrap in dry sterile gauze, Place in sealed bag, then in ice water", "Submerge in saline", "Keep warm"], correctAnswer: "Wrap in dry sterile gauze, place in sealed bag, then in ice water", explanation: "Dry gauze -> Bag -> Ice water." },
+    { q: "Which finding 3 days post-amputation requires immediate notification?", category: "amputations", options: ["Phantom sensation", "Temperature 101.2°F with purulent drainage", "Mild discomfort", "Sadness"], correctAnswer: "Temperature 101.2°F (38.4°C) with purulent drainage from the incision", explanation: "Signs of infection." },
+    { q: "Which pain management is used for phantom limb pain? (Select all that apply)", category: "amputations", type: "sata", options: ["Gabapentin", "TENS", "Opioids first-line", "Mirror therapy", "Massage"], correctAnswers: ["Gabapentin (Neurontin)", "TENS (transcutaneous electrical nerve stimulation)", "Mirror therapy", "Massage of the residual limb"], explanation: "Gabapentin, TENS, mirror therapy, massage." },
+    { q: "Which clients have risk factors for osteoporosis? (Select all that apply)", category: "osteoporosis", type: "sata", options: ["Prednisone 1 month", "Jogging", "Phenytoin 20 years", "Furosemide 15 years", "Smoking 5 years"], correctAnswers: ["A 45-year-old client who has taken phenytoin for 20 years", "A 65-year-old client who has taken furosemide for 15 years", "A 50-year-old client who has smoked tobacco for 5 years"], explanation: "Long term phenytoin, furosemide, and smoking." },
+    { q: "Which food is calcium-rich?", category: "osteoporosis", options: ["White bread", "Broccoli", "Apples", "Brown rice"], correctAnswer: "Broccoli", explanation: "Dark green leafy vegetables." },
+    { q: "Which findings indicate osteoporosis risk? (Select all that apply)", category: "osteoporosis", type: "sata", options: ["3 alcoholic drinks/day", "Height loss 2 inches", "BMI 28", "Hyperthyroidism", "Age < 45"], correctAnswers: ["History of consuming 3 alcoholic beverages daily", "Loss of height of 2 inches (5.1 cm)", "History of hyperthyroidism"], explanation: "Alcohol, height loss, hyperthyroidism." },
+    { q: "Home safety for osteoporosis includes: (Select all that apply)", category: "osteoporosis", type: "sata", options: ["Remove rugs", "Use assistive devices", "Remove clutter", "Soft shoes", "Lighting"], correctAnswers: ["Remove throw rugs in walkways", "Use prescribed assistive devices", "Remove clutter from the environment", "Maintain lighting of doorway areas"], explanation: "Prevent falls. No soft shoes." },
+    { q: "Instruction for alendronate (Fosamax)?", category: "osteoporosis", options: ["With food", "With 8 oz water, upright 30 min", "At bedtime", "Crush if needed"], correctAnswer: "Take with 8 oz water and remain upright for 30 minutes", explanation: "Prevent esophageal irritation." },
+    { q: "Recommended exercise for osteoporosis?", category: "osteoporosis", options: ["Swimming", "Weight-bearing exercises like walking", "Bed rest", "High impact"], correctAnswer: "Weight-bearing exercises like walking", explanation: "Weight bearing builds bone." },
+    { q: "Administering raloxifene, report immediately:", category: "osteoporosis", options: ["Hot flashes", "Calf pain and tenderness", "Mild discomfort", "Insomnia"], correctAnswer: "Calf pain and tenderness", explanation: "DVT risk." },
+    { q: "Bisphosphonate dental consideration?", category: "osteoporosis", options: ["No cleaning", "Checkup before starting", "Extract teeth", "None"], correctAnswer: "Dental examinations before starting therapy to prevent osteonecrosis of the jaw", explanation: "Risk of osteonecrosis of jaw." },
+    { q: "Position after vertebroplasty?", category: "osteoporosis", options: ["Prone", "Supine for 1-2 hours", "High Fowler", "Lateral"], correctAnswer: "Supine for 1-2 hours", explanation: "Supine to compress puncture site." },
+    { q: "Calcium supplement administration?", category: "osteoporosis", options: ["All at once", "Divided doses with food/water", "Empty stomach", "No Vitamin D"], correctAnswer: "Take with food in divided doses with water", explanation: "Divided doses absorb better." },
+    { q: "Report finding with teriparatide (Forteo)?", category: "osteoporosis", options: ["Previous radiation therapy", "Cramping", "Calcium supplements", "Postmenopausal"], correctAnswer: "Previous radiation therapy to bones", explanation: "Risk of osteosarcoma." },
+    { q: "Calcitonin nasal spray action?", category: "osteoporosis", options: ["Increases formation", "Decreases resorption by inhibiting osteoclasts", "Replaces estrogen", "For hypocalcemia only"], correctAnswer: "'This medication decreases bone resorption by inhibiting osteoclasts'", explanation: "Inhibits osteoclasts." },
+    { q: "Findings of compartment syndrome? (Select all that apply)", category: "trauma", type: "sata", options: ["Pain 10/10 with passive movement", "Capillary refill 2s", "Hard swollen muscle", "Tingling", "Pulses present"], correctAnswers: ["Pain of 10/10 when the affected foot is passively moved", "Hard, swollen muscle on the affected leg", "Tingling sensation on the affected foot"], explanation: "Pain, hardness, tingling." },
+    { q: "Fracture with bone fragmenting into pieces?", category: "trauma", options: ["Oblique", "Comminuted", "Greenstick", "Spiral"], correctAnswer: "Comminuted fracture", explanation: "Comminuted means fragmented." },
+    { q: "Cast pain unrelieved by meds? Priority?", category: "trauma", options: ["More meds", "Notify provider immediately", "Elevate", "Ice"], correctAnswer: "Notify the provider immediately", explanation: "Sign of compartment syndrome." },
+    { q: "Understanding cast care?", category: "trauma", options: ["Coat hanger", "Keep dry", "Tight is good", "Powder"], correctAnswer: "'I should keep the cast dry'", explanation: "Keep casts dry." },
+    { q: "Skeletal traction fact?", category: "trauma", options: ["Light weights", "Remove for repositioning", "Pins in bone, heavier weights", "For spasm only"], correctAnswer: "Pins are inserted into bone and can use 15-30 pound weights", explanation: "Pins in bone allow heavier weights." },
+    { q: "Care for skeletal traction weights?", category: "trauma", options: ["Remove to reposition", "Hang freely at all times", "Add weight for pain", "Rest on bed"], correctAnswer: "Keep weights hanging freely at all times", explanation: "Weights must hang free." },
+    { q: "Early sign of fat embolism?", category: "trauma", options: ["Petechiae", "Dyspnea with decreased O2 sat", "Resp failure", "Arrest"], correctAnswer: "Dyspnea with decreased oxygen saturation", explanation: "Hypoxia/dyspnea is early. Petechiae is late." },
+    { q: "Fat embolism manifestation in femur fracture?", category: "trauma", options: ["Pain", "Petechial rash on chest with resp distress", "Swelling", "Cool extremity"], correctAnswer: "Petechial rash on the chest with respiratory distress", explanation: "Petechial rash on chest is classic." },
+    { q: "Pin care for external fixation?", category: "trauma", options: ["Same swab all pins", "One swab per pin with solution", "Remove crusting", "Ointment"], correctAnswer: "Using one cotton swab per pin with prescribed solution", explanation: "Prevent cross contamination." },
+    { q: "External fixation discharge understanding?", category: "trauma", options: ["White drainage ok", "Sterile water only", "Tighten pins", "Report increased drainage or loosening"], correctAnswer: "'I will report any increased drainage or loosening of pins'", explanation: "Report signs of infection or failure." },
+    { q: "Osteomyelitis complication?", category: "trauma", options: ["Hypoglycemia", "Need for long-term antibiotics (4-6 weeks)", "Immediate resolution", "Weight gain"], correctAnswer: "Need for long-term antibiotic therapy (4-6 weeks)", explanation: "Antibiotics for 4-6 weeks." },
+    { q: "The 5 P's? (Select all that apply)", category: "trauma", type: "sata", options: ["Pain", "Pressure", "Paresthesia", "Pallor", "Pulselessness", "Paralysis"], correctAnswers: ["Pain", "Paresthesia", "Pallor", "Pulselessness", "Paralysis"], explanation: "Pain, Pallor, Paresthesia, Pulselessness, Paralysis." },
+    { q: "Buck's traction purpose?", category: "trauma", options: ["Permanent stabilization", "Decrease muscle spasms/immobilize", "Replace surgery", "Weight bearing"], correctAnswer: "Decrease muscle spasms and immobilize before surgery", explanation: "Temporary immobilization." },
+    { q: "Handling wet plaster cast?", category: "trauma", options: ["Fingertips", "Palms", "Hard surface", "Plastic cover"], correctAnswer: "Use the palms of the hands to prevent denting", explanation: "Use palms." },
+    { q: "Cast application finding requiring intervention?", category: "trauma", options: ["Itching", "Warmth", "Numbness and tingling", "Swelling"], correctAnswer: "Client reports numbness and tingling in fingers", explanation: "Sign of nerve compression." }
+];
 class MSKReviewRunner {
     constructor(canvas) {
         this.canvas = canvas;
@@ -100,6 +162,7 @@ class MSKReviewRunner {
         this.questionsAnswered = 0;
         this.questionsCorrectRun = 0;
         this.askedQuestionIndices = []; // Track which questions have been asked this run
+        this.questionBag = []; // Bag for randomization
 
         // Time of day (changes based on distance)
         this.timeOfDay = 'dawn'; // dawn, day, dusk, night
@@ -416,6 +479,7 @@ class MSKReviewRunner {
 
         // Reset new features
         this.questionHistory = [];
+        this.shuffleQuestionBag();
         this.questionsAnswered = 0;
         this.questionsCorrectRun = 0;
         this.askedQuestionIndices = []; // Reset for new run
@@ -426,6 +490,16 @@ class MSKReviewRunner {
         this.coinRush = false;
         this.coinRushTimer = 0;
         this.perfectRun = true;
+    }
+
+    shuffleQuestionBag() {
+        // Create an array of indices [0, 1, ... N-1]
+        this.questionBag = Array.from({ length: quizQuestionsBase.length }, (_, i) => i);
+        // Fisher-Yates shuffle
+        for (let i = this.questionBag.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.questionBag[i], this.questionBag[j]] = [this.questionBag[j], this.questionBag[i]];
+        }
     }
 
     update(dt) {
@@ -710,50 +784,17 @@ class MSKReviewRunner {
         this.selectedAnswer = -1; this.questionResult = null;
 
         // ATI-aligned MSK questions
-        const atiQuestions = [
-            { q: "What are the 6 P's of compartment syndrome?", opts: ["Pain, Pressure, Paralysis, Paresthesia, Pallor, Pulselessness", "Pain, Pallor, Pulse, Pressure, Paralysis, Paresis", "Pain, Puffiness, Paralysis, Paresthesia, Pallor, Pressure", "Pain, Paralysis, Paresthesia, Pulse, Perfusion, Pallor"], ans: 0 },
-            { q: "Priority intervention for suspected compartment syndrome?", opts: ["Notify surgeon immediately", "Elevate the extremity", "Apply ice packs", "Administer analgesics"], ans: 0 },
-            { q: "After hip replacement, which position should be avoided?", opts: ["Hip flexion greater than 90 degrees", "Hip extension", "Slight abduction", "Neutral rotation"], ans: 0 },
-            { q: "When does fat embolism typically occur after long bone fracture?", opts: ["12-72 hours", "Immediately", "1 week later", "2-4 hours"], ans: 0 },
-            { q: "Signs of fat embolism include:", opts: ["Petechiae, confusion, dyspnea", "Fever and chills only", "Localized swelling", "Bradycardia"], ans: 0 },
-            { q: "Priority assessment for a client in skeletal traction?", opts: ["Pin sites for infection", "Blood pressure", "Urinary output", "Appetite"], ans: 0 },
-            { q: "Which medication requires the client to remain upright for 30 min?", opts: ["Alendronate (Fosamax)", "Calcium carbonate", "Ibuprofen", "Acetaminophen"], ans: 0 },
-            { q: "Key difference between osteoarthritis and rheumatoid arthritis?", opts: ["OA pain worsens with activity; RA has morning stiffness", "OA is symmetric; RA is not", "OA is autoimmune; RA is degenerative", "OA affects young people; RA affects elderly"], ans: 0 },
-            { q: "After cast application, the nurse should assess for:", opts: ["Pallor, pulselessness, paresthesia", "Weight gain", "Increased appetite", "Dry skin only"], ans: 0 },
-            { q: "DVT prevention after joint replacement includes:", opts: ["Early ambulation and anticoagulants", "Bed rest for 1 week", "Hot compresses to legs", "Crossing legs while sitting"], ans: 0 },
-            { q: "Heberden's nodes are found in which condition?", opts: ["Osteoarthritis", "Rheumatoid arthritis", "Gout", "Osteoporosis"], ans: 0 },
-            { q: "Dietary teaching for osteoporosis prevention includes:", opts: ["High calcium and vitamin D", "Low protein diet", "Sodium restriction", "Fluid restriction"], ans: 0 },
-            { q: "After laminectomy, the client should:", opts: ["Log roll when turning", "Sit up immediately", "Twist at the waist", "Sleep prone"], ans: 0 },
-            { q: "Traction weight should:", opts: ["Hang freely without touching the floor", "Rest on the floor at night", "Be removed for bathing", "Be increased if pain persists"], ans: 0 },
-            { q: "Client teaching for crutch walking includes:", opts: ["Bear weight on hands, not axillae", "Bear weight on axillae", "Keep elbows straight", "Look at feet while walking"], ans: 0 },
-            { q: "Phantom limb pain is:", opts: ["Real pain sensation requiring treatment", "Imaginary and needs no treatment", "Sign of infection", "Only psychological"], ans: 0 },
-            { q: "After total knee replacement, the priority is:", opts: ["Continuous passive motion as ordered", "Immediate full weight bearing", "Ice for 1 hour continuously", "Keeping knee fully extended always"], ans: 0 },
-            { q: "Buck's traction is used for:", opts: ["Hip fractures to reduce muscle spasm", "Cervical spine injuries", "Upper extremity fractures", "Pelvic fractures only"], ans: 0 },
-            { q: "Positive Phalen's test indicates:", opts: ["Carpal tunnel syndrome", "Compartment syndrome", "DVT", "Fracture"], ans: 0 },
-            { q: "For a client with gout, which food should be avoided?", opts: ["Organ meats and alcohol", "Dairy products", "Fresh vegetables", "Whole grains"], ans: 0 }
-        ];
 
-        // Get available question indices (ones not yet asked this run)
-        let availableIndices = [];
-        for (let i = 0; i < atiQuestions.length; i++) {
-            if (!this.askedQuestionIndices.includes(i)) {
-                availableIndices.push(i);
-            }
+        // Use Bag System for Non-Repeating Random Questions
+        if (this.questionBag.length === 0) {
+            this.shuffleQuestionBag();
         }
-
-        // If all questions asked, reset and reshuffle
-        if (availableIndices.length === 0) {
-            this.askedQuestionIndices = [];
-            availableIndices = atiQuestions.map((_, i) => i);
-        }
-
-        // Pick a random question from available ones
-        const randomIdx = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+        const randomIdx = this.questionBag.pop();
         this.askedQuestionIndices.push(randomIdx);
 
-        const q = atiQuestions[randomIdx];
-        const shuffledOpts = [...q.opts];
-        const correctText = q.opts[q.ans];
+        const q = quizQuestionsBase[randomIdx];
+        const shuffledOpts = [...q.options];
+        const correctText = q.correctAnswer;
         // Shuffle options
         for (let i = shuffledOpts.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -997,6 +1038,14 @@ class MSKReviewRunner {
             this.ctx.lineTo(this.centerX + offset, this.height);
             this.ctx.stroke();
         }
+
+        // FOG / HORIZON BLEND - Hides the sharp cut
+        const fogGrad = this.ctx.createLinearGradient(0, horizonY - 2, 0, horizonY + 150);
+        fogGrad.addColorStop(0, '#1e293b'); // Matches sky bottom
+        fogGrad.addColorStop(0.4, 'rgba(30, 41, 59, 0.8)');
+        fogGrad.addColorStop(1, 'transparent');
+        this.ctx.fillStyle = fogGrad;
+        this.ctx.fillRect(0, horizonY - 5, this.width, 160);
     }
 
     drawObstacles() {
@@ -1232,16 +1281,16 @@ class MSKReviewRunner {
             this.ctx.fillStyle = '#ffe4c4'; this.ctx.beginPath(); this.ctx.arc(0, 34, 7, 0, Math.PI * 2); this.ctx.fill();
             this.ctx.restore();
 
-            // REALISTIC STETHOSCOPE
+            // REALISTIC STETHOSCOPE - High Visibility
             this.ctx.lineCap = 'round'; this.ctx.lineJoin = 'round';
-            // Tubing around neck
-            this.ctx.strokeStyle = '#374151'; this.ctx.lineWidth = 4;
+            // Tubing around neck - Lighter Silver
+            this.ctx.strokeStyle = '#cbd5e1'; this.ctx.lineWidth = 4;
             this.ctx.beginPath();
             this.ctx.moveTo(-15, -86 + bounce);
             this.ctx.quadraticCurveTo(0, -82 + bounce, 15, -86 + bounce); // Back of neck
             this.ctx.stroke();
 
-            // Hanging tubing - FLIPPED SIDE
+            // Hanging tubing - FLIPPED SIDE - Lighter
             this.ctx.lineWidth = 3;
             this.ctx.beginPath();
 
@@ -1257,11 +1306,11 @@ class MSKReviewRunner {
             this.ctx.quadraticCurveTo(-15, -50 + bounce, -10, -55 + bounce); // Hook shape
             this.ctx.stroke();
 
-            // Chest piece (Metallic) - Now on Left
+            // Chest piece (Bright Silver/White) - Now on Left
             const diaphragmGrad = this.ctx.createRadialGradient(-10, -55 + bounce, 1, -10, -55 + bounce, 8);
-            diaphragmGrad.addColorStop(0, '#e5e7eb'); diaphragmGrad.addColorStop(0.5, '#9ca3af'); diaphragmGrad.addColorStop(1, '#4b5563');
+            diaphragmGrad.addColorStop(0, '#ffffff'); diaphragmGrad.addColorStop(0.5, '#f1f5f9'); diaphragmGrad.addColorStop(1, '#94a3b8');
             this.ctx.fillStyle = diaphragmGrad;
-            this.ctx.shadowColor = '#000'; this.ctx.shadowBlur = 5;
+            this.ctx.shadowColor = '#fff'; this.ctx.shadowBlur = 8;
             this.ctx.beginPath(); this.ctx.arc(-10, -55 + bounce, 8, 0, Math.PI * 2); this.ctx.fill();
             this.ctx.shadowBlur = 0;
 
@@ -1436,94 +1485,82 @@ class MSKReviewRunner {
     }
 
     drawMenu() {
-        // Semi-transparent dark overlay to show game world
-        this.ctx.fillStyle = 'rgba(15, 23, 42, 0.3)';
+        // Dark Radial Vignette Background (Focus center)
+        const bgGrad = this.ctx.createRadialGradient(this.centerX, this.height * 0.4, 100, this.centerX, this.height * 0.5, this.width);
+        bgGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
+        bgGrad.addColorStop(1, 'rgba(2, 6, 23, 0.98)');
+        this.ctx.fillStyle = bgGrad;
         this.ctx.fillRect(0, 0, this.width, this.height);
 
-        // Subtle grid overlay for depth
-        this.ctx.strokeStyle = 'rgba(99, 102, 241, 0.03)';
-        this.ctx.lineWidth = 1;
-        for (let i = 0; i < this.width; i += 40) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(i, 0);
-            this.ctx.lineTo(i, this.height);
-            this.ctx.stroke();
-        }
+        // Header Section - Massive Gradient Title
+        this.ctx.shadowColor = '#818cf8'; this.ctx.shadowBlur = 80;
 
-        // Title - clean, no emoji
-        const titleSize = Math.min(44, this.width * 0.04);
-        this.ctx.fillStyle = '#e2e8f0';
-        this.ctx.font = `300 ${titleSize} px - apple - system, BlinkMacSystemFont, "Segoe UI", Arial`;
+        const titleGrad = this.ctx.createLinearGradient(this.centerX - 300, 0, this.centerX + 300, 0);
+        titleGrad.addColorStop(0, '#e2e8f0'); titleGrad.addColorStop(0.5, '#ffffff'); titleGrad.addColorStop(1, '#a5b4fc');
+        this.ctx.fillStyle = titleGrad;
+
+        this.ctx.font = '900 80px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('MSK Review Runner', this.centerX, this.height * 0.15);
-
-        // Subtle accent line under title
-        const lineGrad = this.ctx.createLinearGradient(this.centerX - 80, 0, this.centerX + 80, 0);
-        lineGrad.addColorStop(0, 'transparent');
-        lineGrad.addColorStop(0.5, '#6366f1');
-        lineGrad.addColorStop(1, 'transparent');
-        this.ctx.strokeStyle = lineGrad;
-        this.ctx.lineWidth = 2;
-        this.ctx.beginPath();
-        this.ctx.moveTo(this.centerX - 80, this.height * 0.18);
-        this.ctx.lineTo(this.centerX + 80, this.height * 0.18);
-        this.ctx.stroke();
-
-        // Subtitle
-        this.ctx.fillStyle = '#64748b';
-        this.ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
-        this.ctx.fillText('Musculoskeletal Nursing Review', this.centerX, this.height * 0.23);
-
-        // Stats in a clean row
-        this.ctx.fillStyle = '#f8fafc';
-        this.ctx.font = '600 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
-        this.ctx.fillText(`${this.highScore.toLocaleString()} `, this.centerX - 80, this.height * 0.35);
-        this.ctx.fillText(`${this.totalCoins.toLocaleString()} `, this.centerX + 80, this.height * 0.35);
-
-        this.ctx.fillStyle = '#64748b';
-        this.ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
-        this.ctx.fillText('HIGH SCORE', this.centerX - 80, this.height * 0.39);
-        this.ctx.fillText('COINS', this.centerX + 80, this.height * 0.39);
-
-        // Divider
-        this.ctx.strokeStyle = 'rgba(100, 116, 139, 0.2)';
-        this.ctx.lineWidth = 1;
-        this.ctx.beginPath();
-        this.ctx.moveTo(this.centerX - 120, this.height * 0.45);
-        this.ctx.lineTo(this.centerX + 120, this.height * 0.45);
-        this.ctx.stroke();
-
-        // Controls section - minimal
-        this.ctx.fillStyle = '#94a3b8';
-        this.ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
-        this.ctx.fillText('ARROWS to move  •  SPACE to jump  •  DOWN to slide', this.centerX, this.height * 0.52);
-
-        // Start button - premium glassmorphism style
-        const btnY = this.height * 0.68;
-        const btnW = 200;
-        const btnH = 50;
-
-        // Button glow
-        const pulse = 0.5 + Math.sin(this.globalTime * 0.004) * 0.3;
-        this.ctx.shadowColor = '#6366f1';
-        this.ctx.shadowBlur = 30 * pulse;
-
-        // Button background
-        this.ctx.fillStyle = '#6366f1';
-        this.ctx.beginPath();
-        this.ctx.roundRect(this.centerX - btnW / 2, btnY - btnH / 2, btnW, btnH, 25);
-        this.ctx.fill();
+        this.ctx.fillText('MSK REVIEW RUNNER', this.centerX, this.height * 0.22);
         this.ctx.shadowBlur = 0;
 
-        // Button text
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = '600 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
-        this.ctx.fillText('START GAME', this.centerX, btnY + 6);
+        // Subtitle
+        this.ctx.fillStyle = '#94a3b8';
+        this.ctx.font = '500 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        this.ctx.fillText('Musculoskeletal Nursing Study Guide', this.centerX, this.height * 0.30);
 
-        // Footer hint
-        this.ctx.fillStyle = '#475569';
-        this.ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
-        this.ctx.fillText('Press O for Outfits', this.centerX, this.height * 0.90);
+        // Stats Card - Larger and Cleaner
+        const statsW = 600;
+        const statsX = this.centerX - statsW / 2;
+        const statsY = this.height * 0.38;
+
+        // Glass Effect
+        this.ctx.fillStyle = 'rgba(30, 41, 59, 0.5)';
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath(); this.ctx.roundRect(statsX, statsY, statsW, 120, 24); this.ctx.fill(); this.ctx.stroke();
+
+        // High Score
+        this.ctx.fillStyle = '#f8fafc'; this.ctx.font = '800 48px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+        this.ctx.fillText(this.highScore.toLocaleString(), statsX + 150, statsY + 75);
+        this.ctx.fillStyle = '#64748b'; this.ctx.font = '700 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+        this.ctx.fillText('HIGH SCORE', statsX + 150, statsY + 35);
+
+        // Divider
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        this.ctx.beginPath(); this.ctx.moveTo(this.centerX, statsY + 20); this.ctx.lineTo(this.centerX, statsY + 100); this.ctx.stroke();
+
+        // Coins
+        this.ctx.fillStyle = '#fbbf24'; this.ctx.font = '800 48px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+        this.ctx.fillText(this.totalCoins.toLocaleString(), statsX + 450, statsY + 75);
+        this.ctx.fillStyle = '#64748b'; this.ctx.font = '700 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+        this.ctx.fillText('TOTAL COINS', statsX + 450, statsY + 35);
+
+        // Main CTA Button
+        const btnY = this.height * 0.65;
+        const btnW = 320;
+        const btnH = 80;
+
+        // Pulse Effect
+        const pulse = 0.5 + Math.sin(this.globalTime * 0.005) * 0.2;
+        this.ctx.shadowColor = '#6366f1'; this.ctx.shadowBlur = 40 * pulse + 15;
+        this.ctx.fillStyle = '#6366f1';
+        this.ctx.beginPath(); this.ctx.roundRect(this.centerX - btnW / 2, btnY, btnW, btnH, 40); this.ctx.fill();
+        this.ctx.shadowBlur = 0;
+
+        // Button Shine
+        const btnGrad = this.ctx.createLinearGradient(this.centerX, btnY, this.centerX, btnY + btnH);
+        btnGrad.addColorStop(0, 'rgba(255,255,255,0.2)'); btnGrad.addColorStop(1, 'rgba(255,255,255,0)');
+        this.ctx.fillStyle = btnGrad; this.ctx.fill();
+
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = '800 28px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        this.ctx.fillText('START GAME', this.centerX, btnY + 50);
+
+        // Instructions
+        this.ctx.fillStyle = 'rgba(148, 163, 184, 0.8)';
+        this.ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+        this.ctx.fillText('Press SPACE to Start  •  Press O for Outfits  •  Arrows to Move', this.centerX, this.height * 0.90);
     }
 
     drawShop() {
