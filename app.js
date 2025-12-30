@@ -1176,24 +1176,52 @@ function switchMainTab(tabName) {
     panel.classList.toggle('active', panel.id === `panel-${tabName}`);
   });
 
-  // Initialize or stop game based on tab
-  if (tabName === 'game') {
-    // Initialize game after a short delay to ensure canvas is visible
-    setTimeout(() => {
-      if (typeof initGame === 'function') {
-        initGame();
-        updateGameStats();
+  // Special handling for game panel - make it fullscreen
+  const gamePanel = document.getElementById('panel-game');
+  if (gamePanel) {
+    if (tabName === 'game') {
+      // Force fullscreen styling
+      gamePanel.style.position = 'fixed';
+      gamePanel.style.top = '0';
+      gamePanel.style.left = '0';
+      gamePanel.style.right = '0';
+      gamePanel.style.bottom = '0';
+      gamePanel.style.zIndex = '999';
+      gamePanel.style.background = 'radial-gradient(ellipse at center, #0f0a1a 0%, #050510 100%)';
+      gamePanel.style.paddingTop = '80px';
+      gamePanel.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+
+      // Initialize game
+      setTimeout(() => {
+        if (typeof initGame === 'function') {
+          initGame();
+        }
+      }, 100);
+    } else {
+      // Reset game panel styles
+      gamePanel.style.position = '';
+      gamePanel.style.top = '';
+      gamePanel.style.left = '';
+      gamePanel.style.right = '';
+      gamePanel.style.bottom = '';
+      gamePanel.style.zIndex = '';
+      gamePanel.style.background = '';
+      gamePanel.style.paddingTop = '';
+      gamePanel.style.overflow = '';
+      document.body.style.overflow = '';
+
+      // Stop game
+      if (typeof stopGame === 'function') {
+        stopGame();
       }
-    }, 100);
-  } else {
-    // Stop game when leaving game tab
-    if (typeof stopGame === 'function') {
-      stopGame();
     }
   }
 
-  // Scroll to top of content
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Scroll to top of content (only if not game)
+  if (tabName !== 'game') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
 
 // Update game stats display
