@@ -1653,65 +1653,79 @@ class MSKReviewRunner {
     }
 
     drawGameOver() {
-        this.ctx.fillStyle = 'rgba(0,0,0,0.94)'; this.ctx.fillRect(0, 0, this.width, this.height);
-        this.ctx.shadowColor = '#ef4444'; this.ctx.shadowBlur = 80; this.ctx.fillStyle = '#ef4444';
-        this.ctx.font = `bold ${Math.min(65, this.width * 0.055)}px "Space Grotesk", Arial`; this.ctx.textAlign = 'center';
-        this.ctx.fillText('GAME OVER', this.centerX, this.height * 0.1); this.ctx.shadowBlur = 0;
+        // Darkened blur overlay
+        this.ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+        this.ctx.fillRect(0, 0, this.width, this.height);
 
-        // Stats
-        this.ctx.fillStyle = '#fff'; this.ctx.font = 'bold 40px Arial';
-        this.ctx.fillText(`Score: ${this.score.toLocaleString()} `, this.centerX, this.height * 0.2);
-        this.ctx.fillStyle = '#a855f7'; this.ctx.font = '22px Arial';
-        this.ctx.fillText(`Level ${this.level} • ${this.questionsCorrectRun}/${this.questionsAnswered} Questions Correct`, this.centerX, this.height * 0.27);
-
-        if (this.score >= this.highScore) {
-            this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 36px Arial';
-            this.ctx.fillText('🏆 NEW HIGH SCORE! 🏆', this.centerX, this.height * 0.35);
-        } else {
-            this.ctx.fillStyle = '#888'; this.ctx.font = '24px Arial';
-            this.ctx.fillText(`Best: ${this.highScore.toLocaleString()}`, this.centerX, this.height * 0.35);
-        }
-
-        // Question review
-        if (this.questionHistory.length > 0) {
-            this.ctx.fillStyle = '#06b6d4'; this.ctx.font = 'bold 20px Arial';
-            this.ctx.fillText('📝 Question Review', this.centerX, this.height * 0.44);
-
-            const startY = this.height * 0.5;
-            const maxToShow = Math.min(3, this.questionHistory.length);
-            this.ctx.font = '16px Arial'; this.ctx.textAlign = 'left';
-
-            for (let i = 0; i < maxToShow; i++) {
-                const q = this.questionHistory[this.questionHistory.length - 1 - i];
-                const y = startY + i * 50;
-                const icon = q.correct ? '✅' : '❌';
-                const color = q.correct ? '#22c55e' : '#ef4444';
-                this.ctx.fillStyle = color;
-
-                let text = q.question;
-                if (text.length > 50) text = text.slice(0, 47) + '...';
-                this.ctx.fillText(`${icon} ${text}`, 60, y);
-
-                if (!q.correct) {
-                    this.ctx.fillStyle = '#888'; this.ctx.font = '14px Arial';
-                    let ans = q.correctAnswer;
-                    if (ans.length > 40) ans = ans.slice(0, 37) + '...';
-                    this.ctx.fillText(`   → ${ans}`, 60, y + 18);
-                    this.ctx.font = '16px Arial';
-                }
-            }
-        }
-
-        // Coins and XP
+        // Header - Large "GAME OVER"
+        this.ctx.shadowColor = '#ef4444'; this.ctx.shadowBlur = 40;
+        this.ctx.fillStyle = '#ef4444';
+        this.ctx.font = '800 60px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         this.ctx.textAlign = 'center';
-        this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 28px Arial';
-        this.ctx.fillText(`💰 ${this.coins} coins earned`, this.centerX, this.height * 0.82);
-        this.ctx.fillStyle = '#22c55e'; this.ctx.font = '24px Arial';
-        this.ctx.fillText(`+${Math.floor(this.score / 10)} XP`, this.centerX, this.height * 0.87);
+        this.ctx.fillText('GAME OVER', this.centerX, this.height * 0.15);
+        this.ctx.shadowBlur = 0;
 
-        const pulse = 0.6 + Math.sin(this.globalTime * 0.005) * 0.4;
-        this.ctx.globalAlpha = pulse; this.ctx.fillStyle = '#06b6d4'; this.ctx.font = 'bold 28px Arial';
-        this.ctx.fillText('[ PRESS SPACE TO RETRY ]', this.centerX, this.height * 0.95); this.ctx.globalAlpha = 1;
+        // Glass Card Container for Stats
+        const cardW = Math.min(600, this.width * 0.9);
+        const cardH = this.height * 0.5;
+        const cardX = this.centerX - cardW / 2;
+        const cardY = this.height * 0.22;
+
+        this.ctx.fillStyle = 'rgba(30, 41, 59, 0.6)'; // Glass bg
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath(); this.ctx.roundRect(cardX, cardY, cardW, cardH, 20); this.ctx.fill(); this.ctx.stroke();
+
+        // Score Section
+        this.ctx.fillStyle = '#94a3b8';
+        this.ctx.font = '600 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+        this.ctx.fillText('FINAL SCORE', this.centerX, cardY + 50);
+
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = '700 48px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+        this.ctx.fillText(this.score.toLocaleString(), this.centerX, cardY + 95);
+
+        // High Score / New Best
+        if (this.score >= this.highScore) {
+            this.ctx.fillStyle = '#fbbf24'; this.ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+            this.ctx.fillText('🏆 NEW HIGH SCORE! 🏆', this.centerX, cardY + 130);
+        } else {
+            this.ctx.fillStyle = '#64748b'; this.ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+            this.ctx.fillText(`Personal Best: ${this.highScore.toLocaleString()}`, this.centerX, cardY + 130);
+        }
+
+        // Stats Row (XP, Coins, Questions)
+        const statsY = cardY + 180;
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        this.ctx.beginPath(); this.ctx.roundRect(cardX + 20, statsY, cardW - 40, 80, 12); this.ctx.fill();
+
+        this.ctx.fillStyle = '#fbbf24'; this.ctx.font = '600 24px Arial';
+        this.ctx.textAlign = 'left';
+        this.ctx.fillText(`💰 ${this.coins}`, cardX + 50, statsY + 48);
+
+        this.ctx.textAlign = 'right';
+        this.ctx.fillStyle = '#22c55e';
+        this.ctx.fillText(`+${Math.floor(this.score / 10)} XP`, cardX + cardW - 50, statsY + 48);
+
+        this.ctx.textAlign = 'center';
+        this.ctx.fillStyle = '#a855f7'; this.ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+        this.ctx.fillText(`${this.questionsCorrectRun}/${this.questionsAnswered} Correct`, this.centerX, statsY + 48);
+
+        // Retry Button
+        const btnY = this.height * 0.82;
+        const btnW = 240;
+        const btnH = 56;
+
+        this.ctx.shadowColor = '#6366f1'; this.ctx.shadowBlur = 25;
+        this.ctx.fillStyle = '#6366f1';
+        this.ctx.beginPath(); this.ctx.roundRect(this.centerX - btnW / 2, btnY, btnW, btnH, 28); this.ctx.fill();
+        this.ctx.shadowBlur = 0;
+
+        this.ctx.fillStyle = '#fff'; this.ctx.font = '700 18px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+        this.ctx.fillText('TRY AGAIN', this.centerX, btnY + 34);
+
+        this.ctx.fillStyle = '#64748b'; this.ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+        this.ctx.fillText('Press SPACE to Restart', this.centerX, btnY + 85);
     }
 
     loop(ts) { const dt = Math.min(ts - this.lastTime, 50); this.lastTime = ts; this.update(dt); this.render(); if (this.running) requestAnimationFrame(t => this.loop(t)); }
