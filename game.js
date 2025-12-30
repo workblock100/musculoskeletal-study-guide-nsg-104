@@ -20,8 +20,8 @@ const gameQuizQuestions = [
     { q: "A client 2 days post-hip replacement reports sudden severe hip pain and heard a 'pop.' The leg is shortened. What is suspected?", category: "arthroplasty", options: ["DVT", "Hip dislocation", "Fat embolism", "Infection"], correctAnswer: "Hip dislocation", explanation: "Pop, pain, shortening, rotation = dislocation." },
     { q: "Which instruction should the nurse reinforce for discharge after total hip arthroplasty? (Select all that apply)", category: "arthroplasty", type: "sata", options: ["Calf exercises every 2 hours", "Turn toes inward", "Bend at waist", "Use raised toilet seat", "Use long-handled shoehorn"], correctAnswers: ["Perform calf and leg exercises every 2 hours", "Use a raised toilet seat", "Use a long-handled shoehorn"], explanation: "Exercises, raised seat, shoehorn. No bending >90 degrees." },
     { q: "DVT prophylaxis after total knee replacement includes which interventions?", category: "arthroplasty", options: ["Strict bed rest", "Anticoagulants, compression devices, and early ambulation", "Aspirin only", "Dependent position"], correctAnswer: "Anticoagulants, compression devices, and early ambulation", explanation: "Combination therapy is required." },
-    { q: "A client asks why they must use Hibiclens soap before joint replacement surgery. The nurse explains:", category: "arthroplasty", options: ["Relaxation", "It reduces skin bacteria to prevent infection", "Removes dead skin", "Decreases pain"], correctAnswer: "'It reduces skin bacteria to prevent infection'", explanation: "Reduces bacterial count." },
-    { q: "Which client statement indicates understanding of discharge teaching after total knee arthroplasty?", category: "arthroplasty", options: ["I can kneel to garden", "I should avoid deep-knee bends indefinitely", "Stop anticoagulants in 1 week", "No infection worry"], correctAnswer: "'I should avoid deep-knee bends indefinitely'", explanation: "Deep knee bends put stress on the prosthesis." },
+    { q: "A client asks why they must use Hibiclens soap before joint replacement surgery. The nurse explains:", category: "arthroplasty", options: ["Relaxation", "It reduces skin bacteria to prevent infection", "Removes dead skin", "Decreases pain"], correctAnswer: "It reduces skin bacteria to prevent infection", explanation: "Reduces bacterial count." },
+    { q: "Which client statement indicates understanding of discharge teaching after total knee arthroplasty?", category: "arthroplasty", options: ["I can kneel to garden", "I should avoid deep-knee bends indefinitely", "Stop anticoagulants in 1 week", "No infection worry"], correctAnswer: "I should avoid deep-knee bends indefinitely", explanation: "Deep knee bends put stress on the prosthesis." },
     { q: "Which is the priority assessment immediately after total joint arthroplasty?", category: "arthroplasty", options: ["Pain level", "Neurovascular status of the operative extremity", "Mobility", "Precautions"], correctAnswer: "Neurovascular status of the operative extremity", explanation: "Circulation is priority." },
     { q: "A nurse notes bloody drainage on hip dressing. Hgb is 8.5 (down from 11.2). What should the nurse anticipate?", category: "arthroplasty", options: ["Surgical exploration", "Antifibrinolytics", "Autologous blood transfusion", "IV fluids only"], correctAnswer: "Autologous blood transfusion", explanation: "Significant blood loss/drop in Hgb may require transfusion." },
     { q: "At the scene of a traumatic amputation, which action should the nurse take first?", category: "amputations", options: ["Locate extremity", "Apply direct pressure to control hemorrhage", "Call EMS", "Ice the part"], correctAnswer: "Apply direct pressure to control hemorrhage", explanation: "Hemorrhage control is life-saving priority." },
@@ -29,7 +29,7 @@ const gameQuizQuestions = [
     { q: "Which intervention helps prevent hip flexion contractures after above-knee amputation?", category: "amputations", options: ["Pillows under limb", "Sitting all day", "Lie prone for 20-30 minutes several times daily", "Elevate limb indefinitely"], correctAnswer: "Have the client lie prone for 20-30 minutes several times daily", explanation: "Prone position stretches the hip flexors." },
     { q: "Which technique is correct for residual limb wrapping?", category: "amputations", options: ["Circular from proximal", "Figure-eight to prevent restriction", "Tight bandaging", "Apply once daily"], correctAnswer: "Figure-eight wrapping to prevent blood flow restriction", explanation: "Figure-eight shapes the limb without restriction." },
     { q: "Which nursing actions are appropriate post-amputation? (Select all that apply)", category: "amputations", type: "sata", options: ["Gabapentin for phantom pain", "Delay ROM", "Record drainage", "Avoid prone", "Compare pulses"], correctAnswers: ["Administer gabapentin for phantom limb pain", "Record amount, color, and odor of wound drainage", "Compare pulses in the affected extremity with the other extremity"], explanation: "Gabapentin, drainage monitoring, pulse checks." },
-    { q: "A client with a new amputation refuses to look at the limb. Therapeutic response?", category: "amputations", options: ["You need to look", "I understand this is difficult. Would you like to talk about your feelings?", "You'll get used to it", "Should I cover it?"], correctAnswer: "'I understand this is difficult. Would you like to talk about your feelings?'", explanation: "Acknowledge feelings." },
+    { q: "A client with a new amputation refuses to look at the limb. Therapeutic response?", category: "amputations", options: ["You need to look", "I understand this is difficult. Would you like to talk about your feelings?", "You'll get used to it", "Should I cover it?"], correctAnswer: "I understand this is difficult. Would you like to talk about your feelings?", explanation: "Acknowledge feelings." },
     { q: "Which team member fits the prosthesis?", category: "amputations", options: ["PT", "OT", "Certified prosthetic orthotist", "Nurse"], correctAnswer: "Certified prosthetic orthotist", explanation: "Prosthetist fits the device." },
     { q: "When caring for a severed extremity, the nurse should:", category: "amputations", options: ["Place on ice directly", "Wrap in dry sterile gauze, Place in sealed bag, then in ice water", "Submerge in saline", "Keep warm"], correctAnswer: "Wrap in dry sterile gauze, place in sealed bag, then in ice water", explanation: "Dry gauze -> Bag -> Ice water." },
     { q: "Which finding 3 days post-amputation requires immediate notification?", category: "amputations", options: ["Phantom sensation", "Temperature 101.2°F with purulent drainage", "Mild discomfort", "Sadness"], correctAnswer: "Temperature 101.2°F (38.4°C) with purulent drainage from the incision", explanation: "Signs of infection." },
@@ -45,17 +45,17 @@ const gameQuizQuestions = [
     { q: "Position after vertebroplasty?", category: "osteoporosis", options: ["Prone", "Supine for 1-2 hours", "High Fowler", "Lateral"], correctAnswer: "Supine for 1-2 hours", explanation: "Supine to compress puncture site." },
     { q: "Calcium supplement administration?", category: "osteoporosis", options: ["All at once", "Divided doses with food/water", "Empty stomach", "No Vitamin D"], correctAnswer: "Take with food in divided doses with water", explanation: "Divided doses absorb better." },
     { q: "Report finding with teriparatide (Forteo)?", category: "osteoporosis", options: ["Previous radiation therapy", "Cramping", "Calcium supplements", "Postmenopausal"], correctAnswer: "Previous radiation therapy to bones", explanation: "Risk of osteosarcoma." },
-    { q: "Calcitonin nasal spray action?", category: "osteoporosis", options: ["Increases formation", "Decreases resorption by inhibiting osteoclasts", "Replaces estrogen", "For hypocalcemia only"], correctAnswer: "'This medication decreases bone resorption by inhibiting osteoclasts'", explanation: "Inhibits osteoclasts." },
+    { q: "Calcitonin nasal spray action?", category: "osteoporosis", options: ["Increases formation", "Decreases resorption by inhibiting osteoclasts", "Replaces estrogen", "For hypocalcemia only"], correctAnswer: "Decreases resorption by inhibiting osteoclasts", explanation: "Inhibits osteoclasts." },
     { q: "Findings of compartment syndrome? (Select all that apply)", category: "trauma", type: "sata", options: ["Pain 10/10 with passive movement", "Capillary refill 2s", "Hard swollen muscle", "Tingling", "Pulses present"], correctAnswers: ["Pain of 10/10 when the affected foot is passively moved", "Hard, swollen muscle on the affected leg", "Tingling sensation on the affected foot"], explanation: "Pain, hardness, tingling." },
     { q: "Fracture with bone fragmenting into pieces?", category: "trauma", options: ["Oblique", "Comminuted", "Greenstick", "Spiral"], correctAnswer: "Comminuted fracture", explanation: "Comminuted means fragmented." },
     { q: "Cast pain unrelieved by meds? Priority?", category: "trauma", options: ["More meds", "Notify provider immediately", "Elevate", "Ice"], correctAnswer: "Notify the provider immediately", explanation: "Sign of compartment syndrome." },
-    { q: "Understanding cast care?", category: "trauma", options: ["Coat hanger", "Keep dry", "Tight is good", "Powder"], correctAnswer: "'I should keep the cast dry'", explanation: "Keep casts dry." },
+    { q: "Understanding cast care?", category: "trauma", options: ["Coat hanger", "Keep dry", "Tight is good", "Powder"], correctAnswer: "Keep dry", explanation: "Keep casts dry." },
     { q: "Skeletal traction fact?", category: "trauma", options: ["Light weights", "Remove for repositioning", "Pins in bone, heavier weights", "For spasm only"], correctAnswer: "Pins are inserted into bone and can use 15-30 pound weights", explanation: "Pins in bone allow heavier weights." },
     { q: "Care for skeletal traction weights?", category: "trauma", options: ["Remove to reposition", "Hang freely at all times", "Add weight for pain", "Rest on bed"], correctAnswer: "Keep weights hanging freely at all times", explanation: "Weights must hang free." },
     { q: "Early sign of fat embolism?", category: "trauma", options: ["Petechiae", "Dyspnea with decreased O2 sat", "Resp failure", "Arrest"], correctAnswer: "Dyspnea with decreased oxygen saturation", explanation: "Hypoxia/dyspnea is early. Petechiae is late." },
     { q: "Fat embolism manifestation in femur fracture?", category: "trauma", options: ["Pain", "Petechial rash on chest with resp distress", "Swelling", "Cool extremity"], correctAnswer: "Petechial rash on the chest with respiratory distress", explanation: "Petechial rash on chest is classic." },
     { q: "Pin care for external fixation?", category: "trauma", options: ["Same swab all pins", "One swab per pin with solution", "Remove crusting", "Ointment"], correctAnswer: "Using one cotton swab per pin with prescribed solution", explanation: "Prevent cross contamination." },
-    { q: "External fixation discharge understanding?", category: "trauma", options: ["White drainage ok", "Sterile water only", "Tighten pins", "Report increased drainage or loosening"], correctAnswer: "'I will report any increased drainage or loosening of pins'", explanation: "Report signs of infection or failure." },
+    { q: "External fixation discharge understanding?", category: "trauma", options: ["White drainage ok", "Sterile water only", "Tighten pins", "Report increased drainage or loosening"], correctAnswer: "Report increased drainage or loosening", explanation: "Report signs of infection or failure." },
     { q: "Osteomyelitis complication?", category: "trauma", options: ["Hypoglycemia", "Need for long-term antibiotics (4-6 weeks)", "Immediate resolution", "Weight gain"], correctAnswer: "Need for long-term antibiotic therapy (4-6 weeks)", explanation: "Antibiotics for 4-6 weeks." },
     { q: "The 5 P's? (Select all that apply)", category: "trauma", type: "sata", options: ["Pain", "Pressure", "Paresthesia", "Pallor", "Pulselessness", "Paralysis"], correctAnswers: ["Pain", "Paresthesia", "Pallor", "Pulselessness", "Paralysis"], explanation: "Pain, Pallor, Paresthesia, Pulselessness, Paralysis." },
     { q: "Buck's traction purpose?", category: "trauma", options: ["Permanent stabilization", "Decrease muscle spasms/immobilize", "Replace surgery", "Weight bearing"], correctAnswer: "Decrease muscle spasms and immobilize before surgery", explanation: "Temporary immobilization." },
@@ -1052,35 +1052,66 @@ class MSKReviewRunner {
         this.newAchievement = { id, name, timer: 180 };
     }
 
-    // Draw clean, static background with pre-computed windows
+    // Enhanced background with visual depth
     drawBackground() {
         const horizonY = this.height * 0.4;
 
-        // Deep Space/Twilight Gradient
-        const skyGrad = this.ctx.createLinearGradient(0, 0, 0, this.height * 0.6);
-        skyGrad.addColorStop(0, '#05070a');    // Almost black top
-        skyGrad.addColorStop(0.4, '#0f172a');  // Deep blue mid
-        skyGrad.addColorStop(0.7, '#1e293b');  // Slate blue horizon
-        skyGrad.addColorStop(1, '#0f172a');    // Fade back down
+        // Rich twilight gradient with warm horizon
+        const skyGrad = this.ctx.createLinearGradient(0, 0, 0, horizonY + 50);
+        skyGrad.addColorStop(0, '#030508');      // Near black
+        skyGrad.addColorStop(0.25, '#0c1929');   // Deep navy
+        skyGrad.addColorStop(0.5, '#1a2d4a');    // Navy blue
+        skyGrad.addColorStop(0.75, '#2d3a52');   // Slate
+        skyGrad.addColorStop(0.9, '#4a3f5c');    // Purple hint
+        skyGrad.addColorStop(1, '#3d2942');      // Warm purple at horizon
         this.ctx.fillStyle = skyGrad;
         this.ctx.fillRect(0, 0, this.width, this.height);
 
-        // Pre-compute window positions ONCE
+        // Static stars (pre-computed once)
+        if (!this.staticStars) {
+            this.staticStars = [];
+            for (let i = 0; i < 25; i++) {
+                this.staticStars.push({
+                    x: Math.random() * this.width,
+                    y: Math.random() * horizonY * 0.6,
+                    size: Math.random() * 1.2 + 0.3,
+                    brightness: 0.3 + Math.random() * 0.4
+                });
+            }
+        }
+        this.staticStars.forEach(s => {
+            this.ctx.fillStyle = `rgba(255, 255, 255, ${s.brightness})`;
+            this.ctx.beginPath();
+            this.ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
+
+        // City ambient glow (before buildings)
+        const cityGlow = this.ctx.createRadialGradient(this.centerX, horizonY, 20, this.centerX, horizonY, this.width * 0.5);
+        cityGlow.addColorStop(0, 'rgba(100, 80, 120, 0.15)');
+        cityGlow.addColorStop(0.5, 'rgba(60, 50, 80, 0.08)');
+        cityGlow.addColorStop(1, 'transparent');
+        this.ctx.fillStyle = cityGlow;
+        this.ctx.fillRect(0, horizonY - 80, this.width, 100);
+
+        // Pre-compute windows ONCE
         if (!this.staticWindows) {
             this.staticWindows = [];
             this.buildings.forEach(b => {
                 const bHeight = b.height * 0.6;
                 const by = horizonY - bHeight;
-                const rows = Math.floor(bHeight / 14);
-                const cols = Math.floor(b.width / 10);
+                const rows = Math.floor(bHeight / 12);
+                const cols = Math.floor(b.width / 8);
                 for (let row = 1; row < rows; row++) {
                     for (let col = 1; col < cols; col++) {
-                        // 25% chance of a window, stored permanently
-                        if (Math.random() < 0.25) {
+                        if (Math.random() < 0.3) {
+                            const warm = Math.random() < 0.75;
                             this.staticWindows.push({
-                                x: b.x + col * 10 + 2,
-                                y: by + row * 14 + 2,
-                                color: Math.random() < 0.8 ? 'rgba(255, 240, 200, 0.15)' : 'rgba(200, 230, 255, 0.1)'
+                                x: b.x + col * 8 + 1,
+                                y: by + row * 12 + 1,
+                                color: warm
+                                    ? `rgba(255, ${200 + Math.random() * 50}, ${150 + Math.random() * 50}, ${0.2 + Math.random() * 0.25})`
+                                    : `rgba(${180 + Math.random() * 40}, ${200 + Math.random() * 50}, 255, ${0.15 + Math.random() * 0.2})`
                             });
                         }
                     }
@@ -1088,32 +1119,34 @@ class MSKReviewRunner {
             });
         }
 
-        // Draw Buildings
+        // Draw buildings with depth
         this.buildings.forEach(b => {
             const bHeight = b.height * 0.6;
             const by = horizonY - bHeight;
 
-            // Building Gradient
+            // Building gradient (darker at top, lighter at base)
             const bGrad = this.ctx.createLinearGradient(0, by, 0, horizonY);
-            bGrad.addColorStop(0, 'rgba(30, 41, 59, 0.4)');
-            bGrad.addColorStop(1, 'rgba(15, 23, 42, 0.9)');
+            bGrad.addColorStop(0, 'rgba(25, 32, 45, 0.5)');
+            bGrad.addColorStop(0.5, 'rgba(35, 45, 60, 0.7)');
+            bGrad.addColorStop(1, 'rgba(45, 55, 70, 0.85)');
             this.ctx.fillStyle = bGrad;
             this.ctx.fillRect(b.x, by, b.width, bHeight);
         });
 
-        // Draw Static Windows (Batch for performance)
+        // Draw static windows
         this.staticWindows.forEach(w => {
             this.ctx.fillStyle = w.color;
-            this.ctx.fillRect(w.x, w.y, 4, 5);
+            this.ctx.fillRect(w.x, w.y, 3, 4);
         });
 
-        // Horizon Fog / Atmosphere
-        const fogGrad = this.ctx.createLinearGradient(0, horizonY - 50, 0, horizonY + 20);
+        // Horizon atmosphere (fog + glow)
+        const fogGrad = this.ctx.createLinearGradient(0, horizonY - 60, 0, horizonY + 30);
         fogGrad.addColorStop(0, 'transparent');
-        fogGrad.addColorStop(0.6, 'rgba(15, 23, 42, 0.8)');
-        fogGrad.addColorStop(1, 'rgba(15, 23, 42, 1)');
+        fogGrad.addColorStop(0.4, 'rgba(40, 35, 55, 0.4)');
+        fogGrad.addColorStop(0.7, 'rgba(30, 28, 42, 0.7)');
+        fogGrad.addColorStop(1, 'rgba(20, 20, 35, 0.95)');
         this.ctx.fillStyle = fogGrad;
-        this.ctx.fillRect(0, horizonY - 50, this.width, 70);
+        this.ctx.fillRect(0, horizonY - 60, this.width, 90);
     }
 
     drawRoad() { // Fixed indentation & structure
@@ -1343,14 +1376,14 @@ class MSKReviewRunner {
             // LEGS - 3D shaded
             const legLGrad = this.ctx.createLinearGradient(-15, 0, -5, 0); legLGrad.addColorStop(0, '#1e293b'); legLGrad.addColorStop(0.5, pantsColor); legLGrad.addColorStop(1, '#1e293b');
             this.ctx.fillStyle = legLGrad;
-            this.ctx.save(); this.ctx.translate(-12, -18 + bounce); this.ctx.rotate(legSwing * Math.PI / 180);
+            this.ctx.save(); this.ctx.translate(-12, -18 + bounce); this.ctx.rotate(-legSwing * Math.PI / 180);
             this.ctx.fillRect(-7, 0, 14, 42);
             this.ctx.fillStyle = '#f8fafc'; this.ctx.fillRect(-8, 38, 16, 12); // Shoe
             this.ctx.restore();
 
             const legRGrad = this.ctx.createLinearGradient(5, 0, 15, 0); legRGrad.addColorStop(0, '#1e293b'); legRGrad.addColorStop(0.5, pantsColor); legRGrad.addColorStop(1, '#1e293b');
             this.ctx.fillStyle = legRGrad;
-            this.ctx.save(); this.ctx.translate(12, -18 + bounce); this.ctx.rotate(-legSwing * Math.PI / 180);
+            this.ctx.save(); this.ctx.translate(12, -18 + bounce); this.ctx.rotate(legSwing * Math.PI / 180);
             this.ctx.fillRect(-7, 0, 14, 42);
             this.ctx.fillStyle = '#f8fafc'; this.ctx.fillRect(-8, 38, 16, 12); // Shoe
             this.ctx.restore();
