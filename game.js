@@ -974,40 +974,61 @@ class MSKReviewRunner {
     }
 
     drawBackground() {
-        // Simple gradient sky
-        const grad = this.ctx.createLinearGradient(0, 0, 0, this.height * 0.5);
-        grad.addColorStop(0, '#0f172a');
-        grad.addColorStop(1, '#1e293b');
-        this.ctx.fillStyle = grad;
-        this.ctx.fillRect(0, 0, this.width, this.height * 0.5);
+        const horizonY = this.height * 0.4;
 
-        // Ground area
-        this.ctx.fillStyle = '#0f0f14';
-        this.ctx.fillRect(0, this.height * 0.4, this.width, this.height * 0.6);
+        // Full-screen sky gradient that extends below horizon
+        const skyGrad = this.ctx.createLinearGradient(0, 0, 0, this.height * 0.7);
+        skyGrad.addColorStop(0, '#0a0f1a');     // Deep space blue at top
+        skyGrad.addColorStop(0.3, '#0f172a');   // Night sky
+        skyGrad.addColorStop(0.5, '#1e293b');   // Horizon glow
+        skyGrad.addColorStop(0.7, '#0f1419');   // Fades into road darkness
+        skyGrad.addColorStop(1, '#0c0c10');     // Matches road
+        this.ctx.fillStyle = skyGrad;
+        this.ctx.fillRect(0, 0, this.width, this.height);
 
-        // Simple silhouette buildings (no gradients, no shadows)
-        this.ctx.fillStyle = '#1a1a24';
+        // City silhouettes with atmospheric fade
         for (let i = 0; i < this.buildings.length; i++) {
             const b = this.buildings[i];
-            const by = this.height * 0.4 - b.height * 0.6;
-            this.ctx.fillRect(b.x, by, b.width, b.height * 0.6);
+            const bHeight = b.height * 0.6;
+            const by = horizonY - bHeight;
+
+            // Building gradient - fades into atmosphere at top
+            const buildGrad = this.ctx.createLinearGradient(0, by, 0, horizonY);
+            buildGrad.addColorStop(0, 'rgba(20, 24, 35, 0.3)');   // Faded top
+            buildGrad.addColorStop(0.3, 'rgba(25, 30, 42, 0.6)'); // Mid
+            buildGrad.addColorStop(1, 'rgba(30, 35, 50, 0.9)');   // Solid bottom
+            this.ctx.fillStyle = buildGrad;
+            this.ctx.fillRect(b.x, by, b.width, bHeight);
+
+            // Subtle window lights
+            if (Math.random() < 0.02) {
+                this.ctx.fillStyle = 'rgba(251, 191, 36, 0.4)';
+                this.ctx.fillRect(b.x + Math.random() * b.width, by + Math.random() * bHeight * 0.7, 3, 3);
+            }
         }
 
-        // Horizon line accent
-        this.ctx.strokeStyle = '#334155';
-        this.ctx.lineWidth = 1;
-        this.ctx.beginPath();
-        this.ctx.moveTo(0, this.height * 0.4);
-        this.ctx.lineTo(this.width, this.height * 0.4);
-        this.ctx.stroke();
+        // Atmospheric haze layer at horizon (blends buildings into road)
+        const hazeGrad = this.ctx.createLinearGradient(0, horizonY - 60, 0, horizonY + 80);
+        hazeGrad.addColorStop(0, 'transparent');
+        hazeGrad.addColorStop(0.3, 'rgba(15, 20, 30, 0.5)');
+        hazeGrad.addColorStop(0.5, 'rgba(12, 15, 22, 0.8)');
+        hazeGrad.addColorStop(1, 'rgba(10, 12, 18, 0.9)');
+        this.ctx.fillStyle = hazeGrad;
+        this.ctx.fillRect(0, horizonY - 60, this.width, 140);
     }
 
     drawRoad() {
         const horizonY = this.height * 0.4;
         const roadW = 540;
 
-        // Simple road surface
-        this.ctx.fillStyle = '#18181b';
+        // Road surface with gradient that matches atmosphere
+        const roadGrad = this.ctx.createLinearGradient(0, horizonY, 0, this.height);
+        roadGrad.addColorStop(0, 'rgba(12, 14, 18, 0.6)');   // Semi-transparent at horizon (blends with bg)
+        roadGrad.addColorStop(0.15, 'rgba(18, 18, 22, 0.85)');
+        roadGrad.addColorStop(0.4, '#151518');                // Solid road
+        roadGrad.addColorStop(1, '#1a1a1f');                  // Slightly lighter at bottom
+
+        this.ctx.fillStyle = roadGrad;
         this.ctx.beginPath();
         this.ctx.moveTo(this.centerX - 120, horizonY);
         this.ctx.lineTo(this.centerX + 120, horizonY);
@@ -1016,8 +1037,14 @@ class MSKReviewRunner {
         this.ctx.closePath();
         this.ctx.fill();
 
-        // Road edges
-        this.ctx.strokeStyle = '#6366f1';
+        // Road edges with glow that fades at horizon
+        const edgeGrad = this.ctx.createLinearGradient(0, horizonY, 0, this.height);
+        edgeGrad.addColorStop(0, 'rgba(99, 102, 241, 0)');    // Invisible at horizon
+        edgeGrad.addColorStop(0.2, 'rgba(99, 102, 241, 0.4)'); // Fades in
+        edgeGrad.addColorStop(0.5, 'rgba(99, 102, 241, 0.8)'); // Bright
+        edgeGrad.addColorStop(1, '#6366f1');                   // Full color at bottom
+
+        this.ctx.strokeStyle = edgeGrad;
         this.ctx.lineWidth = 3;
         this.ctx.beginPath();
         this.ctx.moveTo(this.centerX - 120, horizonY);
@@ -1028,8 +1055,13 @@ class MSKReviewRunner {
         this.ctx.lineTo(this.centerX + roadW, this.height);
         this.ctx.stroke();
 
-        // Simple lane dividers
-        this.ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
+        // Lane dividers (also fade at horizon)
+        const laneGrad = this.ctx.createLinearGradient(0, horizonY, 0, this.height);
+        laneGrad.addColorStop(0, 'rgba(148, 163, 184, 0)');
+        laneGrad.addColorStop(0.3, 'rgba(148, 163, 184, 0.2)');
+        laneGrad.addColorStop(1, 'rgba(148, 163, 184, 0.4)');
+
+        this.ctx.strokeStyle = laneGrad;
         this.ctx.lineWidth = 2;
         for (let lane = 0; lane < 2; lane++) {
             const offset = (lane - 0.5) * this.laneWidth;
@@ -1038,14 +1070,6 @@ class MSKReviewRunner {
             this.ctx.lineTo(this.centerX + offset, this.height);
             this.ctx.stroke();
         }
-
-        // FOG / HORIZON BLEND - Hides the sharp cut
-        const fogGrad = this.ctx.createLinearGradient(0, horizonY - 2, 0, horizonY + 150);
-        fogGrad.addColorStop(0, '#1e293b'); // Matches sky bottom
-        fogGrad.addColorStop(0.4, 'rgba(30, 41, 59, 0.8)');
-        fogGrad.addColorStop(1, 'transparent');
-        this.ctx.fillStyle = fogGrad;
-        this.ctx.fillRect(0, horizonY - 5, this.width, 160);
     }
 
     drawObstacles() {
