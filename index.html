@@ -18,6 +18,19 @@
   <nav class="nav">
     <div class="nav-container">
       <div class="nav-logo">🦴 MSK Study Guide</div>
+
+      <!-- XP Bar -->
+      <div class="xp-bar-container">
+        <div class="level-badge" id="levelBadge">📚</div>
+        <div class="xp-bar-wrapper">
+          <div class="level-name" id="levelName">Nursing Student</div>
+          <div class="xp-bar">
+            <div class="xp-bar-fill" id="xpBarFill" style="width: 0%"></div>
+          </div>
+          <div class="xp-text" id="xpText">0 / 500 XP</div>
+        </div>
+      </div>
+
       <div class="mastery-badge" id="masteryBadge" title="Your mastery level">
         <span class="mastery-icon">🏆</span>
         <span class="mastery-level" id="masteryLevel">0%</span>
@@ -1050,6 +1063,28 @@
         <p>Track your study journey and identify areas for improvement</p>
       </div>
 
+      <!-- Daily Challenge -->
+      <div class="daily-challenge-card" id="dailyChallenge">
+        <div class="daily-challenge-header">
+          <span class="daily-icon">🎯</span>
+          <span class="daily-title">Daily Challenge</span>
+        </div>
+        <div class="daily-desc">Loading...</div>
+        <div class="daily-reward">
+          <span class="reward-icon">⭐</span>
+          <span class="reward-xp">+100 XP</span>
+        </div>
+      </div>
+
+      <!-- Achievements Section -->
+      <div class="progress-section-card" style="margin-bottom: 2rem;">
+        <h3>🏆 Achievements</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 1rem;">Unlock badges by completing challenges</p>
+        <div class="achievements-grid" id="achievementsList">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+
       <div class="progress-overview">
         <div class="progress-stat-card">
           <div class="progress-stat-icon">🔥</div>
@@ -1336,6 +1371,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Theme Toggle Button -->
+  <button class="theme-toggle" id="themeToggle" title="Toggle light/dark theme">☀️</button>
 
   <script src="app.js"></script>
 </body>

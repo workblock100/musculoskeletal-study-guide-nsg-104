@@ -2393,3 +2393,545 @@ function closeImageModal() {
     document.body.style.overflow = '';
   }
 }
+
+// ============================================
+// PREMIUM GAMIFICATION SYSTEM V4.0
+// ============================================
+
+// XP & Leveling System
+const XP_CONFIG = {
+  correctAnswer: 25,
+  perfectQuiz: 200,
+  flashcardMastered: 50,
+  dailyLogin: 100,
+  streakBonus: 25, // per day
+  achievements: {
+    firstPerfect: 500,
+    tenStreak: 300,
+    allCards: 1000,
+    speedDemon: 250
+  }
+};
+
+const LEVELS = [
+  { name: 'Nursing Student', minXP: 0, icon: '📚' },
+  { name: 'Clinical Rookie', minXP: 500, icon: '🩺' },
+  { name: 'Ward Nurse', minXP: 1500, icon: '💉' },
+  { name: 'Charge Nurse', minXP: 3500, icon: '⭐' },
+  { name: 'Clinical Expert', minXP: 7000, icon: '🏆' },
+  { name: 'MSK Master', minXP: 15000, icon: '👑' }
+];
+
+const ACHIEVEMENTS = [
+  { id: 'first_quiz', name: 'First Steps', desc: 'Complete your first quiz', icon: '🎯', xp: 100 },
+  { id: 'perfect_score', name: 'Perfect Score', desc: 'Get 100% on a quiz', icon: '💯', xp: 500 },
+  { id: 'streak_3', name: 'On Fire', desc: '3-day study streak', icon: '🔥', xp: 150 },
+  { id: 'streak_7', name: 'Dedicated', desc: '7-day study streak', icon: '⚡', xp: 300 },
+  { id: 'streak_14', name: 'Unstoppable', desc: '14-day study streak', icon: '🌟', xp: 500 },
+  { id: 'cards_10', name: 'Getting Started', desc: 'Master 10 flashcards', icon: '📇', xp: 100 },
+  { id: 'cards_25', name: 'Making Progress', desc: 'Master 25 flashcards', icon: '🎴', xp: 250 },
+  { id: 'cards_50', name: 'Card Master', desc: 'Master all 50 flashcards', icon: '🃏', xp: 1000 },
+  { id: 'speed_demon', name: 'Speed Demon', desc: 'Complete quiz in under 2 mins', icon: '⚡', xp: 250 },
+  { id: 'night_owl', name: 'Night Owl', desc: 'Study after midnight', icon: '🦉', xp: 100 },
+  { id: 'early_bird', name: 'Early Bird', desc: 'Study before 7 AM', icon: '🐦', xp: 100 }
+];
+
+// Extended storage for gamification
+function loadGameData() {
+  try {
+    const data = localStorage.getItem('msk_game_data');
+    return data ? JSON.parse(data) : getDefaultGameData();
+  } catch {
+    return getDefaultGameData();
+  }
+}
+
+function getDefaultGameData() {
+  return {
+    xp: 0,
+    level: 0,
+    achievements: [],
+    quizHistory: [],
+    dailyChallenge: null,
+    dailyChallengeCompleted: false,
+    lastDailyReset: null,
+    theme: 'dark',
+    totalQuizzes: 0,
+    totalCorrect: 0,
+    fastestQuiz: null
+  };
+}
+
+function saveGameData(data) {
+  try {
+    localStorage.setItem('msk_game_data', JSON.stringify(data));
+  } catch (e) {
+    console.log('Could not save game data');
+  }
+}
+
+// XP System
+function addXP(amount, reason = '') {
+  const gameData = loadGameData();
+  const oldLevel = getCurrentLevel(gameData.xp);
+  gameData.xp += amount;
+  const newLevel = getCurrentLevel(gameData.xp);
+  saveGameData(gameData);
+  
+  // Show XP popup
+  showXPPopup(amount, reason);
+  
+  // Level up notification
+  if (newLevel.name !== oldLevel.name) {
+    showLevelUpNotification(newLevel);
+  }
+  
+  updateXPDisplay();
+}
+
+function getCurrentLevel(xp) {
+  let currentLevel = LEVELS[0];
+  for (const level of LEVELS) {
+    if (xp >= level.minXP) {
+      currentLevel = level;
+    }
+  }
+  return currentLevel;
+}
+
+function getNextLevel(xp) {
+  for (const level of LEVELS) {
+    if (xp < level.minXP) {
+      return level;
+    }
+  }
+  return LEVELS[LEVELS.length - 1];
+}
+
+function showXPPopup(amount, reason) {
+  const popup = document.createElement('div');
+  popup.className = 'xp-popup';
+  popup.innerHTML = `+${amount} XP${reason ? ` <span class="xp-reason">${reason}</span>` : ''}`;
+  document.body.appendChild(popup);
+  
+  setTimeout(() => popup.classList.add('show'), 10);
+  setTimeout(() => {
+    popup.classList.remove('show');
+    setTimeout(() => popup.remove(), 300);
+  }, 2000);
+}
+
+function showLevelUpNotification(level) {
+  const notification = document.createElement('div');
+  notification.className = 'level-up-notification';
+  notification.innerHTML = `
+    <div class="level-up-icon">${level.icon}</div>
+    <div class="level-up-text">
+      <div class="level-up-title">LEVEL UP!</div>
+      <div class="level-up-name">${level.name}</div>
+    </div>
+  `;
+  document.body.appendChild(notification);
+  
+  triggerConfetti();
+  
+  setTimeout(() => notification.classList.add('show'), 10);
+  setTimeout(() => {
+    notification.classList.remove('show');
+    setTimeout(() => notification.remove(), 500);
+  }, 4000);
+}
+
+function updateXPDisplay() {
+  const gameData = loadGameData();
+  const currentLevel = getCurrentLevel(gameData.xp);
+  const nextLevel = getNextLevel(gameData.xp);
+  
+  const xpBarFill = document.getElementById('xpBarFill');
+  const xpText = document.getElementById('xpText');
+  const levelBadge = document.getElementById('levelBadge');
+  const levelName = document.getElementById('levelName');
+  
+  if (xpBarFill && xpText) {
+    const progress = nextLevel.minXP > currentLevel.minXP 
+      ? ((gameData.xp - currentLevel.minXP) / (nextLevel.minXP - currentLevel.minXP)) * 100
+      : 100;
+    xpBarFill.style.width = `${progress}%`;
+    xpText.textContent = `${gameData.xp.toLocaleString()} / ${nextLevel.minXP.toLocaleString()} XP`;
+  }
+  
+  if (levelBadge) {
+    levelBadge.textContent = currentLevel.icon;
+  }
+  
+  if (levelName) {
+    levelName.textContent = currentLevel.name;
+  }
+}
+
+// Achievements System
+function checkAchievements() {
+  const gameData = loadGameData();
+  const progress = loadProgress();
+  
+  const checks = [
+    { id: 'first_quiz', condition: gameData.totalQuizzes >= 1 },
+    { id: 'perfect_score', condition: progress.bestQuizScore >= 100 },
+    { id: 'streak_3', condition: progress.streak >= 3 },
+    { id: 'streak_7', condition: progress.streak >= 7 },
+    { id: 'streak_14', condition: progress.streak >= 14 },
+    { id: 'cards_10', condition: progress.cardsMastered >= 10 },
+    { id: 'cards_25', condition: progress.cardsMastered >= 25 },
+    { id: 'cards_50', condition: progress.cardsMastered >= 50 },
+    { id: 'night_owl', condition: new Date().getHours() >= 0 && new Date().getHours() < 5 },
+    { id: 'early_bird', condition: new Date().getHours() >= 5 && new Date().getHours() < 7 }
+  ];
+  
+  checks.forEach(check => {
+    if (check.condition && !gameData.achievements.includes(check.id)) {
+      unlockAchievement(check.id);
+    }
+  });
+}
+
+function unlockAchievement(id) {
+  const achievement = ACHIEVEMENTS.find(a => a.id === id);
+  if (!achievement) return;
+  
+  const gameData = loadGameData();
+  if (gameData.achievements.includes(id)) return;
+  
+  gameData.achievements.push(id);
+  saveGameData(gameData);
+  
+  // Show achievement notification
+  showAchievementNotification(achievement);
+  
+  // Award XP
+  addXP(achievement.xp, achievement.name);
+  
+  // Update achievements display
+  updateAchievementsDisplay();
+}
+
+function showAchievementNotification(achievement) {
+  const notification = document.createElement('div');
+  notification.className = 'achievement-notification';
+  notification.innerHTML = `
+    <div class="achievement-icon">${achievement.icon}</div>
+    <div class="achievement-info">
+      <div class="achievement-unlocked">Achievement Unlocked!</div>
+      <div class="achievement-name">${achievement.name}</div>
+      <div class="achievement-desc">${achievement.desc}</div>
+    </div>
+  `;
+  document.body.appendChild(notification);
+  
+  setTimeout(() => notification.classList.add('show'), 10);
+  setTimeout(() => {
+    notification.classList.remove('show');
+    setTimeout(() => notification.remove(), 500);
+  }, 4000);
+}
+
+function updateAchievementsDisplay() {
+  const container = document.getElementById('achievementsList');
+  if (!container) return;
+  
+  const gameData = loadGameData();
+  
+  container.innerHTML = ACHIEVEMENTS.map(a => {
+    const unlocked = gameData.achievements.includes(a.id);
+    return `
+      <div class="achievement-badge ${unlocked ? 'unlocked' : 'locked'}">
+        <div class="badge-icon">${a.icon}</div>
+        <div class="badge-info">
+          <div class="badge-name">${a.name}</div>
+          <div class="badge-desc">${a.desc}</div>
+        </div>
+        ${unlocked ? '<div class="badge-check">✓</div>' : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+// Confetti Animation
+function triggerConfetti() {
+  const colors = ['#6366f1', '#06b6d4', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'];
+  const confettiCount = 150;
+  
+  for (let i = 0; i < confettiCount; i++) {
+    const confetti = document.createElement('div');
+    confetti.className = 'confetti';
+    confetti.style.cssText = `
+      left: ${Math.random() * 100}vw;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      animation-delay: ${Math.random() * 0.5}s;
+      animation-duration: ${2 + Math.random() * 2}s;
+    `;
+    document.body.appendChild(confetti);
+    setTimeout(() => confetti.remove(), 4000);
+  }
+}
+
+// Quiz Answer Animations
+function animateCorrectAnswer(element) {
+  element.classList.add('answer-correct');
+  element.innerHTML += ' <span class="answer-feedback">✓ Correct!</span>';
+  
+  // Pulse effect
+  const pulse = document.createElement('div');
+  pulse.className = 'pulse-ring';
+  element.appendChild(pulse);
+  setTimeout(() => pulse.remove(), 600);
+}
+
+function animateIncorrectAnswer(element) {
+  element.classList.add('answer-incorrect');
+  element.classList.add('shake');
+  element.innerHTML += ' <span class="answer-feedback">✗ Incorrect</span>';
+  setTimeout(() => element.classList.remove('shake'), 500);
+}
+
+// Keyboard Shortcuts
+function initKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    // Only active when flashcards panel is visible
+    const flashcardsPanel = document.getElementById('panel-flashcards');
+    if (!flashcardsPanel || !flashcardsPanel.classList.contains('active')) return;
+    
+    const flashcard = document.getElementById('flashcard');
+    if (!flashcard) return;
+    
+    switch(e.key) {
+      case 'f':
+      case 'F':
+      case ' ':
+        e.preventDefault();
+        flashcard.classList.toggle('flipped');
+        break;
+      case '1':
+        e.preventDefault();
+        document.querySelector('.confidence-btn[data-confidence="0"]')?.click();
+        break;
+      case '2':
+        e.preventDefault();
+        document.querySelector('.confidence-btn[data-confidence="1"]')?.click();
+        break;
+      case '3':
+        e.preventDefault();
+        document.querySelector('.confidence-btn[data-confidence="2"]')?.click();
+        break;
+      case '4':
+        e.preventDefault();
+        document.querySelector('.confidence-btn[data-confidence="3"]')?.click();
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        currentCard = (currentCard + 1) % flashcards.length;
+        updateCardDisplay();
+        if (flashcard.classList.contains('flipped')) {
+          flashcard.classList.remove('flipped');
+        }
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        currentCard = (currentCard - 1 + flashcards.length) % flashcards.length;
+        updateCardDisplay();
+        if (flashcard.classList.contains('flipped')) {
+          flashcard.classList.remove('flipped');
+        }
+        break;
+    }
+  });
+}
+
+// Theme Toggle
+function initThemeToggle() {
+  const toggle = document.getElementById('themeToggle');
+  if (!toggle) return;
+  
+  const gameData = loadGameData();
+  if (gameData.theme === 'light') {
+    document.body.classList.add('light-theme');
+    toggle.textContent = '🌙';
+  }
+  
+  toggle.addEventListener('click', () => {
+    document.body.classList.toggle('light-theme');
+    const isLight = document.body.classList.contains('light-theme');
+    toggle.textContent = isLight ? '🌙' : '☀️';
+    
+    const data = loadGameData();
+    data.theme = isLight ? 'light' : 'dark';
+    saveGameData(data);
+  });
+}
+
+// Daily Challenge
+function initDailyChallenge() {
+  const gameData = loadGameData();
+  const today = new Date().toDateString();
+  
+  if (gameData.lastDailyReset !== today) {
+    // Generate new daily challenge
+    const challenges = [
+      { type: 'quiz', target: 1, desc: 'Complete 1 quiz', xp: 150 },
+      { type: 'cards', target: 10, desc: 'Review 10 flashcards', xp: 100 },
+      { type: 'perfect', target: 1, desc: 'Get a perfect quiz score', xp: 300 },
+      { type: 'streak', target: 1, desc: 'Maintain your study streak', xp: 100 }
+    ];
+    
+    gameData.dailyChallenge = challenges[Math.floor(Math.random() * challenges.length)];
+    gameData.dailyChallengeCompleted = false;
+    gameData.lastDailyReset = today;
+    saveGameData(gameData);
+  }
+  
+  updateDailyChallengeDisplay();
+}
+
+function updateDailyChallengeDisplay() {
+  const container = document.getElementById('dailyChallenge');
+  if (!container) return;
+  
+  const gameData = loadGameData();
+  const challenge = gameData.dailyChallenge;
+  
+  if (!challenge) return;
+  
+  container.innerHTML = `
+    <div class="daily-challenge-header">
+      <span class="daily-icon">🎯</span>
+      <span class="daily-title">Daily Challenge</span>
+      ${gameData.dailyChallengeCompleted ? '<span class="daily-complete">✓ Complete!</span>' : ''}
+    </div>
+    <div class="daily-desc">${challenge.desc}</div>
+    <div class="daily-reward">
+      <span class="reward-icon">⭐</span>
+      <span class="reward-xp">+${challenge.xp} XP</span>
+    </div>
+  `;
+  
+  if (gameData.dailyChallengeCompleted) {
+    container.classList.add('completed');
+  }
+}
+
+// Enhanced Quiz with Gamification
+function enhanceQuizWithGamification() {
+  // Hook into existing quiz completion
+  const originalRestartBtn = document.getElementById('restartQuiz');
+  if (!originalRestartBtn) return;
+  
+  // Observe quiz results for gamification
+  const resultsObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.target.style.display !== 'none') {
+        handleQuizCompletion();
+      }
+    });
+  });
+  
+  const quizResults = document.getElementById('quizResults');
+  if (quizResults) {
+    resultsObserver.observe(quizResults, { attributes: true, attributeFilter: ['style'] });
+  }
+}
+
+function handleQuizCompletion() {
+  const scoreEl = document.querySelector('#quizResults .score-value');
+  if (!scoreEl) return;
+  
+  const score = parseInt(scoreEl.textContent);
+  const gameData = loadGameData();
+  
+  // Increment quiz count
+  gameData.totalQuizzes++;
+  saveGameData(gameData);
+  
+  // Award XP based on score
+  const xpEarned = Math.round(score * 2);
+  addXP(xpEarned, 'Quiz Complete');
+  
+  // Perfect score bonus
+  if (score === 100) {
+    addXP(XP_CONFIG.perfectQuiz, 'Perfect Score!');
+    triggerConfetti();
+  }
+  
+  // Check achievements
+  checkAchievements();
+}
+
+// Mobile Swipe Gestures for Flashcards
+function initSwipeGestures() {
+  const flashcard = document.getElementById('flashcard');
+  if (!flashcard) return;
+  
+  let startX = 0;
+  let startY = 0;
+  let isDragging = false;
+  
+  flashcard.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    isDragging = true;
+  }, { passive: true });
+  
+  flashcard.addEventListener('touchmove', (e) => {
+    if (!isDragging) return;
+    
+    const deltaX = e.touches[0].clientX - startX;
+    const deltaY = e.touches[0].clientY - startY;
+    
+    // Only handle horizontal swipes
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 30) {
+      flashcard.style.transform = `translateX(${deltaX * 0.5}px) rotate(${deltaX * 0.02}deg)`;
+    }
+  }, { passive: true });
+  
+  flashcard.addEventListener('touchend', (e) => {
+    if (!isDragging) return;
+    isDragging = false;
+    
+    const endX = e.changedTouches[0].clientX;
+    const deltaX = endX - startX;
+    
+    flashcard.style.transform = '';
+    
+    if (deltaX > 100) {
+      // Swipe right - Got it (confidence 3)
+      document.querySelector('.confidence-btn[data-confidence="3"]')?.click();
+    } else if (deltaX < -100) {
+      // Swipe left - Again (confidence 0)
+      document.querySelector('.confidence-btn[data-confidence="0"]')?.click();
+    }
+  }, { passive: true });
+}
+
+// Initialize all gamification features
+function initGamification() {
+  updateXPDisplay();
+  updateAchievementsDisplay();
+  initKeyboardShortcuts();
+  initThemeToggle();
+  initDailyChallenge();
+  enhanceQuizWithGamification();
+  initSwipeGestures();
+  checkAchievements();
+  
+  // Daily login XP
+  const gameData = loadGameData();
+  const today = new Date().toDateString();
+  if (gameData.lastDailyReset !== today) {
+    addXP(XP_CONFIG.dailyLogin, 'Daily Login');
+  }
+}
+
+// Run gamification init after DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initGamification);
+} else {
+  setTimeout(initGamification, 100);
+}
