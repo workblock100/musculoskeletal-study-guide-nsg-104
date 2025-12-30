@@ -1485,82 +1485,96 @@ class MSKReviewRunner {
     }
 
     drawMenu() {
-        // Dark Radial Vignette Background (Focus center)
-        const bgGrad = this.ctx.createRadialGradient(this.centerX, this.height * 0.4, 100, this.centerX, this.height * 0.5, this.width);
-        bgGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
-        bgGrad.addColorStop(1, 'rgba(2, 6, 23, 0.98)');
-        this.ctx.fillStyle = bgGrad;
-        this.ctx.fillRect(0, 0, this.width, this.height);
+        try {
+            // Dark Radial Vignette Background (Focus center)
+            const bgGrad = this.ctx.createRadialGradient(this.centerX, this.height * 0.4, 100, this.centerX, this.height * 0.5, this.width);
+            bgGrad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
+            bgGrad.addColorStop(1, 'rgba(2, 6, 23, 0.98)');
+            this.ctx.fillStyle = bgGrad;
+            this.ctx.fillRect(0, 0, this.width, this.height);
 
-        // Header Section - Massive Gradient Title
-        this.ctx.shadowColor = '#818cf8'; this.ctx.shadowBlur = 80;
+            // Header Section - Massive Gradient Title
+            this.ctx.shadowColor = '#818cf8'; this.ctx.shadowBlur = 80;
 
-        const titleGrad = this.ctx.createLinearGradient(this.centerX - 300, 0, this.centerX + 300, 0);
-        titleGrad.addColorStop(0, '#e2e8f0'); titleGrad.addColorStop(0.5, '#ffffff'); titleGrad.addColorStop(1, '#a5b4fc');
-        this.ctx.fillStyle = titleGrad;
+            const titleGrad = this.ctx.createLinearGradient(this.centerX - 300, 0, this.centerX + 300, 0);
+            titleGrad.addColorStop(0, '#e2e8f0'); titleGrad.addColorStop(0.5, '#ffffff'); titleGrad.addColorStop(1, '#a5b4fc');
+            this.ctx.fillStyle = titleGrad;
 
-        this.ctx.font = '900 80px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        this.ctx.textAlign = 'center';
-        this.ctx.fillText('MSK REVIEW RUNNER', this.centerX, this.height * 0.22);
-        this.ctx.shadowBlur = 0;
+            this.ctx.font = '900 80px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('MSK REVIEW RUNNER', this.centerX, this.height * 0.22);
+            this.ctx.shadowBlur = 0;
 
-        // Subtitle
-        this.ctx.fillStyle = '#94a3b8';
-        this.ctx.font = '500 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        this.ctx.fillText('Musculoskeletal Nursing Study Guide', this.centerX, this.height * 0.30);
+            // Subtitle
+            this.ctx.fillStyle = '#94a3b8';
+            this.ctx.font = '500 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            this.ctx.fillText('Musculoskeletal Nursing Study Guide', this.centerX, this.height * 0.30);
 
-        // Stats Card - Larger and Cleaner
-        const statsW = 600;
-        const statsX = this.centerX - statsW / 2;
-        const statsY = this.height * 0.38;
+            // Stats Card - Larger and Cleaner
+            const statsW = 600;
+            const statsX = this.centerX - statsW / 2;
+            const statsY = this.height * 0.38;
 
-        // Glass Effect
-        this.ctx.fillStyle = 'rgba(30, 41, 59, 0.5)';
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-        this.ctx.lineWidth = 1;
-        this.ctx.beginPath(); this.ctx.roundRect(statsX, statsY, statsW, 120, 24); this.ctx.fill(); this.ctx.stroke();
+            // Glass Effect
+            this.ctx.fillStyle = 'rgba(30, 41, 59, 0.5)';
+            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+            this.ctx.lineWidth = 1;
+            if (this.ctx.roundRect) {
+                this.ctx.beginPath(); this.ctx.roundRect(statsX, statsY, statsW, 120, 24); this.ctx.fill(); this.ctx.stroke();
+            } else {
+                this.ctx.fillRect(statsX, statsY, statsW, 120); this.ctx.strokeRect(statsX, statsY, statsW, 120);
+            }
 
-        // High Score
-        this.ctx.fillStyle = '#f8fafc'; this.ctx.font = '800 48px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
-        this.ctx.fillText(this.highScore.toLocaleString(), statsX + 150, statsY + 75);
-        this.ctx.fillStyle = '#64748b'; this.ctx.font = '700 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
-        this.ctx.fillText('HIGH SCORE', statsX + 150, statsY + 35);
+            // High Score
+            this.ctx.fillStyle = '#f8fafc'; this.ctx.font = '800 48px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+            this.ctx.fillText(this.highScore.toLocaleString(), statsX + 150, statsY + 75);
+            this.ctx.fillStyle = '#64748b'; this.ctx.font = '700 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+            this.ctx.fillText('HIGH SCORE', statsX + 150, statsY + 35);
 
-        // Divider
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-        this.ctx.beginPath(); this.ctx.moveTo(this.centerX, statsY + 20); this.ctx.lineTo(this.centerX, statsY + 100); this.ctx.stroke();
+            // Divider
+            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            this.ctx.beginPath(); this.ctx.moveTo(this.centerX, statsY + 20); this.ctx.lineTo(this.centerX, statsY + 100); this.ctx.stroke();
 
-        // Coins
-        this.ctx.fillStyle = '#fbbf24'; this.ctx.font = '800 48px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
-        this.ctx.fillText(this.totalCoins.toLocaleString(), statsX + 450, statsY + 75);
-        this.ctx.fillStyle = '#64748b'; this.ctx.font = '700 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
-        this.ctx.fillText('TOTAL COINS', statsX + 450, statsY + 35);
+            // Coins
+            this.ctx.fillStyle = '#fbbf24'; this.ctx.font = '800 48px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+            this.ctx.fillText(this.totalCoins.toLocaleString(), statsX + 450, statsY + 75);
+            this.ctx.fillStyle = '#64748b'; this.ctx.font = '700 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Arial';
+            this.ctx.fillText('TOTAL COINS', statsX + 450, statsY + 35);
 
-        // Main CTA Button
-        const btnY = this.height * 0.65;
-        const btnW = 320;
-        const btnH = 80;
+            // Main CTA Button
+            const btnY = this.height * 0.65;
+            const btnW = 320;
+            const btnH = 80;
 
-        // Pulse Effect
-        const pulse = 0.5 + Math.sin(this.globalTime * 0.005) * 0.2;
-        this.ctx.shadowColor = '#6366f1'; this.ctx.shadowBlur = 40 * pulse + 15;
-        this.ctx.fillStyle = '#6366f1';
-        this.ctx.beginPath(); this.ctx.roundRect(this.centerX - btnW / 2, btnY, btnW, btnH, 40); this.ctx.fill();
-        this.ctx.shadowBlur = 0;
+            // Pulse Effect
+            const pulse = 0.5 + Math.sin(this.globalTime * 0.005) * 0.2;
+            this.ctx.shadowColor = '#6366f1'; this.ctx.shadowBlur = 40 * pulse + 15;
+            this.ctx.fillStyle = '#6366f1';
+            if (this.ctx.roundRect) {
+                this.ctx.beginPath(); this.ctx.roundRect(this.centerX - btnW / 2, btnY, btnW, btnH, 40); this.ctx.fill();
+            } else {
+                this.ctx.fillRect(this.centerX - btnW / 2, btnY, btnW, btnH);
+            }
+            this.ctx.shadowBlur = 0;
 
-        // Button Shine
-        const btnGrad = this.ctx.createLinearGradient(this.centerX, btnY, this.centerX, btnY + btnH);
-        btnGrad.addColorStop(0, 'rgba(255,255,255,0.2)'); btnGrad.addColorStop(1, 'rgba(255,255,255,0)');
-        this.ctx.fillStyle = btnGrad; this.ctx.fill();
+            // Button Shine
+            const btnGrad = this.ctx.createLinearGradient(this.centerX, btnY, this.centerX, btnY + btnH);
+            btnGrad.addColorStop(0, 'rgba(255,255,255,0.2)'); btnGrad.addColorStop(1, 'rgba(255,255,255,0)');
+            this.ctx.fillStyle = btnGrad; this.ctx.fill();
 
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = '800 28px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-        this.ctx.fillText('START GAME', this.centerX, btnY + 50);
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = '800 28px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+            this.ctx.fillText('START GAME', this.centerX, btnY + 50);
 
-        // Instructions
-        this.ctx.fillStyle = 'rgba(148, 163, 184, 0.8)';
-        this.ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-        this.ctx.fillText('Press SPACE to Start  •  Press O for Outfits  •  Arrows to Move', this.centerX, this.height * 0.90);
+            // Instructions
+            this.ctx.fillStyle = 'rgba(148, 163, 184, 0.8)';
+            this.ctx.font = '16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+            this.ctx.fillText('Press SPACE to Start  •  Press O for Outfits  •  Arrows to Move', this.centerX, this.height * 0.90);
+        } catch (e) {
+            console.error(e);
+            this.ctx.fillStyle = '#ef4444'; this.ctx.font = '30px Arial'; this.ctx.textAlign = 'center';
+            this.ctx.fillText('ERROR: ' + e.message, this.centerX, this.height / 2);
+        }
     }
 
     drawShop() {
