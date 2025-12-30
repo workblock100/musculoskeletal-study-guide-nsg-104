@@ -6,7 +6,7 @@ const gameQuizQuestions = [
     { q: "A nurse is preparing a client for a bone scan. Which instruction should the nurse provide?", category: "diagnostics", options: ["You will receive the radioactive injection when scanning begins", "You must remain NPO for 24 hours before the test", "You should empty your bladder before the procedure", "Radioactive precautions are needed for 72 hours after"], correctAnswer: "You should empty your bladder before the procedure", explanation: "Empty bladder promotes visualization of pelvic bones." },
     { q: "A client asks about DEXA scan results showing a T-score of -2.8. The nurse explains this indicates:", category: "diagnostics", options: ["Normal bone density", "Osteopenia", "Osteoporosis", "Severe osteomalacia"], correctAnswer: "Osteoporosis", explanation: "T-score <= -2.5 indicates osteoporosis." },
     { q: "Which client would the nurse identify as having a contraindication for electromyography (EMG)?", category: "diagnostics", options: ["A client taking metformin", "A client taking warfarin for atrial fibrillation", "A client with allergies", "A client who drinks coffee"], correctAnswer: "A client taking warfarin for atrial fibrillation", explanation: "Anticoagulants are a contraindication for EMG needles." },
-    { q: "A nurse is reinforcing teaching about DEXA scans. Which information should the nurse include? (Select all that apply)", category: "diagnostics", type: "sata", options: ["Requires contrast", "Hip and spine are usual areas", "Detects osteoarthritis", "Bone pain indicates need", "Females baseline 40-49"], correctAnswers: ["Hip and spine are usual areas", "Bone pain can indicate a need for a scan", "Females should have a baseline scan during ages 40-49 years"], explanation: "DEXA scans hip/spine for density. No contrast." },
+    { q: "A nurse is reinforcing teaching about DEXA scans. Which information should the nurse include? (Select all that apply)", category: "diagnostics", type: "sata", options: ["Requires contrast", "Hip and spine are usual areas", "Detects osteoarthritis", "Bone pain indicates need", "Females baseline 40-49"], correctAnswers: ["Hip and spine are usual areas", "Bone pain indicates need", "Females baseline 40-49"], explanation: "DEXA scans hip/spine for density. No contrast." },
     { q: "A client is scheduled for EMG testing. Which pre-procedure instruction should the nurse provide?", category: "diagnostics", options: ["Fast for 12 hours", "Avoid smoking and caffeine for at least 3 hours", "Take muscle relaxant", "Expect sedation"], correctAnswer: "Avoid smoking and caffeine for at least 3 hours", explanation: "Avoid stimulants before EMG." },
     { q: "A nurse is caring for a client post-arthroscopy. Which nursing action is appropriate?", category: "diagnostics", options: ["Warm compresses", "Monitor neurovascular status every hour", "Immediate weight bearing", "Dependent position"], correctAnswer: "Monitor neurovascular status every hour", explanation: "Neurovascular checks are priority." },
     { q: "Following a gallium scan, which instruction should the nurse reinforce?", category: "diagnostics", options: ["Avoid pregnant women", "Increase fluid intake", "Monitor urine color", "Bed rest"], correctAnswer: "Increase fluid intake", explanation: "Fluids help excrete the radioisotope." },
@@ -14,11 +14,11 @@ const gameQuizQuestions = [
     { q: "Which finding suggests a need for CT scan rather than X-ray for a fracture?", category: "diagnostics", options: ["Wrist fracture", "Possible hip or pelvic fracture", "Ankle sprain", "Finger fracture"], correctAnswer: "Possible hip or pelvic fracture", explanation: "CT is better for complex pelvic fractures." },
     { q: "A nurse is collecting data from a client scheduled for knee arthroplasty. Which findings should the nurse expect? (Select all that apply)", category: "arthroplasty", type: "sata", options: ["Pain when bearing weight", "Joint crepitus", "Skin reddened", "Swelling of the affected joint", "Limited joint motion"], correctAnswers: ["Pain when bearing weight", "Joint crepitus", "Swelling of the affected joint", "Limited joint motion"], explanation: "Expect pain, crepitus, swelling, and limited motion." },
     { q: "Which finding in a client's history is a contraindication for total joint arthroplasty?", category: "arthroplasty", options: ["Age 55 years", "History of cancer", "Previous joint replacement", "Bronchitis 2 weeks ago"], correctAnswer: "Bronchitis 2 weeks ago", explanation: "Recent infection is a contraindication due to risk of seeding." },
-    { q: "A nurse is caring for a client following a total knee replacement. Which actions should the nurse take? (Select all that apply)", category: "arthroplasty", type: "sata", options: ["Check CPM settings", "Palpate dorsal pedal pulses", "Place pillow behind knee", "Request PT referral", "Apply heat"], correctAnswers: ["Check CPM settings", "Palpate dorsal pedal pulses", "Request a referral for outpatient physical therapy"], explanation: "Check CPM, pulses, and PT. No pillow behind knee." },
+    { q: "A nurse is caring for a client following a total knee replacement. Which actions should the nurse take? (Select all that apply)", category: "arthroplasty", type: "sata", options: ["Check CPM settings", "Palpate dorsal pedal pulses", "Place pillow behind knee", "Request PT referral", "Apply heat"], correctAnswers: ["Check CPM settings", "Palpate dorsal pedal pulses", "Request PT referral"], explanation: "Check CPM, pulses, and PT. No pillow behind knee." },
     { q: "Which position prevents hip dislocation after total hip arthroplasty?", category: "arthroplasty", options: ["Legs adducted past midline", "Legs abducted with wedge pillow between them", "Hip flexion > 90 degrees", "Legs crossed"], correctAnswer: "Legs abducted with wedge pillow between them", explanation: "Maintain abduction with wedge pillow." },
-    { q: "A nurse is providing postoperative care for a client who has a total hip arthroplasty. Which actions should the nurse take? (Select all that apply)", category: "arthroplasty", type: "sata", options: ["Provide raised toilet seat", "Low reclining chair", "Roll onto operative hip", "Use abductor pillow", "Use incentive spirometer"], correctAnswers: ["Provide a raised toilet seat for the client", "Use an abductor pillow when turning the client", "Instruct the client on the use of an incentive spirometer"], explanation: "Raised toilet seat, abductor pillow, incentive spirometer." },
+    { q: "A nurse is providing postoperative care for a client who has a total hip arthroplasty. Which actions should the nurse take? (Select all that apply)", category: "arthroplasty", type: "sata", options: ["Provide raised toilet seat", "Low reclining chair", "Roll onto operative hip", "Use abductor pillow", "Use incentive spirometer"], correctAnswers: ["Provide raised toilet seat", "Use abductor pillow", "Use incentive spirometer"], explanation: "Raised toilet seat, abductor pillow, incentive spirometer." },
     { q: "A client 2 days post-hip replacement reports sudden severe hip pain and heard a 'pop.' The leg is shortened. What is suspected?", category: "arthroplasty", options: ["DVT", "Hip dislocation", "Fat embolism", "Infection"], correctAnswer: "Hip dislocation", explanation: "Pop, pain, shortening, rotation = dislocation." },
-    { q: "Which instruction should the nurse reinforce for discharge after total hip arthroplasty? (Select all that apply)", category: "arthroplasty", type: "sata", options: ["Calf exercises every 2 hours", "Turn toes inward", "Bend at waist", "Use raised toilet seat", "Use long-handled shoehorn"], correctAnswers: ["Perform calf and leg exercises every 2 hours", "Use a raised toilet seat", "Use a long-handled shoehorn"], explanation: "Exercises, raised seat, shoehorn. No bending >90 degrees." },
+    { q: "Which instruction should the nurse reinforce for discharge after total hip arthroplasty? (Select all that apply)", category: "arthroplasty", type: "sata", options: ["Calf exercises every 2 hours", "Turn toes inward", "Bend at waist", "Use raised toilet seat", "Use long-handled shoehorn"], correctAnswers: ["Calf exercises every 2 hours", "Use raised toilet seat", "Use long-handled shoehorn"], explanation: "Exercises, raised seat, shoehorn. No bending >90 degrees." },
     { q: "DVT prophylaxis after total knee replacement includes which interventions?", category: "arthroplasty", options: ["Strict bed rest", "Anticoagulants, compression devices, and early ambulation", "Aspirin only", "Dependent position"], correctAnswer: "Anticoagulants, compression devices, and early ambulation", explanation: "Combination therapy is required." },
     { q: "A client asks why they must use Hibiclens soap before joint replacement surgery. The nurse explains:", category: "arthroplasty", options: ["Relaxation", "It reduces skin bacteria to prevent infection", "Removes dead skin", "Decreases pain"], correctAnswer: "It reduces skin bacteria to prevent infection", explanation: "Reduces bacterial count." },
     { q: "Which client statement indicates understanding of discharge teaching after total knee arthroplasty?", category: "arthroplasty", options: ["I can kneel to garden", "I should avoid deep-knee bends indefinitely", "Stop anticoagulants in 1 week", "No infection worry"], correctAnswer: "I should avoid deep-knee bends indefinitely", explanation: "Deep knee bends put stress on the prosthesis." },
@@ -28,16 +28,16 @@ const gameQuizQuestions = [
     { q: "A client with a below-knee amputation reports burning pain in the 'missing' foot. This is:", category: "amputations", options: ["Incisional pain", "Phantom limb pain that can be treated", "Infection", "Psychological disturbance"], correctAnswer: "Phantom limb pain that can be treated", explanation: "Phantom pain is real and treatable." },
     { q: "Which intervention helps prevent hip flexion contractures after above-knee amputation?", category: "amputations", options: ["Pillows under limb", "Sitting all day", "Lie prone for 20-30 minutes several times daily", "Elevate limb indefinitely"], correctAnswer: "Have the client lie prone for 20-30 minutes several times daily", explanation: "Prone position stretches the hip flexors." },
     { q: "Which technique is correct for residual limb wrapping?", category: "amputations", options: ["Circular from proximal", "Figure-eight to prevent restriction", "Tight bandaging", "Apply once daily"], correctAnswer: "Figure-eight wrapping to prevent blood flow restriction", explanation: "Figure-eight shapes the limb without restriction." },
-    { q: "Which nursing actions are appropriate post-amputation? (Select all that apply)", category: "amputations", type: "sata", options: ["Gabapentin for phantom pain", "Delay ROM", "Record drainage", "Avoid prone", "Compare pulses"], correctAnswers: ["Administer gabapentin for phantom limb pain", "Record amount, color, and odor of wound drainage", "Compare pulses in the affected extremity with the other extremity"], explanation: "Gabapentin, drainage monitoring, pulse checks." },
+    { q: "Which nursing actions are appropriate post-amputation? (Select all that apply)", category: "amputations", type: "sata", options: ["Gabapentin for phantom pain", "Delay ROM", "Record drainage", "Avoid prone", "Compare pulses"], correctAnswers: ["Gabapentin for phantom pain", "Record drainage", "Compare pulses"], explanation: "Gabapentin, drainage monitoring, pulse checks." },
     { q: "A client with a new amputation refuses to look at the limb. Therapeutic response?", category: "amputations", options: ["You need to look", "I understand this is difficult. Would you like to talk about your feelings?", "You'll get used to it", "Should I cover it?"], correctAnswer: "I understand this is difficult. Would you like to talk about your feelings?", explanation: "Acknowledge feelings." },
     { q: "Which team member fits the prosthesis?", category: "amputations", options: ["PT", "OT", "Certified prosthetic orthotist", "Nurse"], correctAnswer: "Certified prosthetic orthotist", explanation: "Prosthetist fits the device." },
     { q: "When caring for a severed extremity, the nurse should:", category: "amputations", options: ["Place on ice directly", "Wrap in dry sterile gauze, Place in sealed bag, then in ice water", "Submerge in saline", "Keep warm"], correctAnswer: "Wrap in dry sterile gauze, place in sealed bag, then in ice water", explanation: "Dry gauze -> Bag -> Ice water." },
     { q: "Which finding 3 days post-amputation requires immediate notification?", category: "amputations", options: ["Phantom sensation", "Temperature 101.2°F with purulent drainage", "Mild discomfort", "Sadness"], correctAnswer: "Temperature 101.2°F (38.4°C) with purulent drainage from the incision", explanation: "Signs of infection." },
-    { q: "Which pain management is used for phantom limb pain? (Select all that apply)", category: "amputations", type: "sata", options: ["Gabapentin", "TENS", "Opioids first-line", "Mirror therapy", "Massage"], correctAnswers: ["Gabapentin (Neurontin)", "TENS (transcutaneous electrical nerve stimulation)", "Mirror therapy", "Massage of the residual limb"], explanation: "Gabapentin, TENS, mirror therapy, massage." },
-    { q: "Which clients have risk factors for osteoporosis? (Select all that apply)", category: "osteoporosis", type: "sata", options: ["Prednisone 1 month", "Jogging", "Phenytoin 20 years", "Furosemide 15 years", "Smoking 5 years"], correctAnswers: ["A 45-year-old client who has taken phenytoin for 20 years", "A 65-year-old client who has taken furosemide for 15 years", "A 50-year-old client who has smoked tobacco for 5 years"], explanation: "Long term phenytoin, furosemide, and smoking." },
+    { q: "Which pain management is used for phantom limb pain? (Select all that apply)", category: "amputations", type: "sata", options: ["Gabapentin", "TENS", "Opioids first-line", "Mirror therapy", "Massage"], correctAnswers: ["Gabapentin", "TENS", "Mirror therapy", "Massage"], explanation: "Gabapentin, TENS, mirror therapy, massage." },
+    { q: "Which clients have risk factors for osteoporosis? (Select all that apply)", category: "osteoporosis", type: "sata", options: ["Prednisone 1 month", "Jogging", "Phenytoin 20 years", "Furosemide 15 years", "Smoking 5 years"], correctAnswers: ["Phenytoin 20 years", "Furosemide 15 years", "Smoking 5 years"], explanation: "Long term phenytoin, furosemide, and smoking." },
     { q: "Which food is calcium-rich?", category: "osteoporosis", options: ["White bread", "Broccoli", "Apples", "Brown rice"], correctAnswer: "Broccoli", explanation: "Dark green leafy vegetables." },
-    { q: "Which findings indicate osteoporosis risk? (Select all that apply)", category: "osteoporosis", type: "sata", options: ["3 alcoholic drinks/day", "Height loss 2 inches", "BMI 28", "Hyperthyroidism", "Age < 45"], correctAnswers: ["History of consuming 3 alcoholic beverages daily", "Loss of height of 2 inches (5.1 cm)", "History of hyperthyroidism"], explanation: "Alcohol, height loss, hyperthyroidism." },
-    { q: "Home safety for osteoporosis includes: (Select all that apply)", category: "osteoporosis", type: "sata", options: ["Remove rugs", "Use assistive devices", "Remove clutter", "Soft shoes", "Lighting"], correctAnswers: ["Remove throw rugs in walkways", "Use prescribed assistive devices", "Remove clutter from the environment", "Maintain lighting of doorway areas"], explanation: "Prevent falls. No soft shoes." },
+    { q: "Which findings indicate osteoporosis risk? (Select all that apply)", category: "osteoporosis", type: "sata", options: ["3 alcoholic drinks/day", "Height loss 2 inches", "BMI 28", "Hyperthyroidism", "Age < 45"], correctAnswers: ["3 alcoholic drinks/day", "Height loss 2 inches", "Hyperthyroidism"], explanation: "Alcohol, height loss, hyperthyroidism." },
+    { q: "Home safety for osteoporosis includes: (Select all that apply)", category: "osteoporosis", type: "sata", options: ["Remove rugs", "Use assistive devices", "Remove clutter", "Soft shoes", "Lighting"], correctAnswers: ["Remove rugs", "Use assistive devices", "Remove clutter", "Lighting"], explanation: "Prevent falls. No soft shoes." },
     { q: "Instruction for alendronate (Fosamax)?", category: "osteoporosis", options: ["With food", "With 8 oz water, upright 30 min", "At bedtime", "Crush if needed"], correctAnswer: "Take with 8 oz water and remain upright for 30 minutes", explanation: "Prevent esophageal irritation." },
     { q: "Recommended exercise for osteoporosis?", category: "osteoporosis", options: ["Swimming", "Weight-bearing exercises like walking", "Bed rest", "High impact"], correctAnswer: "Weight-bearing exercises like walking", explanation: "Weight bearing builds bone." },
     { q: "Administering raloxifene, report immediately:", category: "osteoporosis", options: ["Hot flashes", "Calf pain and tenderness", "Mild discomfort", "Insomnia"], correctAnswer: "Calf pain and tenderness", explanation: "DVT risk." },
@@ -46,7 +46,7 @@ const gameQuizQuestions = [
     { q: "Calcium supplement administration?", category: "osteoporosis", options: ["All at once", "Divided doses with food/water", "Empty stomach", "No Vitamin D"], correctAnswer: "Take with food in divided doses with water", explanation: "Divided doses absorb better." },
     { q: "Report finding with teriparatide (Forteo)?", category: "osteoporosis", options: ["Previous radiation therapy", "Cramping", "Calcium supplements", "Postmenopausal"], correctAnswer: "Previous radiation therapy to bones", explanation: "Risk of osteosarcoma." },
     { q: "Calcitonin nasal spray action?", category: "osteoporosis", options: ["Increases formation", "Decreases resorption by inhibiting osteoclasts", "Replaces estrogen", "For hypocalcemia only"], correctAnswer: "Decreases resorption by inhibiting osteoclasts", explanation: "Inhibits osteoclasts." },
-    { q: "Findings of compartment syndrome? (Select all that apply)", category: "trauma", type: "sata", options: ["Pain 10/10 with passive movement", "Capillary refill 2s", "Hard swollen muscle", "Tingling", "Pulses present"], correctAnswers: ["Pain of 10/10 when the affected foot is passively moved", "Hard, swollen muscle on the affected leg", "Tingling sensation on the affected foot"], explanation: "Pain, hardness, tingling." },
+    { q: "Findings of compartment syndrome? (Select all that apply)", category: "trauma", type: "sata", options: ["Pain 10/10 with passive movement", "Capillary refill 2s", "Hard swollen muscle", "Tingling", "Pulses present"], correctAnswers: ["Pain 10/10 with passive movement", "Hard swollen muscle", "Tingling"], explanation: "Pain, hardness, tingling." },
     { q: "Fracture with bone fragmenting into pieces?", category: "trauma", options: ["Oblique", "Comminuted", "Greenstick", "Spiral"], correctAnswer: "Comminuted fracture", explanation: "Comminuted means fragmented." },
     { q: "Cast pain unrelieved by meds? Priority?", category: "trauma", options: ["More meds", "Notify provider immediately", "Elevate", "Ice"], correctAnswer: "Notify the provider immediately", explanation: "Sign of compartment syndrome." },
     { q: "Understanding cast care?", category: "trauma", options: ["Coat hanger", "Keep dry", "Tight is good", "Powder"], correctAnswer: "Keep dry", explanation: "Keep casts dry." },
@@ -1139,25 +1139,28 @@ class MSKReviewRunner {
             this.ctx.fillRect(w.x, w.y, 3, 4);
         });
 
-        // Horizon atmosphere (fog + glow)
-        const fogGrad = this.ctx.createLinearGradient(0, horizonY - 60, 0, horizonY + 30);
+        // Horizon atmosphere (deep fog that extends into road zone for seamless blend)
+        const fogGrad = this.ctx.createLinearGradient(0, horizonY - 80, 0, horizonY + 80);
         fogGrad.addColorStop(0, 'transparent');
-        fogGrad.addColorStop(0.4, 'rgba(40, 35, 55, 0.4)');
-        fogGrad.addColorStop(0.7, 'rgba(30, 28, 42, 0.7)');
-        fogGrad.addColorStop(1, 'rgba(20, 20, 35, 0.95)');
+        fogGrad.addColorStop(0.3, 'rgba(35, 30, 50, 0.3)');
+        fogGrad.addColorStop(0.5, 'rgba(25, 25, 40, 0.6)');
+        fogGrad.addColorStop(0.7, 'rgba(18, 20, 32, 0.85)');
+        fogGrad.addColorStop(1, 'rgba(15, 18, 28, 0.95)');
         this.ctx.fillStyle = fogGrad;
-        this.ctx.fillRect(0, horizonY - 60, this.width, 90);
+        this.ctx.fillRect(0, horizonY - 80, this.width, 160);
     }
 
-    drawRoad() { // Fixed indentation & structure
+    drawRoad() {
         const horizonY = this.height * 0.4;
         const roadW = 540;
 
-        // Road surface w/ deep color
+        // Road surface - matches fog end color and fades in smoothly
         const roadGrad = this.ctx.createLinearGradient(0, horizonY, 0, this.height);
-        roadGrad.addColorStop(0, 'rgba(15, 23, 42, 1)');
-        roadGrad.addColorStop(0.2, '#1e293b');
-        roadGrad.addColorStop(1, '#0f172a');
+        roadGrad.addColorStop(0, 'rgba(15, 18, 28, 0)');      // Transparent at horizon (blends with fog)
+        roadGrad.addColorStop(0.1, 'rgba(18, 22, 32, 0.5)');  // Fade in
+        roadGrad.addColorStop(0.25, 'rgba(20, 25, 35, 0.85)'); // Getting solid
+        roadGrad.addColorStop(0.5, '#151a24');                 // Solid dark road
+        roadGrad.addColorStop(1, '#0f1318');                   // Darkest at bottom
         this.ctx.fillStyle = roadGrad;
         this.ctx.beginPath();
         this.ctx.moveTo(this.centerX - 120, horizonY);
@@ -1373,17 +1376,33 @@ class MSKReviewRunner {
             this.ctx.fillStyle = '#5d4037';
             this.ctx.beginPath(); this.ctx.ellipse(-15, -28, 30, 10, -0.3, 0, Math.PI * 2); this.ctx.fill();
         } else {
-            // LEGS - 3D shaded
-            const legLGrad = this.ctx.createLinearGradient(-15, 0, -5, 0); legLGrad.addColorStop(0, '#1e293b'); legLGrad.addColorStop(0.5, pantsColor); legLGrad.addColorStop(1, '#1e293b');
+            // LEGS - Forward running motion (lift up/down, not side-to-side)
+            const legLift = Math.abs(legSwing); // How high the leg lifts (0-24)
+            const legPhase = legSwing > 0; // Which leg is forward
+
+            const legLGrad = this.ctx.createLinearGradient(-15, 0, -5, 0);
+            legLGrad.addColorStop(0, '#1e293b'); legLGrad.addColorStop(0.5, pantsColor); legLGrad.addColorStop(1, '#1e293b');
+            const legRGrad = this.ctx.createLinearGradient(5, 0, 15, 0);
+            legRGrad.addColorStop(0, '#1e293b'); legRGrad.addColorStop(0.5, pantsColor); legRGrad.addColorStop(1, '#1e293b');
+
+            // Left leg - lifts when phase is true (forward kick)
+            this.ctx.save();
+            const leftLift = legPhase ? legLift * 0.5 : 0; // Lift amount
+            const leftScale = legPhase ? 0.92 : 1; // Smaller when forward (depth)
+            this.ctx.translate(-12, -18 + bounce - leftLift);
+            this.ctx.scale(1, leftScale);
             this.ctx.fillStyle = legLGrad;
-            this.ctx.save(); this.ctx.translate(-12, -18 + bounce); this.ctx.rotate(-legSwing * Math.PI / 180);
             this.ctx.fillRect(-7, 0, 14, 42);
             this.ctx.fillStyle = '#f8fafc'; this.ctx.fillRect(-8, 38, 16, 12); // Shoe
             this.ctx.restore();
 
-            const legRGrad = this.ctx.createLinearGradient(5, 0, 15, 0); legRGrad.addColorStop(0, '#1e293b'); legRGrad.addColorStop(0.5, pantsColor); legRGrad.addColorStop(1, '#1e293b');
+            // Right leg - lifts when phase is false (forward kick)
+            this.ctx.save();
+            const rightLift = !legPhase ? legLift * 0.5 : 0;
+            const rightScale = !legPhase ? 0.92 : 1;
+            this.ctx.translate(12, -18 + bounce - rightLift);
+            this.ctx.scale(1, rightScale);
             this.ctx.fillStyle = legRGrad;
-            this.ctx.save(); this.ctx.translate(12, -18 + bounce); this.ctx.rotate(legSwing * Math.PI / 180);
             this.ctx.fillRect(-7, 0, 14, 42);
             this.ctx.fillStyle = '#f8fafc'; this.ctx.fillRect(-8, 38, 16, 12); // Shoe
             this.ctx.restore();
